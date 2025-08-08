@@ -7,7 +7,8 @@
     "dev:server": "npx convex dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "npx prettier --write ."
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
