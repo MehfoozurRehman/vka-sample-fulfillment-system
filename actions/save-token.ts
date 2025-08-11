@@ -1,14 +1,12 @@
 'use server';
 
-import { TOKEN_COOKIE_NAME } from '../../remotion/constants';
+import { TOKEN_COOKIE_NAME } from '@/constants';
 import { cookies } from 'next/headers';
 
-export async function saveToken(userDetails: { email: string; name: string; picture: string; id: string }) {
-  const { id } = userDetails;
-
+export async function saveToken(userId: string) {
   const cookie = await cookies();
 
-  cookie.set(TOKEN_COOKIE_NAME, id, {
+  cookie.set(TOKEN_COOKIE_NAME, userId, {
     path: '/',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
