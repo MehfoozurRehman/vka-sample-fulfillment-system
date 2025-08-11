@@ -100,4 +100,12 @@ export default defineSchema({
     changes: v.any(),
     timestamp: v.number(),
   }).index('by_user', ['userId', 'timestamp']),
+
+  notifications: defineTable({
+    userId: v.id('users'),
+    type: v.string(),
+    message: v.string(),
+    read: v.boolean(),
+    createdAt: v.number(),
+  }).index('by_user', ['userId', 'createdAt']),
 });
