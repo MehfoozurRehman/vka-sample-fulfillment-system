@@ -1,4 +1,5 @@
 import { Id } from './_generated/dataModel';
+import { mutation } from './_generated/server';
 import { query } from './_generated/server';
 import { v } from 'convex/values';
 
@@ -52,6 +53,24 @@ export const list = query({
         recordId: l.recordId,
         changes: l.changes,
       };
+    });
+  },
+});
+
+export const addAuditLog = mutation({
+  args: {
+    userId: v.id('users'),
+    action: v.string(),
+    table: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert('auditLogs', {
+      userId: args.userId,
+      action: args.action,
+      table: args.table,
+      recordId: '',
+      changes: { read: true },
+      timestamp: Date.now(),
     });
   },
 });
