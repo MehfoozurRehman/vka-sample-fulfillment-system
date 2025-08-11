@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import { ConvexClientProvider } from '@/providers/convex';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { ThemeProvider } from '@/providers/theme';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -30,12 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ConvexClientProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </ConvexClientProvider>
+        <Suspense>
+          <ConvexClientProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </ConvexClientProvider>
+        </Suspense>
       </body>
     </html>
   );
