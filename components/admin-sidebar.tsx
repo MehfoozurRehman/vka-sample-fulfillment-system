@@ -24,11 +24,6 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: 'Audit Logs',
-      url: '/admin/audit-logs',
-      icon: IconListDetails,
-    },
-    {
       title: 'Products',
       url: '/admin/products',
       icon: IconFolder,
@@ -42,6 +37,11 @@ const data = {
       title: 'Users',
       url: '/admin/users',
       icon: IconUsers,
+    },
+    {
+      title: 'Audit Logs',
+      url: '/admin/audit-logs',
+      icon: IconListDetails,
     },
   ],
   navSecondary: [
