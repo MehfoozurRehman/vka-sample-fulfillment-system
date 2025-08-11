@@ -1,21 +1,30 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter, useSearchParams } from 'next/navigation';
 
+import { GoogleLoginResponse } from '@/types';
 import { Loader } from 'lucide-react';
+import { Roles } from '@/constants';
 import { api } from '@/convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { saveToken } from '@/actions/save-token';
 import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useMutation } from 'convex/react';
-import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const router = useRouter();
 
+  const searchParams = useSearchParams();
+
+  const inviteId = searchParams.get('invite') || null;
+
   const login = useMutation(api.auth.login);
+
+  const acceptInvite = useMutation(api.auth.acceptInvite);
 
   const loginCallback = useGoogleLogin({
     onSuccess: async (res) => {
@@ -26,28 +35,44 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               Authorization: `Bearer ${res.access_token}`,
             },
           });
-          const userInfo = await userInfoResponse.json();
+          const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
 
-          if (userInfo && userInfo.email && userInfo.sub) {
-            const data = await login({
-              email: userInfo.email,
-              name: userInfo.name,
-              picture: userInfo.picture,
-              googleId: userInfo.sub,
-            });
-            // await saveToken(data);
-            // if (data.type === 'existing') {
-            //   toast.success(`Welcome back, ${data.name}!`);
-            //   router.replace('/');
-            // } else {
-            //   toast.success(`Welcome, ${data.name}!`);
-            //   router.replace(`/register?id=${data.id}`);
-            // }
+          console.log('Google user info:', gInfo);
+
+          if (gInfo && gInfo.email && gInfo.sub) {
+            let data: { id: string; role: Roles } | null = null;
+
+            if (inviteId) {
+              data = await acceptInvite({
+                picture: gInfo.picture,
+                googleId: gInfo.sub,
+                inviteId,
+              });
+            } else {
+              data = await login({
+                googleId: gInfo.sub,
+              });
+            }
+
+            if (!data) {
+              toast.error('Login failed');
+              return;
+            }
+
+            await saveToken(data.id);
+
+            if (inviteId) {
+              toast.success(`Welcome, ${gInfo.name}! Your invite has been accepted.`);
+            } else {
+              toast.success(`Welcome back, ${gInfo.name}!`);
+            }
+
+            router.replace(`/${data.role}`);
           } else {
             toast.error('Failed to fetch Google user info.');
           }
-        } catch (err) {
-          toast.error('Login failed');
+        } catch (error) {
+          toastError(error);
         }
       });
     },
