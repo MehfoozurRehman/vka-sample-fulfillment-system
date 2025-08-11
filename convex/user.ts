@@ -69,6 +69,15 @@ export const inviteUser = mutation({
       updatedAt: Date.now(),
     });
 
+    await ctx.db.insert('auditLogs', {
+      userId: user as Id<'users'>,
+      action: 'inviteUser',
+      table: 'users',
+      recordId: user,
+      changes: { email, name, role, active: false },
+      timestamp: Date.now(),
+    });
+
     await resend.sendEmail(ctx, {
       from: 'VKA <onboarding@resend.dev>',
       to: email,
@@ -91,9 +100,20 @@ export const updateStatus = mutation({
   args: { userId: v.id('users'), status: v.union(v.literal('active'), v.literal('inactive')) },
   handler: async (ctx, { userId, status }) => {
     const user = await ctx.db.get(userId);
+
     if (!user) throw new Error('User not found');
 
     await ctx.db.patch(userId, { active: status === 'active', updatedAt: Date.now() });
+
+    await ctx.db.insert('auditLogs', {
+      userId: userId,
+      action: 'updateStatus',
+      table: 'users',
+      recordId: userId,
+      changes: { active: status === 'active' },
+      timestamp: Date.now(),
+    });
+
     return { ok: true };
   },
 });
