@@ -57,7 +57,6 @@ export const add = mutation({
     let productId = (args.productId || '').trim();
 
     if (!productId || productId.toUpperCase() === 'AUTO') {
-      // generate next id
       const items = await ctx.db
         .query('products')
         .filter((q) => q.eq(q.field('deletedAt'), undefined))
@@ -101,7 +100,6 @@ export const update = mutation({
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Product not found');
 
-    // Prevent productId duplication among non-deleted products
     const dupe = await ctx.db
       .query('products')
       .filter((q) => q.and(q.eq(q.field('productId'), rest.productId), q.neq(q.field('_id'), id), q.eq(q.field('deletedAt'), undefined)))
