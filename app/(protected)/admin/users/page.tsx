@@ -130,7 +130,7 @@ const columns: ColumnDef<DataType>[] = [
   {
     accessorKey: 'lastLogin',
     header: 'Last Login',
-    cell: ({ row }) => row.original.lastLogin,
+    cell: ({ row }) => (row.original.lastLogin ? dayjs(row.original.lastLogin).format('MMM D, YYYY h:mm A') : 'Never'),
   },
   {
     accessorKey: 'createdAt',
@@ -367,7 +367,7 @@ function DataTable({ data: initialData, isPending }: { data: DataType[]; isPendi
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Last Login</span>
-                    <span className="font-medium">{selectedUser.lastLogin ? dayjs(selectedUser.lastLogin).format('MMM D, YYYY h:mm A') : '-'}</span>
+                    <span className="font-medium">{selectedUser.lastLogin ? dayjs(selectedUser.lastLogin).format('MMM D, YYYY h:mm A') : 'Never'}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Created At</span>
