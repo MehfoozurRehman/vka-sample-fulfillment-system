@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server';
 
 import { Id } from './_generated/dataModel';
 import dayjs from 'dayjs';
+import { resend } from './resend';
 import { v } from 'convex/values';
 
 export const getUsers = query({
@@ -9,7 +10,7 @@ export const getUsers = query({
   handler: async (ctx) => {
     const users = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('deletedAt'), null))
+      .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
     const usersWithData = await Promise.all(
@@ -38,5 +39,50 @@ export const getUsers = query({
     );
 
     return usersWithData;
+  },
+});
+
+export const inviteUser = mutation({
+  args: { email: v.string(), name: v.string(), role: v.string() },
+  handler: async (ctx, args) => {
+    const { email, name, role } = args;
+
+    if (!email || !name || !role) {
+      throw new Error('Email, name, and role are required');
+    }
+
+    const existingUser = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('email'), email))
+      .first();
+
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+
+    const user = await ctx.db.insert('users', {
+      email,
+      name,
+      role,
+      active: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    await resend.sendEmail(ctx, {
+      from: 'VKA <onboarding@resend.dev>',
+      to: email,
+      subject: 'Invitation to join VKA',
+      html: `
+        <p>Hello ${name},</p>
+        <p>You have been invited to join VKA as a <strong>${role}</strong>. Please click the link below to accept the invitation and set up your account.</p>
+        <p>
+          <a href="http://localhost:3000/login?invite=${user}">Accept Invitation</a>
+        </p>
+        <p>Best regards,<br/>VKA Team</p>
+      `,
+    });
+
+    return user;
   },
 });
