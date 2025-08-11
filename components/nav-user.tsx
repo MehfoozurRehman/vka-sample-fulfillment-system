@@ -8,7 +8,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import Link from 'next/link';
 import { Loader } from 'lucide-react';
 import { removeToken } from '@/actions/remove-token';
-import { useAuth } from '@/providers/auth';
+import { useAuth } from '@/hooks/use-user';
 import { usePathname } from 'next/navigation';
 import { useTransition } from 'react';
 
