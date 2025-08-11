@@ -15,7 +15,6 @@ export const list = query({
     let logs;
 
     if (userId) {
-      // Use index when filtering by user for performance
       logs = await ctx.db
         .query('auditLogs')
         .withIndex('by_user', (q) => q.eq('userId', userId))
@@ -24,7 +23,6 @@ export const list = query({
       logs = await ctx.db.query('auditLogs').collect();
     }
 
-    // In-memory filtering for other criteria
     const filtered = logs
       .filter((l) => (action ? l.action === action : true))
       .filter((l) => (table ? l.table === table : true))
@@ -37,7 +35,6 @@ export const list = query({
       })
       .sort((a, b) => b.timestamp - a.timestamp);
 
-    // Attach minimal user info
     const uniqueUserIds = Array.from(new Set(filtered.map((l) => l.userId as Id<'users'>)));
     const users = await Promise.all(uniqueUserIds.map((id) => ctx.db.get(id)));
     const userMap = new Map(users.filter(Boolean).map((u) => [u!._id, u!]));
