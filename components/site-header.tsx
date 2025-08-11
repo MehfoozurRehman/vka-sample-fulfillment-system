@@ -4,8 +4,11 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import { Button } from './ui/button';
 import { ChevronLeft } from 'lucide-react';
+import ClickAwayListener from 'react-click-away-listener';
+import { IconBell } from '@tabler/icons-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
+import { useState } from 'react';
 
 export function SiteHeader() {
   const router = useRouter();
@@ -34,9 +37,31 @@ export function SiteHeader() {
         )}
         <h1 className="text-base font-medium">{pageName}</h1>
         <div className="ml-auto flex items-center gap-2">
+          <Notifications />
           <ThemeToggle />
         </div>
       </div>
     </header>
+  );
+}
+
+function Notifications() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <ClickAwayListener onClickAway={() => setIsOpen(false)}>
+      <div className="relative">
+        <Button variant="outline" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
+          <IconBell />
+          <span className="sr-only">Notifications</span>
+          <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+        </Button>
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-64 rounded-md bg-white shadow-lg">
+            <div className="p-4">No new notifications</div>
+          </div>
+        )}
+      </div>
+    </ClickAwayListener>
   );
 }
