@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import { ConvexClientProvider } from '@/providers/convex';
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { ThemeProvider } from '@/providers/theme';
 import { Toaster } from '@/components/ui/sonner';
 
