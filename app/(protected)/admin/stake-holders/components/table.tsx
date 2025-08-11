@@ -188,7 +188,6 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
           <div className="p-4 space-y-4">
             {selected && (
               <>
-                {/* Editable form */}
                 <div className="grid gap-3">
                   <Label htmlFor="companyName">Company Name</Label>
                   <Input id="companyName" value={(edit?.companyName ?? selected.companyName) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), companyName: e.target.value })} />
