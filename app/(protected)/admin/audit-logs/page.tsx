@@ -12,23 +12,15 @@ import { Button } from '@/components/ui/button';
 import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
-interface AuditRow {
-  id: string;
-  timestamp: number;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  action: string;
-  table: string;
-  recordId: string;
-  changes: unknown;
-}
+type AuditRow = NonNullable<ReturnType<typeof useQuery<typeof api.audit.list>>>[number];
 
 export default function AuditLogsPage() {
   const [selectedUser, setSelectedUser] = useState<string>('');
@@ -48,7 +40,7 @@ export default function AuditLogsPage() {
 
   const users = useQuery(api.user.getUsers);
 
-  const logsRaw = useQuery(api.audit.list, {
+  const { data: logsRaw, isPending } = useQueryWithStatus(api.audit.list, {
     userId: selectedUser && selectedUser !== 'all' ? (selectedUser as unknown as Id<'users'>) : undefined,
     action: action && action !== 'all' ? action : undefined,
     table: tableName && tableName !== 'all' ? tableName : undefined,
@@ -200,7 +192,15 @@ export default function AuditLogsPage() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isPending ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="flex items-center justify-center">
+                    <Loader className="animate-spin" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
