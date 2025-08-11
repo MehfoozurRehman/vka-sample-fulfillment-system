@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,15 @@ export function AddProduct() {
 
   const add = useMutation(api.product.add);
   const nextId = useQuery(api.product.nextId);
+  const products = useQuery(api.product.list);
+
+  const categoryOptions = useMemo(() => {
+    const cats = new Set<string>();
+    (products || []).forEach((p) => {
+      if (p.category) cats.add(p.category);
+    });
+    return Array.from(cats).sort((a, b) => a.localeCompare(b));
+  }, [products]);
 
   const [productId, setProductId] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -88,7 +97,12 @@ export function AddProduct() {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="category">Category</Label>
-              <Input id="category" name="category" />
+              <Input id="category" name="category" list="category-options" autoComplete="off" placeholder="Select or type a category" />
+              <datalist id="category-options">
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="location">Location</Label>
