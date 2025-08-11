@@ -96,6 +96,15 @@ export const login = mutation({
       lastLogin: dayjs().unix(),
     });
 
+    await ctx.db.insert('auditLogs', {
+      userId: user._id,
+      action: 'login',
+      table: 'users',
+      recordId: user._id,
+      changes: { lastLogin: dayjs().unix() },
+      timestamp: dayjs().unix(),
+    });
+
     return {
       id: user._id,
       role: user.role as Roles,
@@ -133,6 +142,15 @@ export const acceptInvite = mutation({
       googleId,
       active: true,
       profilePicture: picture,
+    });
+
+    await ctx.db.insert('auditLogs', {
+      userId: inviteId as Id<'users'>,
+      action: 'acceptInvite',
+      table: 'users',
+      recordId: inviteId,
+      changes: { googleId, active: true, profilePicture: picture },
+      timestamp: dayjs().unix(),
     });
 
     return {
