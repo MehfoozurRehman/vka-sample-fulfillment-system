@@ -34,6 +34,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -176,19 +177,15 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="category">Category</Label>
-                  <Input
+                  <InputWithSuggestions
                     id="category"
-                    list="category-options"
-                    autoComplete="off"
+                    name="category"
                     placeholder="Select or type a category"
+                    options={categoryOptions}
                     value={(edit?.category ?? selected.category) || ''}
-                    onChange={(e) => setEdit({ ...(edit ?? selected), category: e.target.value })}
+                    onValueChange={(val) => setEdit({ ...(edit ?? selected), category: val })}
+                    inputProps={{ spellCheck: false }}
                   />
-                  <datalist id="category-options">
-                    {categoryOptions.map((c) => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="location">Location</Label>
