@@ -1,17 +1,20 @@
 'use client';
 
+import { ChevronLeft, Loader } from 'lucide-react';
+import { IconAlertTriangle, IconBell, IconCircleCheck, IconInfoCircle } from '@tabler/icons-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
 
 import { Button } from './ui/button';
-import { ChevronLeft } from 'lucide-react';
 import ClickAwayListener from 'react-click-away-listener';
-import { IconBell } from '@tabler/icons-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
 import { api } from '@/convex/_generated/api';
+import dayjs from 'dayjs';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-user';
+import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
-import { useState } from 'react';
 
 export function SiteHeader() {
   const router = useRouter();
@@ -57,20 +60,90 @@ function Notifications() {
     userId: user.id,
   });
 
+  const markAsRead = useMutation(api.notification.markAsRead);
+  const markAllAsRead = useMutation(api.notification.markAllAsRead);
+  const [isActing, startTransition] = useTransition();
+
+  const unreadCount = data?.length ?? 0;
+
   return (
     <ClickAwayListener onClickAway={() => setIsOpen(false)}>
       <div className="relative">
         <Button variant="outline" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
           <IconBell />
           <span className="sr-only">Notifications</span>
-          {data?.length > 0 && <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />}
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-red-500 text-[10px] leading-4 text-white px-1 text-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
         </Button>
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-64 rounded-md border bg-muted">
-            <div className="p-4">No new notifications</div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute right-0 mt-2 w-100 rounded-md border bg-popover text-popover-foreground shadow-md"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="text-sm font-medium">Notifications</div>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={unreadCount === 0 || isPending || isActing}
+                onClick={() =>
+                  startTransition(async () => {
+                    await markAllAsRead({ userId: user.id });
+                  })
+                }
+                className="text-xs"
+              >
+                Mark all as read
+              </Button>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {isPending ? (
+                <div className=" flex items-center justify-center p-6">
+                  <Loader className="animate-spin" />
+                </div>
+              ) : unreadCount === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">You&apos;re all caught up</div>
+              ) : (
+                <ul className="divide-y">
+                  {data!.map((n) => (
+                    <li key={n._id} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/40">
+                      <TypeIcon type={n.type} />
+                      <div className="flex-1">
+                        <div className="text-sm">{n.message}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{dayjs(n.createdAt).format('MMM D, YYYY h:mm A')}</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isActing}
+                        onClick={() =>
+                          startTransition(async () => {
+                            await markAsRead({ notificationId: n._id });
+                          })
+                        }
+                        className="text-xs"
+                      >
+                        Mark as read
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </motion.div>
         )}
       </div>
     </ClickAwayListener>
   );
+}
+
+function TypeIcon({ type }: { type?: string }) {
+  const base = 'mt-0.5 rounded-full p-1.5';
+  if (type === 'warning') return <IconAlertTriangle className={`${base} text-amber-600`} />;
+  if (type === 'success') return <IconCircleCheck className={`${base} text-emerald-600`} />;
+  return <IconInfoCircle className={`${base} text-blue-600`} />;
 }
