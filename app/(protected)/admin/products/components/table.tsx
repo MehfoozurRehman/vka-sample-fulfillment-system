@@ -15,13 +15,11 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMemo, useState, useTransition } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 
 import { AddProduct } from './add-product';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IconLoader } from '@tabler/icons-react';
 import { Id } from '@/convex/_generated/dataModel';
@@ -29,10 +27,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
 import { ProductType } from '../type';
+import { Tabs } from '@/components/ui/tabs';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMutation } from 'convex/react';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -55,6 +53,14 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
 
   const update = useMutation(api.product.update);
   const remove = useMutation(api.product.remove);
+  const products = useQuery(api.product.list);
+  const categoryOptions = useMemo(() => {
+    const cats = new Set<string>();
+    (products || []).forEach((p) => {
+      if (p.category) cats.add(p.category);
+    });
+    return Array.from(cats).sort((a, b) => a.localeCompare(b));
+  }, [products]);
 
   const filteredData = useMemo(() => {
     let d = initialData;
@@ -159,7 +165,19 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="category">Category</Label>
-                  <Input id="category" value={(edit?.category ?? selected.category) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), category: e.target.value })} />
+                  <Input
+                    id="category"
+                    list="category-options"
+                    autoComplete="off"
+                    placeholder="Select or type a category"
+                    value={(edit?.category ?? selected.category) || ''}
+                    onChange={(e) => setEdit({ ...(edit ?? selected), category: e.target.value })}
+                  />
+                  <datalist id="category-options">
+                    {categoryOptions.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="location">Location</Label>
