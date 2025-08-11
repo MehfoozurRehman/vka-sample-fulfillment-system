@@ -31,7 +31,7 @@ export const getUsers = query({
           role: user.role,
           email: user.email,
           designation: user.designation,
-          lastLogin: user.lastLogin ? dayjs(user.lastLogin).format('YYYY-MM-DD HH:mm:ss') : 'Never',
+          lastLogin: user.lastLogin ? dayjs(user.lastLogin).format('YYYY-MM-DD HH:mm:ss') : null,
           createdAt: dayjs(user.createdAt).format('YYYY-MM-DD HH:mm:ss'),
           status: (!user.googleId ? 'invited' : user.active ? 'active' : 'inactive') as 'invited' | 'active' | 'inactive',
         };
