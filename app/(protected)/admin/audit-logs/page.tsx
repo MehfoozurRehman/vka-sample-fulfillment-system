@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from 'convex/react';
 
 interface AuditRow {
@@ -37,6 +38,8 @@ export default function AuditLogsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [start, setStart] = useState<string>('');
   const [end, setEnd] = useState<string>('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditRow | null>(null);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(search), 300);
@@ -81,15 +84,6 @@ export default function AuditLogsPage() {
       {
         header: 'Table',
         accessorKey: 'table',
-      },
-      {
-        header: 'Record',
-        accessorKey: 'recordId',
-      },
-      {
-        id: 'details',
-        header: '',
-        cell: ({ row }) => <DetailsDrawer row={row.original} />,
       },
     ],
     [],
@@ -208,7 +202,14 @@ export default function AuditLogsPage() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/60"
+                  onClick={() => {
+                    setSelectedLog(row.original);
+                    setDrawerOpen(true);
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
@@ -245,25 +246,31 @@ export default function AuditLogsPage() {
           </Button>
         </div>
       </div>
+      <DetailsDrawer open={drawerOpen} onOpenChange={setDrawerOpen} row={selectedLog} />
     </div>
   );
 }
 
-function DetailsDrawer({ row }: { row: AuditRow }) {
+interface DetailsDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  row: AuditRow | null;
+}
+
+function DetailsDrawer({ open, onOpenChange, row }: DetailsDrawerProps) {
+  const isMobile = useIsMobile();
+
+  if (!row) return null;
+
   return (
-    <Drawer>
-      <DrawerTrigger asChild>
-        <Button variant="ghost" size="sm">
-          View
-        </Button>
-      </DrawerTrigger>
+    <Drawer direction={isMobile ? 'bottom' : 'right'} open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Audit Log Details</DrawerTitle>
           <DrawerDescription>Full change payload and metadata</DrawerDescription>
         </DrawerHeader>
         <div className="max-h-[70vh] overflow-auto p-4 text-sm">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <div className="text-muted-foreground">When</div>
               <div className="font-medium">{dayjs(row.timestamp).format('MMM D, YYYY h:mm A')}</div>
@@ -280,10 +287,6 @@ function DetailsDrawer({ row }: { row: AuditRow }) {
             <div>
               <div className="text-muted-foreground">Table</div>
               <div className="font-medium">{row.table}</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-muted-foreground">Record ID</div>
-              <div className="font-medium">{row.recordId}</div>
             </div>
             <div className="col-span-2">
               <div className="text-muted-foreground">Changes</div>
