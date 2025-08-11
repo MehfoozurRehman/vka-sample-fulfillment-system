@@ -8,6 +8,9 @@ import ClickAwayListener from 'react-click-away-listener';
 import { IconBell } from '@tabler/icons-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
+import { api } from '@/convex/_generated/api';
+import { useAuth } from '@/hooks/use-user';
+import { useQueryWithStatus } from '@/hooks/use-query';
 import { useState } from 'react';
 
 export function SiteHeader() {
@@ -46,7 +49,13 @@ export function SiteHeader() {
 }
 
 function Notifications() {
+  const user = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
+
+  const { data, isPending } = useQueryWithStatus(api.notification.getNotifications, {
+    userId: user.id,
+  });
 
   return (
     <ClickAwayListener onClickAway={() => setIsOpen(false)}>
@@ -54,7 +63,7 @@ function Notifications() {
         <Button variant="outline" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
           <IconBell />
           <span className="sr-only">Notifications</span>
-          <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+          {data?.length > 0 && <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />}
         </Button>
         {isOpen && (
           <div className="absolute right-0 mt-2 w-64 rounded-md border bg-muted">
