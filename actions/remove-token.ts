@@ -1,6 +1,6 @@
 'use server';
 
-import { TOKEN_COOKIE_NAME } from '../../remotion/constants';
+import { TOKEN_COOKIE_NAME } from '@/constants';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
