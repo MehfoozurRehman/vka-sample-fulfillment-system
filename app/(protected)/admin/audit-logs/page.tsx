@@ -2,10 +2,10 @@
 
 import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight, IconFilter, IconSearch } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight, IconFilter } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { useEffect } from 'react';
 import { useQuery } from 'convex/react';
 
 interface AuditRow {
@@ -33,19 +34,27 @@ export default function AuditLogsPage() {
   const [action, setAction] = useState<string>('');
   const [tableName, setTableName] = useState<string>('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [start, setStart] = useState<string>('');
   const [end, setEnd] = useState<string>('');
 
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const users = useQuery(api.user.getUsers);
 
-  const logs = useQuery(api.audit.list, {
-    userId: selectedUser ? (selectedUser as unknown as Id<'users'>) : undefined,
-    action: action || undefined,
-    table: tableName || undefined,
+  const logsRaw = useQuery(api.audit.list, {
+    userId: selectedUser && selectedUser !== 'all' ? (selectedUser as unknown as Id<'users'>) : undefined,
+    action: action && action !== 'all' ? action : undefined,
+    table: tableName && tableName !== 'all' ? tableName : undefined,
     start: start ? dayjs(start).valueOf() : undefined,
     end: end ? dayjs(end).endOf('day').valueOf() : undefined,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
   });
+
+  const logs = useDeferredValue(logsRaw);
 
   const columns = useMemo<ColumnDef<AuditRow>[]>(
     () => [
@@ -86,8 +95,10 @@ export default function AuditLogsPage() {
     [],
   );
 
+  const tableData = useMemo(() => logs || [], [logs]);
+
   const table = useReactTable({
-    data: logs || [],
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -95,8 +106,8 @@ export default function AuditLogsPage() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const actions = useMemo(() => Array.from(new Set((logs || []).map((l) => l.action))), [logs]);
-  const tables = useMemo(() => Array.from(new Set((logs || []).map((l) => l.table))), [logs]);
+  const actions = useMemo(() => Array.from(new Set(tableData.map((l) => l.action))), [tableData]);
+  const tables = useMemo(() => Array.from(new Set(tableData.map((l) => l.table))), [tableData]);
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 lg:p-6">
