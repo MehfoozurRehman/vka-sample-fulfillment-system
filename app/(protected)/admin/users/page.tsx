@@ -170,16 +170,17 @@ function DataTable({ data: initialData, isPending }: { data: DataType[]; isPendi
     let d = initialData;
 
     if (statusFilter === 'all') {
-      d = d.filter((u) => u.status !== 'invited');
+      d = d;
     } else {
       d = d.filter((u) => u.status === statusFilter);
     }
 
-    const q = search.trim().toLowerCase();
+    const normalize = (str: string) => str.toLowerCase().replace(/\s+/g, '');
+    const q = normalize(search.trim());
     if (q) {
       d = d.filter((u) => {
         const parts = [u.name || '', u.email || '', u.role || '', u.designation || '', u.status || ''];
-        return parts.some((p) => p.toLowerCase().includes(q));
+        return parts.some((p) => normalize(p).includes(q));
       });
     }
 
@@ -322,7 +323,7 @@ function DataTable({ data: initialData, isPending }: { data: DataType[]; isPendi
           <div className="p-4 space-y-4">
             {selectedUser && (
               <>
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12 rounded-lg">
                       <AvatarImage src={selectedUser.picture} alt={selectedUser.name} />
@@ -347,7 +348,7 @@ function DataTable({ data: initialData, isPending }: { data: DataType[]; isPendi
                     </Badge>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+                <div className="flex flex-col gap-3 rounded-lg border p-3">
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Name</span>
                     <span className="font-medium">{selectedUser.name || '-'}</span>
