@@ -124,25 +124,46 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  // {
-  //   accessorKey: 'header',
-  //   header: 'Header',
-  //   cell: ({ row }) => {
-  //     return <TableCellViewer item={row.original} />;
-  //   },
-  //   enableHiding: false,
-  // },
-  // {
-  //   accessorKey: 'type',
-  //   header: 'Section Type',
-  //   cell: ({ row }) => (
-  //     <div className="w-32">
-  //       <Badge variant="outline" className="text-muted-foreground px-1.5">
-  //         {row.original.type}
-  //       </Badge>
-  //     </div>
-  //   ),
-  // },
+  {
+    accessorKey: 'picture',
+    header: 'Picture',
+    cell: ({ row }) => (
+      <Avatar className="h-8 w-8 rounded-lg">
+        <AvatarImage src={row.original.picture} alt={row.original.name} className="w-full h-full" />
+        <AvatarFallback className="rounded-lg">{row.original.name ? row.original.name.charAt(0) : 'CN'}</AvatarFallback>
+      </Avatar>
+    ),
+  },
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    cell: ({ row }) => row.original.name || '-',
+  },
+  {
+    accessorKey: 'role',
+    header: 'Role',
+    cell: ({ row }) => row.original.role,
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    cell: ({ row }) => row.original.email,
+  },
+  {
+    accessorKey: 'designation',
+    header: 'Designation',
+    cell: ({ row }) => row.original.designation || '-',
+  },
+  {
+    accessorKey: 'lastLogin',
+    header: 'Last Login',
+    cell: ({ row }) => row.original.lastLogin,
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Created At',
+    cell: ({ row }) => dayjs(row.original.createdAt).format('MMM D, YYYY'),
+  },
   {
     accessorKey: 'status',
     header: 'Status',
@@ -153,112 +174,17 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </Badge>
     ),
   },
-  // {
-  //   accessorKey: 'target',
-  //   header: () => <div className="w-full text-right">Target</div>,
-  //   cell: ({ row }) => (
-  //     <form
-  //       onSubmit={(e) => {
-  //         e.preventDefault();
-  //         toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-  //           loading: `Saving ${row.original.header}`,
-  //           success: 'Done',
-  //           error: 'Error',
-  //         });
-  //       }}
-  //     >
-  //       <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-  //         Target
-  //       </Label>
-  //       <Input
-  //         className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-  //         defaultValue={row.original.target}
-  //         id={`${row.original.id}-target`}
-  //       />
-  //     </form>
-  //   ),
-  // },
-  // {
-  //   accessorKey: 'limit',
-  //   header: () => <div className="w-full text-right">Limit</div>,
-  //   cell: ({ row }) => (
-  //     <form
-  //       onSubmit={(e) => {
-  //         e.preventDefault();
-  //         toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-  //           loading: `Saving ${row.original.header}`,
-  //           success: 'Done',
-  //           error: 'Error',
-  //         });
-  //       }}
-  //     >
-  //       <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-  //         Limit
-  //       </Label>
-  //       <Input
-  //         className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-  //         defaultValue={row.original.limit}
-  //         id={`${row.original.id}-limit`}
-  //       />
-  //     </form>
-  //   ),
-  // },
-  // {
-  //   accessorKey: 'reviewer',
-  //   header: 'Reviewer',
-  //   cell: ({ row }) => {
-  //     const isAssigned = row.original.reviewer !== 'Assign reviewer';
-
-  //     if (isAssigned) {
-  //       return row.original.reviewer;
-  //     }
-
-  //     return (
-  //       <>
-  //         <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-  //           Reviewer
-  //         </Label>
-  //         <Select>
-  //           <SelectTrigger className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate" size="sm" id={`${row.original.id}-reviewer`}>
-  //             <SelectValue placeholder="Assign reviewer" />
-  //           </SelectTrigger>
-  //           <SelectContent align="end">
-  //             <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-  //             <SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
-  //           </SelectContent>
-  //         </Select>
-  //       </>
-  //     );
-  //   },
-  // },
-  // {
-  //   id: 'actions',
-  //   cell: () => (
-  //     <DropdownMenu>
-  //       <DropdownMenuTrigger asChild>
-  //         <Button variant="ghost" className="data-[state=open]:bg-muted text-muted-foreground flex size-8" size="icon">
-  //           <IconDotsVertical />
-  //           <span className="sr-only">Open menu</span>
-  //         </Button>
-  //       </DropdownMenuTrigger>
-  //       <DropdownMenuContent align="end" className="w-32">
-  //         <DropdownMenuItem>Edit</DropdownMenuItem>
-  //         <DropdownMenuItem>Make a copy</DropdownMenuItem>
-  //         <DropdownMenuItem>Favorite</DropdownMenuItem>
-  //         <DropdownMenuSeparator />
-  //         <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-  //       </DropdownMenuContent>
-  //     </DropdownMenu>
-  //   ),
-  // },
 ];
 
 function DataTable({ data: initialData, isPending }: { data: z.infer<typeof schema>[]; isPending: boolean }) {
   const [data, setData] = React.useState(() => initialData);
+  const [selectedUser, setSelectedUser] = React.useState<null | z.infer<typeof schema>>(null);
 
   useEffect(() => {
     setData(initialData);
   }, [initialData]);
+
+  const isMobile = useIsMobile();
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -272,12 +198,7 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
+    state: { sorting, columnVisibility, rowSelection, columnFilters },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -303,106 +224,145 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
     }
   }
 
+  const totalUsers = data?.filter((user) => user.status !== 'invited').length || 0;
+  const noOfActiveUsers = data?.filter((user) => user.status === 'active').length || 0;
+  const noOfInactiveUsers = data?.filter((user) => user.status === 'inactive').length || 0;
+  const noOfInvitedUsers = data?.filter((user) => user.status === 'invited').length || 0;
+
   return (
-    <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="outline">
-          <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <IconChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem key={column.id} className="capitalize" checked={column.getIsVisible()} onCheckedChange={(value) => column.toggleVisibility(!!value)}>
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <InviteUser />
+    <>
+      <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
+        <div className="flex items-center justify-between px-4 lg:px-6">
+          <Label htmlFor="view-selector" className="sr-only">
+            View
+          </Label>
+          <Select defaultValue="all">
+            <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
+              <SelectValue placeholder="Select a status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="invited">Pending Invite</SelectItem>
+            </SelectContent>
+          </Select>
+          <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+            <TabsTrigger value="all">
+              All <Badge variant="secondary">{totalUsers || 0}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="active">
+              Active <Badge variant="secondary">{noOfActiveUsers}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="inactive">
+              Inactive <Badge variant="secondary">{noOfInactiveUsers}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="invited">
+              Pending Invite <Badge variant="secondary">{noOfInvitedUsers}</Badge>
+            </TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2">
+            <Input placeholder="Search" />
+            <InviteUser />
+          </div>
         </div>
-      </div>
-      <TabsContent value="outline" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
-          <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd} sensors={sensors} id={sortableId}>
-            <Table>
-              <TableHeader className="bg-muted sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {isPending ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24">
-                      <div className="flex w-full items-center justify-center">
-                        <IconLoader className="animate-spin" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80">
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
+        <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+          <div className="overflow-hidden rounded-lg border">
+            <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd} sensors={sensors} id={sortableId}>
+              <Table>
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan}>
+                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                          </TableHead>
+                        );
+                      })}
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </DndContext>
+                  ))}
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {isPending ? (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24">
+                        <div className="flex w-full items-center justify-center">
+                          <IconLoader className="animate-spin" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && 'selected'}
+                        className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 cursor-pointer"
+                        onClick={() => setSelectedUser(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </DndContext>
+          </div>
         </div>
-      </TabsContent>
-    </Tabs>
+      </Tabs>
+      <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>User Details</DrawerTitle>
+            <DrawerDescription>Full information for the selected user.</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 space-y-2">
+            {selectedUser && (
+              <>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={selectedUser.picture} alt={selectedUser.name} />
+                    <AvatarFallback className="rounded-lg">{selectedUser.name ? selectedUser.name.charAt(0) : 'CN'}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-bold text-lg">{selectedUser.name || '-'}</span>
+                </div>
+                <div>
+                  <strong>Email:</strong> {selectedUser.email}
+                </div>
+                <div>
+                  <strong>Role:</strong> {selectedUser.role}
+                </div>
+                <div>
+                  <strong>Designation:</strong> {selectedUser.designation || '-'}
+                </div>
+                <div>
+                  <strong>Status:</strong> {selectedUser.status}
+                </div>
+                <div>
+                  <strong>Last Login:</strong> {selectedUser.lastLogin}
+                </div>
+                <div>
+                  <strong>Created At:</strong> {selectedUser.createdAt}
+                </div>
+              </>
+            )}
+          </div>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
 
@@ -551,6 +511,8 @@ import { roles } from '@/constants';
 import { useMutation } from 'convex/react';
 import { Loader } from 'lucide-react';
 import toastError from '@/utils/toastError';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import dayjs from 'dayjs';
 
 function InviteUser() {
   const [open, setOpen] = React.useState(false);
