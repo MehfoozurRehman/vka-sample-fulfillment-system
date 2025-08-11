@@ -20,7 +20,18 @@ export const getNotifications = query({
 export const markAsRead = mutation({
   args: { notificationId: v.id('notifications') },
   handler: async (ctx, { notificationId }) => {
+    const notification = await ctx.db.get(notificationId as Id<'notifications'>);
     await ctx.db.patch(notificationId as Id<'notifications'>, { read: true });
+    if (notification) {
+      await ctx.db.insert('auditLogs', {
+        userId: notification.userId,
+        action: 'markAsRead',
+        table: 'notifications',
+        recordId: notificationId,
+        changes: { read: true },
+        timestamp: Date.now(),
+      });
+    }
     return { ok: true } as const;
   },
 });
@@ -34,7 +45,19 @@ export const markAllAsRead = mutation({
       .filter((q) => q.eq(q.field('read'), false))
       .collect();
 
-    await Promise.all(unread.map((n) => ctx.db.patch(n._id, { read: true })));
+    await Promise.all(
+      unread.map(async (n) => {
+        await ctx.db.patch(n._id, { read: true });
+        await ctx.db.insert('auditLogs', {
+          userId: userId,
+          action: 'markAllAsRead',
+          table: 'notifications',
+          recordId: n._id,
+          changes: { read: true },
+          timestamp: Date.now(),
+        });
+      }),
+    );
 
     return { ok: true, count: unread.length } as const;
   },
