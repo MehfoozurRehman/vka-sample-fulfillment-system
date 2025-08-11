@@ -1,9 +1,8 @@
-import { cookies, headers } from 'next/headers';
-
 import AuthProvider from '@/providers/auth';
 import React from 'react';
 import { TOKEN_COOKIE_NAME } from '@/constants';
 import { api } from '@/convex/_generated/api';
+import { cookies } from 'next/headers';
 import { fetchQuery } from 'convex/nextjs';
 import { redirect } from 'next/navigation';
 
