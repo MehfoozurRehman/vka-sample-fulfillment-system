@@ -46,6 +46,63 @@ export const nextId = query({
   },
 });
 
+export const stats = query({
+  args: { productId: v.id('products'), rangeDays: v.optional(v.number()) },
+  handler: async (ctx, { productId, rangeDays }) => {
+    const now = Date.now();
+    const days = rangeDays ?? 90;
+    const startTs = now - days * 24 * 60 * 60 * 1000;
+    const fmt = (ts: number) => new Date(ts).toISOString().slice(0, 10);
+
+    const requestedByDate = new Map<string, number>();
+    const ordersByDate = new Map<string, number>();
+    const shippedByDate = new Map<string, number>();
+
+    const requests = await ctx.db
+      .query('requests')
+      .filter((q) => q.eq(q.field('deletedAt'), undefined))
+      .collect();
+
+    const relevantRequests = requests.filter((r) => r.createdAt >= startTs && r.productsRequested?.some((pr) => pr.productId === productId));
+
+    const relevantRequestIds = new Set(relevantRequests.map((r) => r._id));
+
+    for (const r of relevantRequests) {
+      const date = fmt(r.createdAt);
+      const qty = r.productsRequested.filter((pr) => pr.productId === productId).reduce((sum, pr) => sum + (pr.quantity ?? 0), 0);
+      requestedByDate.set(date, (requestedByDate.get(date) ?? 0) + qty);
+    }
+
+    const orders = await ctx.db
+      .query('orders')
+      .filter((q) => q.eq(q.field('deletedAt'), undefined))
+      .collect();
+
+    for (const o of orders) {
+      if (!relevantRequestIds.has(o.requestId)) continue;
+      if (o.createdAt >= startTs) {
+        const d = fmt(o.createdAt);
+        ordersByDate.set(d, (ordersByDate.get(d) ?? 0) + 1);
+      }
+      if (o.shippedDate && o.shippedDate >= startTs) {
+        const d2 = fmt(o.shippedDate);
+        shippedByDate.set(d2, (shippedByDate.get(d2) ?? 0) + 1);
+      }
+    }
+
+    const allDates = new Set<string>([...requestedByDate.keys(), ...ordersByDate.keys(), ...shippedByDate.keys()]);
+    const sorted = Array.from(allDates).sort((a, b) => a.localeCompare(b));
+    const data = sorted.map((date) => ({
+      date,
+      requested: requestedByDate.get(date) ?? 0,
+      ordered: ordersByDate.get(date) ?? 0,
+      shipped: shippedByDate.get(date) ?? 0,
+    }));
+
+    return { data };
+  },
+});
+
 export const add = mutation({
   args: {
     productId: v.string(),
