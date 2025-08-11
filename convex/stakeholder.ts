@@ -89,7 +89,6 @@ export const updateStakeholder = mutation({
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Stakeholder not found');
 
-    // Optional: prevent renaming to another existing company name
     const duplicate = await ctx.db
       .query('stakeholders')
       .filter((q) => q.and(q.eq(q.field('companyName'), companyName), q.neq(q.field('_id'), id)))
