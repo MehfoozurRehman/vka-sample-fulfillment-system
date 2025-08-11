@@ -5,6 +5,7 @@ import * as React from 'react';
 import { IconChartBar, IconDashboard, IconFolder, IconHelp, IconInnerShadowTop, IconListDetails, IconSettings, IconUsers } from '@tabler/icons-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 
+import { GalleryVerticalEnd } from 'lucide-react';
 import Link from 'next/link';
 import { NavMain } from '@/components/admin-nav-main';
 import { NavSecondary } from '@/components/nav-secondary';
@@ -70,7 +71,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link href="/admin">
-                <IconInnerShadowTop className="!size-5" />
+                <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+                  <GalleryVerticalEnd className="size-4" />
+                </div>
                 <span className="text-base font-semibold">VKA Sample Fulfillment</span>
               </Link>
             </SidebarMenuButton>
