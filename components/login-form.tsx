@@ -37,8 +37,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           });
           const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
 
-          console.log('Google user info:', gInfo);
-
           if (gInfo && gInfo.email && gInfo.sub) {
             let data: { id: string; role: Roles } | null = null;
 
