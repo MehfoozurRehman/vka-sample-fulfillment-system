@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,32 +23,14 @@ import { useMemo, useState } from 'react';
 
 import { AddStakeholder } from './add-stakeholder';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StakeholderType } from '../type';
 import dayjs from 'dayjs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const columns: ColumnDef<StakeholderType>[] = [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
-        <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   { accessorKey: 'companyName', header: 'Company' },
   { accessorKey: 'salesRepEmail', header: 'Sales Rep' },
   { accessorKey: 'accountManagerEmail', header: 'Account Manager' },
@@ -57,7 +40,7 @@ const columns: ColumnDef<StakeholderType>[] = [
     header: 'VIP',
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.vipFlag ? <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" /> : <IconLoader />}
+        {row.original.vipFlag ? <IconCircleCheckFilled className="mr-1 size-4 fill-green-500 dark:fill-green-400" /> : <IconLoader className="mr-1 size-4" />}
         {row.original.vipFlag ? 'Yes' : 'No'}
       </Badge>
     ),
@@ -68,10 +51,11 @@ const columns: ColumnDef<StakeholderType>[] = [
 export function DataTable({ data: initialData, isPending }: { data: StakeholderType[]; isPending: boolean }) {
   const [search, setSearch] = useState('');
   const [vipFilter, setVipFilter] = useState<'all' | 'vip' | 'non-vip'>('all');
-  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [selected, setSelected] = useState<StakeholderType | null>(null);
+  const isMobile = useIsMobile();
 
   const filteredData = useMemo(() => {
     let d = initialData;
@@ -90,10 +74,8 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, columnVisibility, rowSelection, columnFilters },
+    state: { sorting, columnVisibility, columnFilters },
     getRowId: (row) => row.id.toString(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -158,7 +140,7 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
+              <TableBody>
                 {isPending ? (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24">
@@ -169,7 +151,7 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                   </TableRow>
                 ) : table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80">
+                    <TableRow key={row.id} className="relative z-0 cursor-pointer data-[dragging=true]:z-10 data-[dragging=true]:opacity-80" onClick={() => setSelected(row.original)}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                       ))}
@@ -187,6 +169,54 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
           </div>
         </div>
       </Tabs>
+      <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Stakeholder Details</DrawerTitle>
+            <DrawerDescription>Full information for the selected stakeholder.</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 space-y-4">
+            {selected && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <div className="font-semibold text-lg">{selected.companyName}</div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-muted-foreground px-1.5">
+                      {selected.vipFlag ? <IconCircleCheckFilled className="mr-1 size-4 fill-green-500 dark:fill-green-400" /> : <IconLoader className="mr-1 size-4" />}
+                      {selected.vipFlag ? 'VIP' : 'Standard'}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 rounded-lg border p-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Sales Rep Email</span>
+                    <span className="font-medium break-all">{selected.salesRepEmail}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Account Manager Email</span>
+                    <span className="font-medium break-all">{selected.accountManagerEmail}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Compliance Officer Email</span>
+                    <span className="font-medium break-all">{selected.complianceOfficerEmail}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Created At</span>
+                    <span className="font-medium">{dayjs(selected.createdAt).format('MMM D, YYYY h:mm A')}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <DrawerFooter>
+            <div className="flex w-full justify-end">
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </div>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }
