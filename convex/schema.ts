@@ -26,6 +26,8 @@ export default defineSchema({
     accountManagerEmail: v.string(),
     complianceOfficerEmail: v.string(),
     vipFlag: v.boolean(),
+    createdBy: v.optional(v.id('users')),
+    updatedBy: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
