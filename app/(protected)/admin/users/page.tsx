@@ -1,7 +1,5 @@
 'use client';
 
-import * as React from 'react';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   ColumnDef,
@@ -23,12 +21,12 @@ import { IconCircleCheckFilled, IconLoader, IconPlus } from '@tabler/icons-react
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useEffect, useMemo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Chart } from './chart';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
@@ -39,9 +37,11 @@ import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMutation } from 'convex/react';
+import { useMemo, useState, useTransition } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
-import { z } from 'zod';
+
+type DataType = NonNullable<ReturnType<typeof useQuery<typeof api.user.getUsers>>>[number];
 
 export default function UsersPage() {
   const { data, isPending } = useQueryWithStatus(api.user.getUsers);
@@ -77,19 +77,7 @@ export default function UsersPage() {
   );
 }
 
-const schema = z.object({
-  picture: z.string(),
-  id: z.string(),
-  name: z.string().optional(),
-  role: z.string(),
-  email: z.string(),
-  designation: z.string().optional(),
-  lastLogin: z.string(),
-  createdAt: z.string(),
-  status: z.enum(['invited', 'active', 'inactive']),
-});
-
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const columns: ColumnDef<DataType>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -161,24 +149,45 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
 ];
 
-function DataTable({ data: initialData, isPending }: { data: z.infer<typeof schema>[]; isPending: boolean }) {
-  const [data, setData] = React.useState(() => initialData);
-  const [selectedUser, setSelectedUser] = React.useState<null | z.infer<typeof schema>>(null);
-
-  useEffect(() => {
-    setData(initialData);
-  }, [initialData]);
-
+function DataTable({ data: initialData, isPending }: { data: DataType[]; isPending: boolean }) {
   const isMobile = useIsMobile();
 
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const sortableId = React.useId();
+  const [search, setSearch] = useState('');
+
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'invited'>('all');
+
+  const [selectedUser, setSelectedUser] = useState<null | DataType>(null);
+
+  const [rowSelection, setRowSelection] = useState({});
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const filteredData = useMemo(() => {
+    let d = initialData;
+
+    if (statusFilter === 'all') {
+      d = d.filter((u) => u.status !== 'invited');
+    } else {
+      d = d.filter((u) => u.status === statusFilter);
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      d = d.filter((u) => {
+        const parts = [u.name || '', u.email || '', u.role || '', u.designation || '', u.status || ''];
+        return parts.some((p) => p.toLowerCase().includes(q));
+      });
+    }
+
+    return d;
+  }, [initialData, search, statusFilter]);
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: { sorting, columnVisibility, rowSelection, columnFilters },
     getRowId: (row) => row.id.toString(),
@@ -195,19 +204,36 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const totalUsers = data?.filter((user) => user.status !== 'invited').length || 0;
-  const noOfActiveUsers = data?.filter((user) => user.status === 'active').length || 0;
-  const noOfInactiveUsers = data?.filter((user) => user.status === 'inactive').length || 0;
-  const noOfInvitedUsers = data?.filter((user) => user.status === 'invited').length || 0;
+  const totalUsers = initialData?.filter((user) => user.status !== 'invited').length || 0;
+  const noOfActiveUsers = initialData?.filter((user) => user.status === 'active').length || 0;
+  const noOfInactiveUsers = initialData?.filter((user) => user.status === 'inactive').length || 0;
+  const noOfInvitedUsers = initialData?.filter((user) => user.status === 'invited').length || 0;
+
+  const updateStatus = useMutation(api.user.updateStatus);
+
+  const [isActing, startActing] = useTransition();
+
+  const handleSetStatus = (status: 'active' | 'inactive') => {
+    if (!selectedUser) return;
+    startActing(async () => {
+      try {
+        await updateStatus({ userId: selectedUser.id as Id<'users'>, status });
+        toast.success(`User ${status === 'active' ? 'activated' : 'deactivated'}`);
+        setSelectedUser((prev) => (prev ? { ...prev, status } : prev));
+      } catch (err) {
+        toastError(err);
+      }
+    });
+  };
 
   return (
     <>
-      <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive' | 'invited')} className="w-full flex-col justify-start gap-6">
         <div className="flex items-center justify-between px-4 lg:px-6">
           <Label htmlFor="view-selector" className="sr-only">
             View
           </Label>
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive' | 'invited')}>
             <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
               <SelectValue placeholder="Select a status" />
             </SelectTrigger>
@@ -233,7 +259,7 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
             </TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-2">
-            <Input placeholder="Search" />
+            <Input placeholder="Search name, email, role..." value={search} onChange={(e) => setSearch(e.target.value)} />
             <InviteUser />
           </div>
         </div>
@@ -293,41 +319,79 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
             <DrawerTitle>User Details</DrawerTitle>
             <DrawerDescription>Full information for the selected user.</DrawerDescription>
           </DrawerHeader>
-          <div className="p-4 space-y-2">
+          <div className="p-4 space-y-4">
             {selectedUser && (
               <>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={selectedUser.picture} alt={selectedUser.name} />
-                    <AvatarFallback className="rounded-lg">{selectedUser.name ? selectedUser.name.charAt(0) : 'CN'}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-bold text-lg">{selectedUser.name || '-'}</span>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 rounded-lg">
+                      <AvatarImage src={selectedUser.picture} alt={selectedUser.name} />
+                      <AvatarFallback className="rounded-lg">{selectedUser.name ? selectedUser.name.charAt(0) : 'CN'}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-lg truncate">{selectedUser.name || '-'}</div>
+                      <div className="text-sm text-muted-foreground truncate">{selectedUser.email}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="capitalize">
+                      {selectedUser.role}
+                    </Badge>
+                    <Badge variant="outline" className="text-muted-foreground px-1.5 capitalize">
+                      {selectedUser.status === 'active' ? (
+                        <IconCircleCheckFilled className="mr-1 size-4 shrink-0 fill-green-500 dark:fill-green-400" />
+                      ) : (
+                        <IconLoader className="mr-1 size-4 shrink-0" />
+                      )}
+                      {selectedUser.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <strong>Email:</strong> {selectedUser.email}
-                </div>
-                <div>
-                  <strong>Role:</strong> {selectedUser.role}
-                </div>
-                <div>
-                  <strong>Designation:</strong> {selectedUser.designation || '-'}
-                </div>
-                <div>
-                  <strong>Status:</strong> {selectedUser.status}
-                </div>
-                <div>
-                  <strong>Last Login:</strong> {selectedUser.lastLogin}
-                </div>
-                <div>
-                  <strong>Created At:</strong> {selectedUser.createdAt}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Name</span>
+                    <span className="font-medium">{selectedUser.name || '-'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Email</span>
+                    <span className="font-medium break-all">{selectedUser.email}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Role</span>
+                    <span className="font-medium capitalize">{selectedUser.role}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Designation</span>
+                    <span className="font-medium">{selectedUser.designation || '-'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Last Login</span>
+                    <span className="font-medium">{selectedUser.lastLogin ? dayjs(selectedUser.lastLogin).format('MMM D, YYYY h:mm A') : '-'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">Created At</span>
+                    <span className="font-medium">{selectedUser.createdAt ? dayjs(selectedUser.createdAt).format('MMM D, YYYY h:mm A') : '-'}</span>
+                  </div>
                 </div>
               </>
             )}
           </div>
           <DrawerFooter>
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={() => handleSetStatus(selectedUser?.status === 'active' ? 'inactive' : 'active')}
+                  variant={selectedUser?.status === 'active' ? 'destructive' : 'default'}
+                  disabled={isActing || !selectedUser}
+                >
+                  {isActing && <Loader className="mr-2 size-4 animate-spin" />}
+                  {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
+                </Button>
+              </div>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </div>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -336,11 +400,11 @@ function DataTable({ data: initialData, isPending }: { data: z.infer<typeof sche
 }
 
 function InviteUser() {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const inviteUser = useMutation(api.user.inviteUser);
 
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
