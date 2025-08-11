@@ -16,8 +16,8 @@ import {
 } from '@tanstack/react-table';
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs } from '@/components/ui/tabs';
 import { useMemo, useState, useTransition } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 
 import { AddProduct } from './add-product';
 import { Button } from '@/components/ui/button';
@@ -27,10 +27,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
 import { ProductType } from '../type';
-import { Tabs } from '@/components/ui/tabs';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMutation, useQuery } from 'convex/react';
+import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -39,6 +42,12 @@ const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'location', header: 'Location' },
   { accessorKey: 'createdAt', header: 'Created At', cell: ({ row }) => dayjs(row.original.createdAt).format('MMM D, YYYY') },
 ];
+
+const detailChartConfig = {
+  requested: { label: 'Requested', color: 'var(--chart-1)' },
+  ordered: { label: 'Ordered', color: 'var(--chart-2)' },
+  shipped: { label: 'Shipped', color: 'var(--chart-3)' },
+} satisfies ChartConfig;
 
 export function DataTable({ data: initialData, isPending }: { data: ProductType[]; isPending: boolean }) {
   const [search, setSearch] = useState('');
@@ -54,9 +63,12 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
   const update = useMutation(api.product.update);
   const remove = useMutation(api.product.remove);
   const products = useQuery(api.product.list);
+
+  const stats = useQuery(api.product.stats, selected ? { productId: selected.id as Id<'products'>, rangeDays: 90 } : 'skip');
+
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
-    (products || []).forEach((p) => {
+    (products || []).forEach((p: ProductType) => {
       if (p.category) cats.add(p.category);
     });
     return Array.from(cats).sort((a, b) => a.localeCompare(b));
@@ -96,7 +108,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
   return (
     <>
       <Tabs value={'all'} className="w-full flex-col justify-start gap-6">
-        <div className="flex items-center justify-end px-4 lg:px-6">
+        <div className="flex items-center justify-end px-4 lg:px-6 gap-2">
           <Input placeholder="Search id, name, category, location..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <AddProduct />
         </div>
@@ -145,7 +157,6 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
           </div>
         </div>
       </Tabs>
-
       <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DrawerContent>
           <DrawerHeader>
@@ -157,7 +168,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
               <>
                 <div className="grid gap-3">
                   <Label htmlFor="productId">Product ID</Label>
-                  <Input id="productId" value={(edit?.productId ?? selected.productId) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), productId: e.target.value })} />
+                  <Input id="productId" value={(edit?.productId ?? selected.productId) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), productId: e.target.value })} autoFocus />
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="productName">Product Name</Label>
@@ -193,6 +204,47 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                     <span className="font-medium">{dayjs(selected.updatedAt).format('MMM D, YYYY h:mm A')}</span>
                   </div>
                 </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Activity (Last 90 days)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={detailChartConfig} className="aspect-auto h-[160px] w-full">
+                      <AreaChart data={stats?.data || []}>
+                        <defs>
+                          <linearGradient id="fillRequested" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.1} />
+                          </linearGradient>
+                          <linearGradient id="fillOrdered" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.1} />
+                          </linearGradient>
+                          <linearGradient id="fillShipped" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0.1} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          minTickGap={32}
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                          }}
+                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                        <Area dataKey="requested" type="natural" fill="url(#fillRequested)" stroke="var(--chart-1)" />
+                        <Area dataKey="ordered" type="natural" fill="url(#fillOrdered)" stroke="var(--chart-2)" />
+                        <Area dataKey="shipped" type="natural" fill="url(#fillShipped)" stroke="var(--chart-3)" />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
               </>
             )}
           </div>
