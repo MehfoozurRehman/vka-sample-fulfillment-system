@@ -77,7 +77,7 @@ export const inviteUser = mutation({
         <p>Hello ${name},</p>
         <p>You have been invited to join VKA as a <strong>${role}</strong>. Please click the link below to accept the invitation and set up your account.</p>
         <p>
-          <a href="http://localhost:3000/login?invite=${user}">Accept Invitation</a>
+          <a href="http://localhost:3000?invite=${user}">Accept Invitation</a>
         </p>
         <p>Best regards,<br/>VKA Team</p>
       `,
