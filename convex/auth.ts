@@ -5,6 +5,42 @@ import { Roles } from '@/constants';
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
 
+export const getUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const { userId } = args;
+
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const user = await ctx.db.get(userId as Id<'users'>);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    let picture = '';
+
+    if (typeof user.profilePicture === 'string' && user.profilePicture.startsWith('http')) {
+      picture = user.profilePicture;
+    } else if (user.profilePicture) {
+      const url = await ctx.storage.getUrl(user.profilePicture as Id<'_storage'>);
+      picture = url ?? '';
+    }
+
+    return {
+      picture,
+      id: user._id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      designation: user.designation,
+      status: (!user.googleId ? 'invited' : user.active ? 'active' : 'inactive') as 'invited' | 'active' | 'inactive',
+    };
+  },
+});
+
 export const checkUserRole = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
