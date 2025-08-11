@@ -11,7 +11,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
