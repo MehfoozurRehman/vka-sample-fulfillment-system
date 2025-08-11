@@ -12,6 +12,7 @@ import type * as audit from "../audit.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as notification from "../notification.js";
+import type * as product from "../product.js";
 import type * as resend from "../resend.js";
 import type * as stakeholder from "../stakeholder.js";
 import type * as user from "../user.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   notification: typeof notification;
+  product: typeof product;
   resend: typeof resend;
   stakeholder: typeof stakeholder;
   user: typeof user;
