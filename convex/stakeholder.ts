@@ -75,3 +75,36 @@ export const addStakeholder = mutation({
     return id;
   },
 });
+
+export const updateStakeholder = mutation({
+  args: {
+    id: v.id('stakeholders'),
+    companyName: v.string(),
+    salesRepEmail: v.string(),
+    accountManagerEmail: v.string(),
+    complianceOfficerEmail: v.string(),
+    vipFlag: v.boolean(),
+  },
+  handler: async (ctx, { id, companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error('Stakeholder not found');
+
+    // Optional: prevent renaming to another existing company name
+    const duplicate = await ctx.db
+      .query('stakeholders')
+      .filter((q) => q.and(q.eq(q.field('companyName'), companyName), q.neq(q.field('_id'), id)))
+      .first();
+    if (duplicate) throw new Error('Another stakeholder with this company name already exists');
+
+    await ctx.db.patch(id, {
+      companyName,
+      salesRepEmail,
+      accountManagerEmail,
+      complianceOfficerEmail,
+      vipFlag,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
