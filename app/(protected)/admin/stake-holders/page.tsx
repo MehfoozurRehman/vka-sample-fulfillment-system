@@ -1,3 +1,23 @@
+'use client';
+
+import { Chart } from './components/chart';
+import { DataTable } from './components/table';
+import { Stats } from './components/stats';
+import { api } from '@/convex/_generated/api';
+import { useQueryWithStatus } from '@/hooks/use-query';
+
 export default function StakeHoldersPage() {
-  return <div>StakeHoldersPage</div>;
+  const { data, isPending } = useQueryWithStatus(api.stakeholder.getStakeholders);
+
+  return (
+    <div className="@container/main flex flex-1 flex-col gap-2">
+      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <Stats data={data || []} />
+        <div className="px-4 lg:px-6">
+          <Chart data={data || []} />
+        </div>
+        <DataTable data={data || []} isPending={isPending} />
+      </div>
+    </div>
+  );
 }
