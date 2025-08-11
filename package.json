@@ -33,6 +33,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.25.4",
+    "convex-helpers": "^0.1.101",
     "dayjs": "^1.11.13",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
