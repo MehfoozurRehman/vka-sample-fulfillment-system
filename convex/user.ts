@@ -86,3 +86,14 @@ export const inviteUser = mutation({
     return user;
   },
 });
+
+export const updateStatus = mutation({
+  args: { userId: v.id('users'), status: v.union(v.literal('active'), v.literal('inactive')) },
+  handler: async (ctx, { userId, status }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error('User not found');
+
+    await ctx.db.patch(userId, { active: status === 'active', updatedAt: Date.now() });
+    return { ok: true };
+  },
+});
