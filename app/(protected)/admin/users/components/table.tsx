@@ -15,6 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { Copy, Loader } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,7 +31,6 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InviteUser } from './invite-user';
 import { Label } from '@/components/ui/label';
-import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
@@ -370,6 +370,19 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                     {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
                   </Button>
                 </div>
+              )}
+              {selectedUser && selectedUser.status === 'invited' && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/invite?${selectedUser.id}`);
+                    toast.success('Invite link copied to clipboard');
+                  }}
+                >
+                  <Copy className="mr-2 size-4" />
+                  Copy Invite Link
+                </Button>
               )}
               <DrawerClose asChild>
                 <Button variant="outline">Close</Button>
