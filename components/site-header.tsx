@@ -57,7 +57,7 @@ function Notifications() {
           <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
         </Button>
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-64 rounded-md bg-white shadow-lg">
+          <div className="absolute right-0 mt-2 w-64 rounded-md border bg-muted">
             <div className="p-4">No new notifications</div>
           </div>
         )}
