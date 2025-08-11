@@ -1,19 +1,13 @@
 import './globals.css';
 
-import { Geist, Geist_Mono } from 'next/font/google';
-
 import { ConvexClientProvider } from '@/providers/convex';
 import type { Metadata } from 'next';
+import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme';
 import { Toaster } from '@/components/ui/sonner';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const nunito = Nunito({
+  variable: '--font-nunito',
   subsets: ['latin'],
 });
 
@@ -29,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${nunito.variable} antialiased`}>
         <ConvexClientProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}
