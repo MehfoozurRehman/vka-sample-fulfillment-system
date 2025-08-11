@@ -7,6 +7,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { Button } from '@/components/ui/button';
 import { IconPlus } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
+import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
@@ -97,12 +98,7 @@ export function AddProduct() {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="category">Category</Label>
-              <Input id="category" name="category" list="category-options" autoComplete="off" placeholder="Select or type a category" />
-              <datalist id="category-options">
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
+              <InputWithSuggestions id="category" name="category" placeholder="Select or type a category" options={categoryOptions} inputProps={{ spellCheck: false }} />
             </div>
             <div className="grid gap-3">
               <Label htmlFor="location">Location</Label>
