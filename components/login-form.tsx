@@ -1,96 +1,103 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+'use client';
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { Loader } from 'lucide-react';
+import { api } from '@/convex/_generated/api';
+import { cn } from '@/lib/utils';
+import { saveToken } from '@/actions/save-token';
+import { toast } from 'sonner';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useMutation } from 'convex/react';
+import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
+
+export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+  const router = useRouter();
+
+  const login = useMutation(api.auth.login);
+
+  const loginCallback = useGoogleLogin({
+    onSuccess: async (res) => {
+      startTransition(async () => {
+        try {
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: {
+              Authorization: `Bearer ${res.access_token}`,
+            },
+          });
+          const userInfo = await userInfoResponse.json();
+
+          if (userInfo && userInfo.email && userInfo.sub) {
+            const data = await login({
+              email: userInfo.email,
+              name: userInfo.name,
+              picture: userInfo.picture,
+              googleId: userInfo.sub,
+            });
+            // await saveToken(data);
+            // if (data.type === 'existing') {
+            //   toast.success(`Welcome back, ${data.name}!`);
+            //   router.replace('/');
+            // } else {
+            //   toast.success(`Welcome, ${data.name}!`);
+            //   router.replace(`/register?id=${data.id}`);
+            // }
+          } else {
+            toast.error('Failed to fetch Google user info.');
+          }
+        } catch (err) {
+          toast.error('Login failed');
+        }
+      });
+    },
+  });
+
+  const [isPending, startTransition] = useTransition();
+
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>
-            Login with your Apple or Google account
-          </CardDescription>
+          <CardDescription>Login with your Google account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <div>
             <div className="grid gap-6">
-              <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Login with Apple
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Login with Google
-                </Button>
+              <div className="flex justify-center w-full">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-6 py-2 rounded-full bg-black text-white hover:bg-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
+                  disabled={isPending}
+                  onClick={() => loginCallback()}
+                >
+                  {isPending ? (
+                    <Loader className="animate-spin" />
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 48 48" className="mr-2" aria-hidden="true">
+                      <g>
+                        <path
+                          fill="#4285F4"
+                          d="M44.5 20H24v8.5h11.7C34.7 32.9 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8.1 2.9l6.2-6.2C34.5 6.7 29.5 4.5 24 4.5 13.5 4.5 5 13 5 24s8.5 19.5 19 19.5c9.5 0 18-7.7 18-19.5 0-1.3-.1-2.7-.5-4z"
+                        />
+                        <path fill="#34A853" d="M6.3 14.7l7 5.1C15.6 16.1 19.5 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.2-6.2C34.5 6.7 29.5 4.5 24 4.5c-7.2 0-13.3 4.1-16.7 10.2z" />
+                        <path fill="#FBBC05" d="M24 44.5c5.5 0 10.5-1.8 14.3-4.9l-6.6-5.4c-2 1.4-4.6 2.3-7.7 2.3-6.1 0-11.3-3.9-13.2-9.2l-7 5.4C7.7 40.4 15.1 44.5 24 44.5z" />
+                        <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-1.1 3.1-4.1 5.5-7.7 5.5-6.1 0-11.3-3.9-13.2-9.2l-7 5.4C7.7 40.4 15.1 44.5 24 44.5c9.5 0 18-7.7 18-19.5 0-1.3-.1-2.7-.5-4z" />
+                      </g>
+                    </svg>
+                  )}
+                  Continue with Google
+                </button>
               </div>
-              <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-                <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  Or continue with
-                </span>
-              </div>
-              <div className="grid gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <a
-                      href="#"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </a>
-                  </div>
-                  <Input id="password" type="password" required />
-                </div>
-                <Button type="submit" className="w-full">
-                  Login
-                </Button>
-              </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
-                  Sign up
-                </a>
-              </div>
+              <div className="text-center text-sm">Login with your Google account to continue using Clipout.</div>
             </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
       </div>
     </div>
-  )
+  );
 }
