@@ -359,16 +359,18 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
           </div>
           <DrawerFooter>
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={() => handleSetStatus(selectedUser?.status === 'active' ? 'inactive' : 'active')}
-                  variant={selectedUser?.status === 'active' ? 'destructive' : 'default'}
-                  disabled={isActing || !selectedUser}
-                >
-                  {isActing && <Loader className="mr-2 size-4 animate-spin" />}
-                  {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
-                </Button>
-              </div>
+              {selectedUser && selectedUser.status !== 'invited' && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={() => handleSetStatus(selectedUser?.status === 'active' ? 'inactive' : 'active')}
+                    variant={selectedUser?.status === 'active' ? 'destructive' : 'default'}
+                    disabled={isActing || !selectedUser}
+                  >
+                    {isActing && <Loader className="mr-2 size-4 animate-spin" />}
+                    {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </Button>
+                </div>
+              )}
               <DrawerClose asChild>
                 <Button variant="outline">Close</Button>
               </DrawerClose>
