@@ -35,7 +35,8 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index('by_companyName', ['companyName'])
-    .index('by_createdAt', ['createdAt']),
+    .index('by_createdAt', ['createdAt'])
+    .index('by_vipFlag', ['vipFlag']),
 
   products: defineTable({
     productId: v.string(),
@@ -80,7 +81,8 @@ export default defineSchema({
     .index('by_companyId', ['companyId'])
     .index('by_email', ['email'])
     .index('by_requestId', ['requestId'])
-    .index('by_createdAt', ['createdAt']),
+    .index('by_createdAt', ['createdAt'])
+    .index('by_company_status', ['companyId', 'status']),
 
   orders: defineTable({
     orderId: v.string(),
@@ -100,7 +102,8 @@ export default defineSchema({
   })
     .index('by_status', ['status', 'createdAt'])
     .index('by_requestId', ['requestId'])
-    .index('by_createdAt', ['createdAt']),
+    .index('by_createdAt', ['createdAt'])
+    .index('by_requestId_status', ['requestId', 'status']),
 
   auditLogs: defineTable({
     userId: v.id('users'),
