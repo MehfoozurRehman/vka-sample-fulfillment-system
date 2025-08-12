@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/use-user';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function RequesterPage() {
-  const { data } = useQueryWithStatus(api.request.recent, { limit: 200 });
+  const { data, isPending } = useQueryWithStatus(api.request.recent, { limit: 200 });
   const user = useAuth();
 
   return (
@@ -22,7 +22,7 @@ export default function RequesterPage() {
         <div className="px-4 lg:px-6">
           <Chart data={data || []} />
         </div>
-        <DataTable data={data || []} />
+        <DataTable data={data || []} isPending={isPending} />
       </div>
     </div>
   );
