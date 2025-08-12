@@ -171,3 +171,28 @@ export const uploadProfilePicture = mutation({
     return { ok: true };
   },
 });
+
+export const updateRole = mutation({
+  args: {
+    userId: v.id('users'),
+    role: v.union(v.literal('admin'), v.literal('requester'), v.literal('screener'), v.literal('packer'), v.literal('shipper')),
+  },
+  handler: async (ctx, { userId, role }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error('User not found');
+
+    await ctx.db.patch(userId, { role, updatedAt: Date.now() });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'updateRole',
+      table: 'users',
+      recordId: userId,
+      changes: { role },
+      timestamp: Date.now(),
+    });
+
+    return { ok: true } as const;
+  },
+});
+
