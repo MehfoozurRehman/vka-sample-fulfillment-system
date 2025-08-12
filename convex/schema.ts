@@ -2,6 +2,8 @@ import { defineSchema, defineTable } from 'convex/server';
 
 import { v } from 'convex/values';
 
+const auditScalar = v.union(v.string(), v.number(), v.boolean());
+
 export default defineSchema({
   users: defineTable({
     googleId: v.optional(v.string()),
@@ -125,7 +127,7 @@ export default defineSchema({
     action: v.string(),
     table: v.string(),
     recordId: v.string(),
-    changes: v.any(),
+    changes: v.record(v.string(), v.union(auditScalar, v.array(auditScalar))),
     timestamp: v.number(),
   })
     .index('by_user', ['userId', 'timestamp'])
