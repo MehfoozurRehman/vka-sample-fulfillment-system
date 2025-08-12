@@ -18,18 +18,23 @@ export function AddProduct() {
   const [open, setOpen] = useState(false);
 
   const add = useMutation(api.product.add);
+
   const nextId = useQuery(api.product.nextId);
+
   const products = useQuery(api.product.list);
 
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
+
     (products || []).forEach((p) => {
       if (p.category) cats.add(p.category);
     });
+
     return Array.from(cats).sort((a, b) => a.localeCompare(b));
   }, [products]);
 
   const [productId, setProductId] = useState('');
+
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -45,20 +50,28 @@ export function AddProduct() {
 
     startTransition(async () => {
       const formData = new FormData(event.currentTarget);
+
       const productName = (formData.get('productName') as string)?.trim();
+
       const category = (formData.get('category') as string)?.trim();
+
       const location = (formData.get('location') as string)?.trim();
 
       if (!productName) {
         toast.error('Product name is required');
+
         return;
       }
+
       if (!category) {
         toast.error('Category is required');
+
         return;
       }
+
       if (!location) {
         toast.error('Location is required');
+
         return;
       }
 

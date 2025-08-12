@@ -33,14 +33,21 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
   const [open, setOpen] = useState(false);
 
   const nextId = useQuery(api.request.nextId);
+
   const stakeholders = useQuery(api.stakeholder.getStakeholders) as StakeholderRow[] | undefined;
+
   const products = useQuery(api.product.list) as ProductRow[] | undefined;
+
   const suggestions = useQuery(api.request.suggestions);
+
   const addReq = useMutation(api.request.add);
 
   const [requestId, setRequestId] = useState('');
+
   const [items, setItems] = useState<{ productId: string; quantity: number; notes: string }[]>([]);
+
   const [companyId, setCompanyId] = useState<string>('');
+
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -51,8 +58,11 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
   }, [open, nextId]);
 
   const companyOptions = useMemo(() => (stakeholders || []).map((s) => s.companyName).sort(), [stakeholders]);
+
   const productOptions = useMemo(() => (products || []).map((p) => `${p.productId} - ${p.productName}`), [products]);
+
   const applicationTypeOptions = useMemo(() => suggestions?.applicationTypes || [], [suggestions]);
+
   const projectNameOptions = useMemo(() => suggestions?.projectNames || [], [suggestions]);
 
   const selectedCompany = (stakeholders || []).find((s) => s.companyName === companyId);
@@ -63,17 +73,24 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     if (!selectedCompany) {
       toast.error('Select a company');
+
       return;
     }
+
     if (!items.length) {
       toast.error('Add at least one product');
+
       return;
     }
+
     const invalid = items.some((i) => !i.productId || !i.quantity || i.quantity <= 0);
+
     if (invalid) {
       toast.error('Each line must have product and quantity > 0');
+
       return;
     }
 
@@ -81,9 +98,12 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
       try {
         const productsRequested = items.map((i) => {
           const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
+
           if (!pid) throw new Error('Invalid product selection');
+
           return { productId: pid, quantity: i.quantity, notes: i.notes || undefined };
         });
+
         await addReq({
           requestId: requestId?.trim() || '',
           companyId: selectedCompany.id,
@@ -167,7 +187,9 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                   .filter((_, i) => i !== idx)
                   .map((i) => i.productId)
                   .filter(Boolean);
+
                 const filteredProductOptions = productOptions.filter((o) => !selectedOthers.includes(o) || o === item.productId);
+
                 return (
                   <div key={idx} className="grid gap-2 md:grid-cols-4">
                     <div className="md:col-span-2">
@@ -176,6 +198,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         value={item.productId}
                         onValueChange={(v) => {
                           const already = selectedOthers.includes(v);
+
                           if (already) return;
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, productId: v } : p)));
                         }}
@@ -191,6 +214,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         value={item.quantity}
                         onChange={(e) => {
                           const qty = parseInt(e.target.value, 10) || 0;
+
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: qty } : p)));
                         }}
                       />

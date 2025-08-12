@@ -44,20 +44,25 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const request = useQuery(api.request.getOne, row ? { id: row.id } : 'skip');
+
   const suggestions = useQuery(api.request.suggestions);
+
   const products = useQuery(api.product.list, {});
 
   const productMap = useMemo(() => {
     if (!products) return new Map<Id<'products'>, ProductListItem>();
+
     return new Map(products.map((p: ProductListItem) => [p.id, p]));
   }, [products]);
 
   const update = useMutation(api.request.update);
+
   const remove = useMutation(api.request.remove);
 
   const isDraft = row && row.status === 'Pending Review' && row.stage === 'Submitted';
 
   const [editing, setEditing] = useState(false);
+
   const [form, setForm] = useState({
     contactName: '',
     email: '',
@@ -74,6 +79,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   useEffect(() => {
     if (request) {
       const pr = (request.productsRequested as { productId: Id<'products'>; quantity: number; notes?: string }[]) || [];
+
       setForm({
         contactName: request.contactName || '',
         email: request.email || '',
@@ -86,6 +92,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
       setProductLines(
         pr.map((p) => {
           const prod = productMap.get(p.productId as Id<'products'>);
+
           return {
             productId: p.productId,
             quantity: p.quantity,
@@ -185,6 +192,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   <ul className="divide-y rounded-md border bg-background">
                     {request.productsRequested.map((p: { productId: Id<'products'>; quantity: number; notes?: string }, i: number) => {
                       const prod = productMap.get(p.productId as Id<'products'>);
+
                       return (
                         <li key={i} className="p-3 flex flex-col gap-2 text-sm">
                           <div className="flex flex-wrap items-center gap-2">
@@ -247,8 +255,11 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                       .filter((_, i) => i !== idx)
                       .map((l) => l.productDisplay)
                       .filter(Boolean);
+
                     const allOptions = (products || []).map((p: ProductListItem) => `${p.productId} - ${p.productName}`);
+
                     const filteredOptions = allOptions.filter((o) => !otherSelected.includes(o) || o === line.productDisplay);
+
                     return (
                       <div key={idx} className="grid gap-2 md:grid-cols-4 p-3 border rounded-md">
                         <div className="md:col-span-2">
@@ -260,6 +271,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                                 prev.map((l, i) => {
                                   if (i !== idx) return l;
                                   const found = products?.find((p: ProductListItem) => `${p.productId} - ${p.productName}` === v);
+
                                   return {
                                     ...l,
                                     productDisplay: v,
@@ -279,6 +291,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                             value={line.quantity}
                             onChange={(e) => {
                               const qty = parseInt(e.target.value, 10) || 0;
+
                               setProductLines((prev) => prev.map((l, i) => (i === idx ? { ...l, quantity: qty } : l)));
                             }}
                           />

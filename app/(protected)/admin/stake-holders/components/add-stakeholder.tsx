@@ -29,26 +29,38 @@ export function AddStakeholder() {
 
     startTransition(async () => {
       const formData = new FormData(event.currentTarget);
+
       const companyName = (formData.get('companyName') as string)?.trim();
+
       const salesRepEmail = (formData.get('salesRepEmail') as string)?.trim();
+
       const accountManagerEmail = (formData.get('accountManagerEmail') as string)?.trim();
+
       const complianceOfficerEmail = (formData.get('complianceOfficerEmail') as string)?.trim();
+
       const vipFlag = formData.get('vipFlag') === 'on';
 
       if (!companyName) {
         toast.error('Company name is required');
+
         return;
       }
+
       if (!salesRepEmail) {
         toast.error('Sales rep email is required');
+
         return;
       }
+
       if (!accountManagerEmail) {
         toast.error('Account manager email is required');
+
         return;
       }
+
       if (!complianceOfficerEmail) {
         toast.error('Compliance officer email is required');
+
         return;
       }
 

@@ -45,46 +45,62 @@ const columns: ColumnDef<RecentRequestsType[number]>[] = [
 
 export function DataTable({ data, isPending }: { data: RecentRequestsType; isPending: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([]);
+
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+
   const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
+
   const [stageFilter, setStageFilter] = useQueryState('stage', parseAsString.withDefault('all'));
+
   const [open, setOpen] = useState(false);
+
   const [activeRow, setActiveRow] = useState<(RecentRequestsType[number] & { id: Id<'requests'> }) | null>(null);
 
   const isMobile = useIsMobile();
 
   const statusMeta = useMemo(() => {
     const counts: Record<string, number> = {};
+
     data.forEach((r) => {
       const key = r.status || 'Unknown';
+
       counts[key] = (counts[key] || 0) + 1;
     });
     const entries = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
+
     return { counts, entries };
   }, [data]);
 
   const stageMeta = useMemo(() => {
     const counts: Record<string, number> = {};
+
     data.forEach((r) => {
       const key = r.stage || 'Unknown';
+
       counts[key] = (counts[key] || 0) + 1;
     });
     const entries = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
+
     return { counts, entries };
   }, [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     let rows = data;
+
     if (statusFilter !== 'all') {
       rows = rows.filter((r) => r.status === statusFilter);
     }
+
     if (stageFilter !== 'all') {
       rows = rows.filter((r) => r.stage === stageFilter);
     }
+
     if (q) {
       rows = rows.filter((r) => [r.requestId, r.company, r.contactName, r.applicationType, r.status, r.stage].some((f) => f.toLowerCase().includes(q)));
     }
+
     return rows;
   }, [data, search, statusFilter, stageFilter]);
 

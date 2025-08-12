@@ -162,10 +162,13 @@ function StatCard({ title, value, sub, icon, loading }: { title: string; value?:
 
 function StatusBadge({ status }: { status: string }) {
   const normalized = status.toLowerCase();
+
   let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'secondary';
+
   if (normalized.includes('pending')) variant = 'outline';
   else if (['approved', 'open'].some((s) => normalized.includes(s))) variant = 'default';
   else if (['rejected', 'cancel', 'error'].some((s) => normalized.includes(s))) variant = 'destructive';
+
   return <Badge variant={variant}>{status}</Badge>;
 }
 

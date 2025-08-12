@@ -6,7 +6,9 @@ import { ProductType } from '../type';
 
 export function Stats(props: { data: ProductType[] } & React.HTMLAttributes<HTMLDivElement> & { className?: string }) {
   const total = props.data?.length || 0;
+
   const categories = new Set(props.data?.map((p) => p.category)).size;
+
   const locations = new Set(props.data?.map((p) => p.location)).size;
 
   return (

@@ -56,28 +56,41 @@ const columns: ColumnDef<StakeholderType>[] = [
 
 export function DataTable({ data: initialData, isPending }: { data: StakeholderType[]; isPending: boolean }) {
   const [search, setSearch] = useState('');
+
   const [vipFilter, setVipFilter] = useState<'all' | 'vip' | 'non-vip'>('all');
+
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
   const [sorting, setSorting] = useState<SortingState>([]);
+
   const [selected, setSelected] = useState<StakeholderType | null>(null);
+
   const [edit, setEdit] = useState<StakeholderType | null>(null);
+
   const [isSaving, startSaving] = useTransition();
+
   const isMobile = useIsMobile();
 
   const updateStakeholder = useMutation(api.stakeholder.updateStakeholder);
 
   const filteredData = useMemo(() => {
     let d = initialData;
+
     if (vipFilter !== 'all') d = d.filter((s) => (vipFilter === 'vip' ? s.vipFlag : !s.vipFlag));
     const normalize = (str: string) => str.toLowerCase().replace(/\s+/g, '');
+
     const q = normalize(search.trim());
+
     if (q) {
       d = d.filter((s) => {
         const parts = [s.companyName, s.salesRepEmail, s.accountManagerEmail, s.complianceOfficerEmail];
+
         return parts.some((p) => normalize(p).includes(q));
       });
     }
+
     return d;
   }, [initialData, search, vipFilter]);
 
@@ -98,7 +111,9 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
   });
 
   const total = initialData?.length || 0;
+
   const vip = initialData?.filter((s) => s.vipFlag).length || 0;
+
   const nonVip = total - vip;
 
   return (

@@ -85,7 +85,9 @@ function Notifications() {
   });
 
   const markAsRead = useMutation(api.notification.markAsRead);
+
   const markAllAsRead = useMutation(api.notification.markAllAsRead);
+
   const [isActing, startTransition] = useTransition();
 
   const unreadCount = data?.length ?? 0;
@@ -167,11 +169,17 @@ function Notifications() {
 
 function UserMenu() {
   const user = useAuth();
+
   const pathname = usePathname();
+
   const root = pathname.split('/')[1] || '';
+
   const [isLoggingOut, startLogout] = useTransition();
+
   const [isSwitching, startSwitch] = useTransition();
+
   const setActiveRole = useMutation(api.user.setActiveRole);
+
   const router = useRouter();
 
   const initials = (user?.name || '')
@@ -263,7 +271,9 @@ function UserMenu() {
 
 function TypeIcon({ type }: { type?: string }) {
   const base = 'mt-0.5 rounded-full p-1.5';
+
   if (type === 'warning') return <IconAlertTriangle className={`${base} text-amber-600`} />;
   if (type === 'success') return <IconCircleCheck className={`${base} text-emerald-600`} />;
+
   return <IconInfoCircle className={`${base} text-blue-600`} />;
 }

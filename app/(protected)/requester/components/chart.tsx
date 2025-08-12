@@ -20,14 +20,18 @@ const chartConfig = {
 
 export function Chart({ data }: { data: RecentRequestsType }) {
   const isMobile = useIsMobile();
+
   const [timeRange, setTimeRange] = useQueryState('range', parseAsString.withDefault('90d'));
 
   const chartData = useMemo(() => {
     const grouped: Record<string, number> = {};
+
     data.forEach((req) => {
       const date = req.createdAt ? req.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
       grouped[date] = (grouped[date] || 0) + 1;
     });
+
     return Object.entries(grouped)
       .map(([date, created]) => ({ date, created }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -38,13 +42,18 @@ export function Chart({ data }: { data: RecentRequestsType }) {
   }, [isMobile, setTimeRange]);
 
   const referenceDate = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date);
+
     let days = 90;
+
     if (timeRange === '30d') days = 30;
     else if (timeRange === '7d') days = 7;
     const start = new Date(referenceDate);
+
     start.setDate(start.getDate() - days);
+
     return date >= start;
   });
 
@@ -98,6 +107,7 @@ export function Chart({ data }: { data: RecentRequestsType }) {
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value as string);
+
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               }}
             />

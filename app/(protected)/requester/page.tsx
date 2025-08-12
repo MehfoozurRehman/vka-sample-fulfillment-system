@@ -10,6 +10,7 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function RequesterPage() {
   const { data, isPending } = useQueryWithStatus(api.request.recent, { limit: 200 });
+
   const user = useAuth();
 
   return (

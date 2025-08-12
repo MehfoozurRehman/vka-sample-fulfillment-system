@@ -21,6 +21,7 @@ export function NavUser() {
   const { isMobile } = useSidebar();
 
   const pathname = usePathname();
+
   const router = useRouter();
 
   const setActiveRole = useMutation(api.user.setActiveRole);
@@ -84,6 +85,7 @@ export function NavUser() {
                       disabled={user.activeRole === r || isLoggingOut}
                       onClick={async () => {
                         if (user.activeRole === r) return;
+
                         try {
                           await setActiveRole({ userId: user.id, role: r });
                           router.push(`/${r}`);

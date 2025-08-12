@@ -112,32 +112,48 @@ const columns: ColumnDef<DataType>[] = [
     ),
   },
 ];
+
 export function DataTable({ data: initialData, isPending }: { data: DataType[]; isPending: boolean }) {
   const isMobile = useIsMobile();
+
   const currentUser = useAuth();
+
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+
   const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
+
   const [selectedUser, setSelectedUser] = useState<null | (DataType & { roles?: string[]; activeRole?: string })>(null);
+
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const filteredData = useMemo(() => {
     type ExtendedUser = DataType & { roles?: string[]; activeRole?: string };
     let d: ExtendedUser[] = initialData as ExtendedUser[];
+
     if (statusFilter !== 'all') {
       d = d.filter((u) => u.status === statusFilter);
     }
+
     const normalize = (str: string) => str.toLowerCase().replace(/\s+/g, '');
+
     const q = normalize(search.trim());
+
     if (q) {
       d = d.filter((u) => {
         const roleText = u.activeRole || (u.roles ? u.roles.join(' ') : '');
+
         const parts = [u.name || '', u.email || '', roleText, u.designation || '', u.status || ''];
+
         return parts.some((p) => normalize(p).includes(q));
       });
     }
+
     return d;
   }, [initialData, search, statusFilter]);
 
@@ -160,30 +176,41 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   });
 
   const totalUsers = initialData?.filter((user) => user.status !== 'invited').length || 0;
+
   const noOfActiveUsers = initialData?.filter((user) => user.status === 'active').length || 0;
+
   const noOfInactiveUsers = initialData?.filter((user) => user.status === 'inactive').length || 0;
+
   const noOfInvitedUsers = initialData?.filter((user) => user.status === 'invited').length || 0;
 
   const [isActing, startActing] = useTransition();
 
   const updateStatus = useMutation(api.user.updateStatus);
+
   const setActiveRole = useMutation(api.user.setActiveRole);
+
   const addRole = useMutation(api.user.addRole);
+
   const removeRole = useMutation(api.user.removeRole);
+
   const resendInvite = useMutation(api.user.resendInvite);
 
   const [isBulkActing, startBulkActing] = useTransition();
+
   const selectedRowIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+
   const selectedUsers = filteredData.filter((u) => selectedRowIds.includes(u.id.toString()));
 
   const handleBulkSetStatus = (status: 'active' | 'inactive') => {
     if (!selectedUsers.length) {
       toast.error('No users selected');
+
       return;
     }
 
     if (status === 'inactive' && selectedUsers.some((u) => u.id === currentUser.id)) {
       toast.error('You cannot deactivate yourself');
+
       return;
     }
 
@@ -200,10 +227,13 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
 
   const handleSetStatus = (status: 'active' | 'inactive') => {
     if (!selectedUser) return;
+
     if (status === 'inactive' && selectedUser.id === currentUser.id) {
       toast.error('You cannot deactivate yourself');
+
       return;
     }
+
     startActing(async () => {
       try {
         await updateStatus({ userId: selectedUser.id as Id<'users'>, status });
@@ -464,6 +494,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                                 className="text-xs hover:opacity-70"
                                 onClick={(e) => {
                                   e.stopPropagation();
+
                                   if (confirm(`Remove role ${r}?`)) {
                                     startActing(async () => {
                                       try {

@@ -6,8 +6,11 @@ import { RecentRequestsType } from '../type';
 
 export function Stats({ data }: { data: RecentRequestsType }) {
   const total = data.length;
+
   const pending = data.filter((r) => r.status.toLowerCase().includes('pending')).length;
+
   const reviewed = data.filter((r) => r.stage === 'Reviewed').length;
+
   const shipped = data.filter((r) => r.stage === 'Shipped').length;
 
   return (

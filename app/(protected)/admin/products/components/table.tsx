@@ -53,39 +53,56 @@ const detailChartConfig = {
 
 export function DataTable({ data: initialData, isPending }: { data: ProductType[]; isPending: boolean }) {
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
   const [sorting, setSorting] = useState<SortingState>([]);
+
   const [selected, setSelected] = useState<ProductType | null>(null);
+
   const [edit, setEdit] = useState<ProductType | null>(null);
+
   const [isSaving, startSaving] = useTransition();
+
   const isMobile = useIsMobile();
 
   const update = useMutation(api.product.update);
+
   const remove = useMutation(api.product.remove);
+
   const products = useQuery(api.product.list);
 
   const stats = useQuery(api.product.stats, selected ? { productId: selected.id as Id<'products'>, rangeDays: 90 } : 'skip');
 
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
+
     (products || []).forEach((p: ProductType) => {
       if (p.category) cats.add(p.category);
     });
+
     return Array.from(cats).sort((a, b) => a.localeCompare(b));
   }, [products]);
 
   const filteredData = useMemo(() => {
     let d = initialData;
+
     const normalize = (str: string) => str.toLowerCase().replace(/\s+/g, '');
+
     const q = normalize(search.trim());
+
     if (q) {
       d = d.filter((p) => {
         const parts = [p.productId, p.productName, p.category, p.location];
+
         return parts.some((part) => normalize(part).includes(q));
       });
     }
+
     return d;
   }, [initialData, search]);
 
@@ -232,6 +249,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                           minTickGap={32}
                           tickFormatter={(value) => {
                             const date = new Date(value);
+
                             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                           }}
                         />

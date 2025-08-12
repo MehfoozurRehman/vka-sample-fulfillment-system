@@ -20,6 +20,7 @@ export function InviteUser() {
   const [open, setOpen] = useState(false);
 
   const inviteUser = useMutation(api.user.inviteUser);
+
   const auth = useAuth();
 
   const [isPending, startTransition] = useTransition();
@@ -29,22 +30,28 @@ export function InviteUser() {
 
     startTransition(async () => {
       const formData = new FormData(event.currentTarget);
+
       const name = formData.get('name') as string;
+
       const email = formData.get('email') as string;
+
       const role = formData.get('role') as string;
 
       if (!name) {
         toast.error('Name is required');
+
         return;
       }
 
       if (!email) {
         toast.error('Email is required');
+
         return;
       }
 
       if (!role) {
         toast.error('Role is required');
+
         return;
       }
 

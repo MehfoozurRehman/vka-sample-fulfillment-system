@@ -19,6 +19,7 @@ const eslintConfig = [
   },
   {
     files: ['**/*.{js,ts,tsx}'],
+    ignores: ['convex/**'],
     rules: {
       'padding-line-between-statements': [
         'error',

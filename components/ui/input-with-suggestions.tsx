@@ -20,10 +20,15 @@ export type InputWithSuggestionsProps = {
 
 export function InputWithSuggestions({ id, name, className, placeholder, disabled, options, value, onValueChange, maxItems = 8, inputProps }: InputWithSuggestionsProps) {
   const isControlled = typeof value === 'string';
+
   const [internalValue, setInternalValue] = React.useState<string>(value ?? '');
+
   const [open, setOpen] = React.useState(false);
+
   const [highlighted, setHighlighted] = React.useState<number>(-1);
+
   const inputRef = React.useRef<HTMLInputElement>(null);
+
   const popoverRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -32,6 +37,7 @@ export function InputWithSuggestions({ id, name, className, placeholder, disable
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
+
     if (!isControlled) setInternalValue(next);
     onValueChange?.(next);
     setOpen(true);
@@ -39,53 +45,70 @@ export function InputWithSuggestions({ id, name, className, placeholder, disable
   };
 
   const query = (isControlled ? value : internalValue) ?? '';
+
   const normalized = query.trim().toLowerCase();
 
   const filtered = React.useMemo(() => {
     const seen = new Set<string>();
+
     const out: string[] = [];
+
     const source = options;
+
     if (!normalized) {
       for (const opt of source) {
         const s = String(opt ?? '');
+
         if (!s || seen.has(s)) continue;
         seen.add(s);
         out.push(s);
         if (out.length >= maxItems) break;
       }
+
       return out;
     }
+
     for (const opt of source) {
       const s = String(opt ?? '');
+
       if (!s) continue;
+
       if (s.toLowerCase().includes(normalized) && !seen.has(s)) {
         seen.add(s);
         out.push(s);
         if (out.length >= maxItems) break;
       }
     }
+
     return out;
   }, [options, normalized, maxItems]);
 
   const selectValue = (val: string) => {
     if (!isControlled) setInternalValue(val);
     onValueChange?.(val);
+
     if (inputRef.current) {
       const nativeInput = inputRef.current;
+
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+
       setter?.call(nativeInput, val);
       nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
       nativeInput.blur();
     }
+
     setOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       setOpen(true);
+
       return;
     }
+
     if (!filtered.length) return;
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlighted((prev) => (prev + 1) % filtered.length);
@@ -105,15 +128,19 @@ export function InputWithSuggestions({ id, name, className, placeholder, disable
   React.useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
+
       if (inputRef.current?.contains(target)) return;
       if (popoverRef.current?.contains(target)) return;
       setOpen(false);
     };
+
     document.addEventListener('mousedown', onDocClick);
+
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
   const currentValue = isControlled ? (value ?? '') : internalValue;
+
   const show = open && filtered.length > 0;
 
   return (

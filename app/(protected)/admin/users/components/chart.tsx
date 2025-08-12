@@ -20,16 +20,20 @@ const chartConfig = {
 
 export function Chart({ data }: { data: DataType[] }) {
   const isMobile = useIsMobile();
+
   const [timeRange, setTimeRange] = useQueryState('range', parseAsString.withDefault('90d'));
 
   const chartData = useMemo(() => {
     if (!data) return [];
     const grouped: Record<string, number> = {};
+
     data.forEach((user) => {
       const date = user.createdAt ? new Date(user.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+
       if (!grouped[date]) grouped[date] = 0;
       grouped[date] += 1;
     });
+
     return Object.entries(grouped)
       .map(([date, created]) => ({ date, created }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -42,16 +46,22 @@ export function Chart({ data }: { data: DataType[] }) {
   }, [isMobile, setTimeRange]);
 
   const referenceDate = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+
   const filteredData = chartData.filter((item: { date: string; created: number }) => {
     const date = new Date(item.date);
+
     let daysToSubtract = 90;
+
     if (timeRange === '30d') {
       daysToSubtract = 30;
     } else if (timeRange === '7d') {
       daysToSubtract = 7;
     }
+
     const startDate = new Date(referenceDate);
+
     startDate.setDate(startDate.getDate() - daysToSubtract);
+
     return date >= startDate;
   });
 
@@ -105,6 +115,7 @@ export function Chart({ data }: { data: DataType[] }) {
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
+
                 return date.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',

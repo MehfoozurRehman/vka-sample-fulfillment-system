@@ -24,17 +24,26 @@ import { useQueryState, parseAsString } from 'nuqs';
 
 export default function AuditLogsPage() {
   const [selectedUser, setSelectedUser] = useQueryState('user', parseAsString.withDefault(''));
+
   const [actionFilter, setActionFilter] = useQueryState('act', parseAsString.withDefault(''));
+
   const [tableName, setTableName] = useQueryState('tbl', parseAsString.withDefault(''));
+
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [start, setStart] = useQueryState('start', parseAsString.withDefault(''));
+
   const [end, setEnd] = useQueryState('end', parseAsString.withDefault(''));
+
   const [drawerOpen, setDrawerOpen] = useState(false);
+
   const [selectedLog, setSelectedLog] = useState<AuditRow | null>(null);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(search), 300);
+
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -93,6 +102,7 @@ export default function AuditLogsPage() {
   });
 
   const actions = useMemo(() => Array.from(new Set(tableData.map((l) => l.action))), [tableData]);
+
   const tables = useMemo(() => Array.from(new Set(tableData.map((l) => l.table))), [tableData]);
 
   return (

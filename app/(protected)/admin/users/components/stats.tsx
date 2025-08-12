@@ -6,8 +6,11 @@ import { DataType } from '../type';
 
 export function Stats(props: { data: DataType[] } & React.HTMLAttributes<HTMLDivElement> & { className?: string }) {
   const totalUsers = props.data?.filter((user) => user.status !== 'invited').length || 0;
+
   const noOfActiveUsers = props.data?.filter((user) => user.status === 'active').length || 0;
+
   const noOfInactiveUsers = props.data?.filter((user) => user.status === 'inactive').length || 0;
+
   const noOfInvitedUsers = props.data?.filter((user) => user.status === 'invited').length || 0;
 
   return (

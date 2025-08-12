@@ -19,16 +19,20 @@ const chartConfig = {
 
 export function Chart({ data }: { data: StakeholderType[] }) {
   const isMobile = useIsMobile();
+
   const [timeRange, setTimeRange] = useState('90d');
 
   const chartData = useMemo(() => {
     if (!data) return [] as { date: string; created: number }[];
     const grouped: Record<string, number> = {};
+
     data.forEach((s) => {
       const date = s.createdAt ? new Date(s.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+
       if (!grouped[date]) grouped[date] = 0;
       grouped[date] += 1;
     });
+
     return Object.entries(grouped)
       .map(([date, created]) => ({ date, created }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -39,13 +43,18 @@ export function Chart({ data }: { data: StakeholderType[] }) {
   }, [isMobile]);
 
   const referenceDate = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date);
+
     let daysToSubtract = 90;
+
     if (timeRange === '30d') daysToSubtract = 30;
     else if (timeRange === '7d') daysToSubtract = 7;
     const startDate = new Date(referenceDate);
+
     startDate.setDate(startDate.getDate() - daysToSubtract);
+
     return date >= startDate;
   });
 
@@ -99,6 +108,7 @@ export function Chart({ data }: { data: StakeholderType[] }) {
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
+
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               }}
             />

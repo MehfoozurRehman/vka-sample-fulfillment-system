@@ -35,6 +35,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               Authorization: `Bearer ${res.access_token}`,
             },
           });
+
           const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
 
           if (gInfo && gInfo.email && gInfo.sub) {
@@ -54,6 +55,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
 
             if (!data) {
               toast.error('Login failed');
+
               return;
             }
 

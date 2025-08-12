@@ -6,6 +6,7 @@ import { StakeholderType } from '../type';
 
 export function Stats(props: { data: StakeholderType[] } & React.HTMLAttributes<HTMLDivElement> & { className?: string }) {
   const total = props.data?.length || 0;
+
   const vip = props.data?.filter((s) => s.vipFlag).length || 0;
 
   return (

@@ -27,6 +27,7 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
+
   return (
     <div className="rounded-md border bg-popover/90 backdrop-blur p-2 text-xs shadow-sm min-w-[140px]">
       {label && <div className="mb-1 font-medium text-foreground/80">{label}</div>}
@@ -49,7 +50,9 @@ export default function AnalyticsPage() {
   const [range, setRange] = React.useState('90');
 
   const { data: overview } = useQueryWithStatus(api.analytics.overview, {});
+
   const { data: distributions } = useQueryWithStatus(api.analytics.distributions, {});
+
   const { data: timeseries, isPending: tsLoading } = useQueryWithStatus(api.analytics.timeseries, { days: Number(range) });
 
   return (
@@ -138,7 +141,9 @@ interface DistDatum {
 
 function DistributionCard({ title, data, type }: { title: string; data: DistDatum[] | undefined; type: 'bar' | 'pie' }) {
   const items: DistDatum[] = (data || []).filter((d) => d && typeof d.value === 'number');
+
   const total = items.reduce((a, b) => a + b.value, 0);
+
   const withPct = items.map((d) => ({ ...d, pct: total ? (d.value / total) * 100 : 0 }));
 
   return (

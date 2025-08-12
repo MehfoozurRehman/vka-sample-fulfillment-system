@@ -18,17 +18,27 @@ import { useAuth } from '@/hooks/use-user';
 
 export function Profile() {
   const user = useAuth();
+
   const updateProfile = useMutation(api.user.updateProfile);
+
   const getUploadUrl = useMutation(api.utils.generateUploadUrl);
+
   const uploadProfilePicture = useMutation(api.user.uploadProfilePicture);
+
   const notificationTypes = useQuery(api.notification.getNotificationTypes, user ? { userId: user.id as Id<'users'> } : 'skip');
+
   const prefs = useQuery(api.notification.getPreferences, user ? { userId: user.id as Id<'users'> } : 'skip');
+
   const setPref = useMutation(api.notification.setPreference);
 
   const [name, setName] = useState(user?.name || '');
+
   const [designation, setDesignation] = useState(user?.designation || '');
+
   const [saving, setSaving] = useState(false);
+
   const [uploading, setUploading] = useState(false);
+
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const initials = useMemo(
@@ -60,11 +70,13 @@ export function Profile() {
   const onSave = useCallback(async () => {
     if (!user || !dirty) return;
     setSaving(true);
+
     try {
       await updateProfile({ userId: user.id as Id<'users'>, name, designation });
       toast.success('Profile updated');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to update profile';
+
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -73,20 +85,26 @@ export function Profile() {
 
   const handleFile = async (file: File) => {
     setUploading(true);
+
     try {
       const url = await getUploadUrl();
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': file.type },
         body: file,
       });
+
       if (!res.ok) throw new Error('Upload failed');
       const json = await res.json();
+
       const storageId = json.storageId as string;
+
       await uploadProfilePicture({ userId: user.id as Id<'users'>, storageId });
       toast.success('Image uploaded');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Upload failed';
+
       toast.error(msg);
     } finally {
       setUploading(false);
@@ -95,6 +113,7 @@ export function Profile() {
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) handleFile(file);
   };
 
@@ -182,7 +201,9 @@ export function Profile() {
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {(notificationTypes || []).map((t) => {
               const existing = prefs?.find((p) => p.type === t);
+
               const enabled = existing ? existing.enabled : true;
+
               return (
                 <label key={t} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 bg-card/40 text-xs capitalize">
                   <span className="truncate">{t.replace(/[-_]/g, ' ')}</span>
@@ -190,6 +211,7 @@ export function Profile() {
                     checked={enabled}
                     onCheckedChange={async (val) => {
                       if (!user) return;
+
                       try {
                         await setPref({ userId: user.id as Id<'users'>, type: t, enabled: Boolean(val) });
                         toast.success(`${t} ${val ? 'enabled' : 'disabled'}`);

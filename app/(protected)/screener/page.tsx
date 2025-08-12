@@ -47,18 +47,29 @@ interface ScreenerMetrics {
 
 export default function ScreenerPage() {
   const auth = useAuth();
+
   const { data: pendingData, isPending } = useQueryWithStatus(api.screener.pending, { limit: 500 });
+
   const pending = useMemo(() => (pendingData as PendingRow[] | undefined) ?? [], [pendingData]);
+
   const [selected, setSelected] = useState<PendingRow | null>(null);
+
   const [range, setRange] = useState('90');
+
   const metrics = useQuery(api.screener.metrics, { days: Number(range) }) as ScreenerMetrics | undefined;
+
   const [search, setSearch] = useState('');
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!q) return pending;
+
     return pending.filter((r) => [r.requestId, r.company, r.applicationType, r.projectName].some((f) => f.toLowerCase().includes(q)));
   }, [pending, search]);
+
   const stats = useMemo(() => computeStats(filtered), [filtered]);
+
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -85,6 +96,7 @@ function ScreenerStats({ stats, isLoading }: { stats: ReturnType<typeof computeS
     </div>
   );
 }
+
 function StatCard({ label, value, loading }: { label: string; value: number; loading: boolean }) {
   return (
     <Card data-slot="card" className="@container/card">
@@ -101,14 +113,18 @@ const flowChartConfig: ChartConfig = {
   rejected: { label: 'Rejected', color: 'var(--destructive)' },
   pending: { label: 'Pending', color: 'var(--warning)' },
 };
+
 function ScreenerChart({ metrics, range, setRange }: { metrics?: ScreenerMetrics; range: string; setRange: (v: string) => void }) {
   const daily = metrics?.daily || [];
+
   const age = metrics?.ageBuckets || { under24: 0, between24and48: 0, over48: 0 };
+
   const ageData = [
     { bucket: '<24h', value: age.under24 },
     { bucket: '24-48h', value: age.between24and48 },
     { bucket: '>48h', value: age.over48 },
   ];
+
   return (
     <Card className="@container/card">
       <CardHeader>
@@ -204,7 +220,9 @@ function ScreenerTable({
               ) : data.length ? (
                 data.map((row) => {
                   const ageH = (Date.now() - row.createdAt) / 3600000;
+
                   const dot = ageH > 48 ? 'bg-red-500' : ageH > 24 ? 'bg-amber-500' : 'bg-emerald-500';
+
                   return (
                     <TableRow key={row.id} className="relative z-0 cursor-pointer" onClick={() => onSelect(row)}>
                       <TableCell className="font-mono text-xs flex items-center gap-2">
@@ -259,17 +277,25 @@ function RequestDrawer({
   afterAction: () => void;
 }) {
   const approveMut = useMutation(api.screener.approve);
+
   const rejectMut = useMutation(api.screener.reject);
+
   const [notes, setNotes] = useState('');
+
   const [reason, setReason] = useState('');
+
   const [isSaving, startSaving] = useTransition();
+
   const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
+
   useEffect(() => {
     if (row) setCurrentId(row.id);
   }, [row]);
 
   const canReject = reason.trim().length > 2;
+
   const detailData = useQuery(api.screener.detail, currentId ? { id: currentId } : 'skip');
+
   const vip = !!detailData?.stakeholder?.vipFlag;
 
   const handleSelect = (id: Id<'requests'>) => {
@@ -394,6 +420,7 @@ function LabelVal({ label, value }: { label: string; value?: string }) {
     </div>
   );
 }
+
 function RecentRequestsPanel({
   data,
   total,
@@ -439,16 +466,24 @@ function RecentRequestsPanel({
 
 function computeStats(rows: PendingRow[]) {
   const total = rows.length;
+
   const vip = rows.filter((r) => r.vip).length;
+
   const avgItems = total ? Math.round(rows.reduce((s, r) => s + r.products, 0) / total) : 0;
+
   const now = Date.now();
+
   let over24 = 0;
+
   let over48 = 0;
+
   rows.forEach((r) => {
     const age = now - r.createdAt;
+
     if (age > 48 * 3600 * 1000) over48++;
     else if (age > 24 * 3600 * 1000) over24++;
   });
   const under24 = total - over24 - over48;
+
   return { total, vip, avgItems, under24, over24, over48 };
 }

@@ -5,6 +5,7 @@ import { fetchMutation } from 'convex/nextjs';
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
+
     const { email, name } = body as { email?: string; name?: string };
 
     if (!email || !name) {
@@ -20,7 +21,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, user });
   } catch (err: unknown) {
     const msg = typeof err === 'object' && err && 'message' in err ? String((err as { message: string }).message) : 'Internal error';
+
     const status = msg.includes('Initial admin already created') ? 409 : 500;
+
     return NextResponse.json({ error: msg }, { status });
   }
 }
