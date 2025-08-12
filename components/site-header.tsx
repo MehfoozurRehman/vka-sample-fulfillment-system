@@ -51,7 +51,7 @@ export function SiteHeader() {
         )}
         <h1 className="text-base font-medium">{pageName}</h1>
         <div className="ml-auto flex items-center gap-2">
-          {!isAdmin && <Notifications />}
+          <Notifications />
           <ThemeToggle />
           <UserMenu />
         </div>
