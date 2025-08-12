@@ -71,7 +71,6 @@ export const login = mutation({
     const { googleId } = args;
     if (!googleId) throw new Error('Google ID is required');
 
-    // Use indexed query to limit read set
     const user = await ctx.db
       .query('users')
       .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
