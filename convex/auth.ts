@@ -2,7 +2,6 @@ import { mutation, query } from './_generated/server';
 
 import { Id } from './_generated/dataModel';
 import { RoleType } from '@/constants';
-import dayjs from 'dayjs';
 import { v } from 'convex/values';
 
 export const getUser = query({
@@ -70,45 +69,30 @@ export const login = mutation({
   args: { googleId: v.string() },
   handler: async (ctx, args) => {
     const { googleId } = args;
+    if (!googleId) throw new Error('Google ID is required');
 
-    if (!googleId) {
-      throw new Error('Google ID is required');
-    }
-
+    // Use indexed query to limit read set
     const user = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('googleId'), googleId))
+      .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
       .first();
 
-    if (!user) {
-      throw new Error('User not found');
-    }
+    if (!user) throw new Error('User not found');
+    if (!user.active) throw new Error('User is inactive');
+    if (user.deletedAt) throw new Error('User is deleted');
 
-    if (!user.active) {
-      throw new Error('User is inactive');
-    }
-
-    if (user.deletedAt) {
-      throw new Error('User is deleted');
-    }
-
-    await ctx.db.patch(user._id, {
-      lastLogin: dayjs().unix(),
-    });
-
+    const now = Date.now();
+    await ctx.db.patch(user._id, { lastLogin: now });
     await ctx.db.insert('auditLogs', {
       userId: user._id,
       action: 'login',
       table: 'users',
       recordId: user._id,
-      changes: { lastLogin: dayjs().unix() },
-      timestamp: dayjs().unix(),
+      changes: { lastLogin: now },
+      timestamp: now,
     });
 
-    return {
-      id: user._id,
-      role: user.role as RoleType,
-    };
+    return { id: user._id, role: user.role as RoleType };
   },
 });
 
