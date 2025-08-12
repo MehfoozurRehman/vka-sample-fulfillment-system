@@ -125,6 +125,7 @@ export const acceptInvite = mutation({
       .query('users')
       .filter((q) => q.eq(q.field('googleId'), googleId))
       .first();
+
     if (googleOwner && googleOwner._id !== (inviteId as unknown as Id<'users'>)) {
       throw new Error('This Google account is already linked to another user');
     }
@@ -133,6 +134,8 @@ export const acceptInvite = mutation({
       .query('users')
       .filter((q) => q.eq(q.field('_id'), inviteId) && q.eq(q.field('googleId'), undefined))
       .first();
+
+    console.log('acceptInvite fetched invite', { inviteId, validInvite });
 
     if (!validInvite) {
       throw new Error('Invalid invite');
@@ -154,25 +157,11 @@ export const acceptInvite = mutation({
       table: 'users',
       recordId: inviteId,
       changes: { googleId, active: true, profilePicture: picture },
-      timestamp: dayjs().unix(),
+      timestamp: Date.now(),
     });
 
-    if (validInvite.invitedBy) {
-      const inviterId = validInvite.invitedBy as Id<'users'>;
-      const inviter = await ctx.db.get(inviterId);
-      if (inviter) {
-        console.log('Creating notification for inviter', { inviterId, inviteId });
-        await ctx.db.insert('notifications', {
-          userId: inviter._id,
-          createdBy: inviteId as Id<'users'>,
-          type: 'inviteAccepted',
-          message: `${validInvite.name || validInvite.email} accepted the invitation`,
-          read: false,
-          createdAt: Date.now(),
-        });
-      }
-    } else {
-      console.warn('acceptInvite: invitedBy missing on invite user record', { inviteId });
+    if (validInvite.invitedByUser) {
+      console.log('Creating notification for inviter', { inviteId, invitedBy: validInvite.invitedByUser });
     }
 
     return {
