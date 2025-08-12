@@ -196,3 +196,38 @@ export const updateRole = mutation({
   },
 });
 
+export const resendInvite = mutation({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error('User not found');
+    if (user.googleId) throw new Error('User already accepted invite');
+    if (user.deletedAt) throw new Error('User deleted');
+
+    await resend.sendEmail(ctx, {
+      from: 'VKA <onboarding@resend.dev>',
+      to: user.email,
+      subject: 'Invitation to join VKA (Reminder)',
+      html: `
+        <p>Hello ${user.name || 'there'},</p>
+        <p>This is a reminder to join VKA as a <strong>${user.role}</strong>. Please click the link below to accept the invitation and set up your account.</p>
+        <p>
+          <a href="http://localhost:3000?invite=${user._id}">Accept Invitation</a>
+        </p>
+        <p>If you did not expect this, you can ignore this email.</p>
+        <p>Best regards,<br/>VKA Team</p>
+      `,
+    });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'resendInvite',
+      table: 'users',
+      recordId: userId,
+      changes: {},
+      timestamp: Date.now(),
+    });
+
+    return { ok: true } as const;
+  },
+});
