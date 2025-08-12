@@ -40,9 +40,9 @@ export function SiteHeader() {
   const previousPath = pathname.split('/').slice(0, -1).join('/');
 
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+    <header className="flex h-[var(--header-height,56px)] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[var(--header-height,56px)]">
+      <div className={`flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ${isAdmin ? '' : 'container mx-auto'}`}>
+        {isAdmin && <SidebarTrigger className="-ml-1" />}
         {!isRoot && (
           <Button onClick={() => router.push(previousPath)} data-slot="back-button" variant="ghost" size="icon">
             <ChevronLeft className="h-4 w-4" />
