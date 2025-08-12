@@ -161,6 +161,7 @@ export const acceptInvite = mutation({
       const inviterId = validInvite.invitedBy as Id<'users'>;
       const inviter = await ctx.db.get(inviterId);
       if (inviter) {
+        console.log('Creating notification for inviter', { inviterId, inviteId });
         await ctx.db.insert('notifications', {
           userId: inviter._id,
           createdBy: inviteId as Id<'users'>,
