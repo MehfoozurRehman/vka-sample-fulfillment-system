@@ -135,7 +135,7 @@ export const acceptInvite = mutation({
       .filter((q) => q.eq(q.field('_id'), inviteId) && q.eq(q.field('googleId'), undefined))
       .first();
 
-    console.log('acceptInvite fetched invite', { inviteId, validInvite });
+    console.log('acceptInvite fetched invite', { inviteId, invitedByUser: validInvite?.invitedByUser });
 
     if (!validInvite) {
       throw new Error('Invalid invite');
@@ -161,7 +161,17 @@ export const acceptInvite = mutation({
     });
 
     if (validInvite.invitedByUser) {
-      console.log('Creating notification for inviter', { inviteId, invitedBy: validInvite.invitedByUser });
+      const inviter = await ctx.db.get(validInvite.invitedByUser as Id<'users'>);
+      if (inviter) {
+        await ctx.db.insert('notifications', {
+          userId: inviter._id,
+          createdBy: inviteId as Id<'users'>,
+          type: 'inviteAccepted',
+          message: `${validInvite.name || validInvite.email} accepted the invitation`,
+          read: false,
+          createdAt: Date.now(),
+        });
+      }
     }
 
     return {
