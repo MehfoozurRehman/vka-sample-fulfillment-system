@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProductListItem {
@@ -44,6 +45,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const request = useQuery(api.request.getOne, row ? { id: row.id } : 'skip');
+
+  const auth = useAuth();
 
   const suggestions = useQuery(api.request.suggestions);
 
@@ -131,7 +134,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
-    await update({ id: row.id, ...form });
+    await update({ userId: auth.id, id: row.id, ...form });
 
     setEditing(false);
 
@@ -141,7 +144,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   async function onDelete() {
     if (!row) return;
     if (!confirm('Delete this draft request?')) return;
-    await remove({ id: row.id });
+    await remove({ userId: auth.id, id: row.id });
     onOpenChange(false);
   }
 
