@@ -16,6 +16,7 @@ import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
+import { useAuth } from '@/hooks/use-user';
 
 interface ProductRow {
   id: Id<'products'>;
@@ -49,6 +50,8 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
   const [companyId, setCompanyId] = useState<string>('');
 
   const [isPending, startTransition] = useTransition();
+
+  const auth = useAuth();
 
   useEffect(() => {
     if (open) {
@@ -105,6 +108,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
         });
 
         await addReq({
+          userId: auth.id,
           requestId: requestId?.trim() || '',
           companyId: selectedCompany.id,
           contactName: (event.currentTarget.elements.namedItem('contactName') as HTMLInputElement).value.trim(),
