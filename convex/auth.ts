@@ -121,6 +121,14 @@ export const acceptInvite = mutation({
       throw new Error('Google ID and invite ID are required');
     }
 
+    const googleOwner = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('googleId'), googleId))
+      .first();
+    if (googleOwner && googleOwner._id !== (inviteId as unknown as Id<'users'>)) {
+      throw new Error('This Google account is already linked to another user');
+    }
+
     const validInvite = await ctx.db
       .query('users')
       .filter((q) => q.eq(q.field('_id'), inviteId) && q.eq(q.field('googleId'), undefined))
@@ -150,7 +158,8 @@ export const acceptInvite = mutation({
     });
 
     if (validInvite.invitedBy) {
-      const inviter = await ctx.db.get(validInvite.invitedBy as unknown as Id<'users'>);
+      const inviterId = validInvite.invitedBy as Id<'users'>;
+      const inviter = await ctx.db.get(inviterId);
       if (inviter) {
         await ctx.db.insert('notifications', {
           userId: inviter._id,
