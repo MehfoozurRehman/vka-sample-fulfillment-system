@@ -78,7 +78,6 @@ export const recent = query({
 export const nextId = query({
   args: {},
   handler: async (ctx) => {
-    // Include ALL requests (even soft-deleted) so we never reuse an ID that previously existed.
     const items = await ctx.db.query('requests').collect();
     const prefix = 'REQ-';
     const width = 5;
@@ -118,7 +117,6 @@ export const add = mutation({
   handler: async (ctx, args) => {
     let requestId = (args.requestId || '').trim();
     if (!requestId || requestId.toUpperCase() === 'AUTO') {
-      // Include soft-deleted records when generating the next ID to avoid reuse collisions
       const all = await ctx.db.query('requests').collect();
       const prefix = 'REQ-';
       const width = 5;
