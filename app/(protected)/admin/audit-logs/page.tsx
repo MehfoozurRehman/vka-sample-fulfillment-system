@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDeferredValue, useMemo, useState } from 'react';
 
+import { AuditRow } from './types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Id } from '@/convex/_generated/dataModel';
@@ -20,8 +21,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 import { useQueryState, parseAsString } from 'nuqs';
-
-type AuditRow = NonNullable<ReturnType<typeof useQuery<typeof api.audit.list>>>[number];
 
 export default function AuditLogsPage() {
   const [selectedUser, setSelectedUser] = useQueryState('user', parseAsString.withDefault(''));
