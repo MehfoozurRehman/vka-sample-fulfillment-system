@@ -4,7 +4,6 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
 
-// Helper: fetch user and ensure role
 async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, email: string): Promise<Doc<'users'>> {
   const user = await ctx.db
     .query('users')
@@ -18,26 +17,17 @@ async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, emai
   return user;
 }
 
-/* ------------------------------ pending list ------------------------------ */
 export const pending = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     const max = Math.min(limit ?? 50, 100);
-    const recent = await ctx.db
-      .query('requests')
-      .withIndex('by_createdAt')
-      .order('desc')
-      .collect();
+    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
 
-    const pendingReqs = recent
-      .filter((r) => !r.deletedAt && r.status.toLowerCase().includes('pending'))
-      .slice(0, max);
+    const pendingReqs = recent.filter((r) => !r.deletedAt && r.status.toLowerCase().includes('pending')).slice(0, max);
 
     const stakeholderIds = Array.from(new Set(pendingReqs.map((r) => r.companyId)));
     const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
-    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(
-      stakeholders.filter(Boolean).map((s) => [s!._id, s!]),
-    );
+    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
 
     return pendingReqs.map((r) => {
       const st = stakeholderMap.get(r.companyId);
@@ -56,7 +46,6 @@ export const pending = query({
   },
 });
 
-/* ------------------------------- detail view ------------------------------ */
 export const detail = query({
   args: { id: v.id('requests') },
   handler: async (ctx, { id }) => {
@@ -69,10 +58,10 @@ export const detail = query({
         const prod = await ctx.db.get(item.productId);
         return {
           id: item.productId,
-            productId: prod?.productId,
-            name: prod?.productName,
-            quantity: item.quantity,
-            notes: item.notes,
+          productId: prod?.productId,
+          name: prod?.productName,
+          quantity: item.quantity,
+          notes: item.notes,
         } as const;
       }),
     );
@@ -82,9 +71,7 @@ export const detail = query({
       .withIndex('by_companyId', (q) => q.eq('companyId', r.companyId))
       .collect();
 
-    const activeCompanyReqs = companyReqs
-      .filter((x) => !x.deletedAt)
-      .sort((a, b) => b.createdAt - a.createdAt);
+    const activeCompanyReqs = companyReqs.filter((x) => !x.deletedAt).sort((a, b) => b.createdAt - a.createdAt);
 
     const lastFive = activeCompanyReqs.slice(0, 5).map((x) => ({
       id: x._id,
@@ -96,18 +83,12 @@ export const detail = query({
     }));
 
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-    const totalSamples12mo = activeCompanyReqs
-      .filter((x) => x.createdAt >= oneYearAgo)
-      .reduce(
-        (sum, x) => sum + x.productsRequested.reduce((s, p) => s + p.quantity, 0),
-        0,
-      );
+    const totalSamples12mo = activeCompanyReqs.filter((x) => x.createdAt >= oneYearAgo).reduce((sum, x) => sum + x.productsRequested.reduce((s, p) => s + p.quantity, 0), 0);
 
     return { request: r, stakeholder, productsDetailed, lastFive, totalSamples12mo } as const;
   },
 });
 
-/* ------------------------------ approve flow ------------------------------ */
 export const approve = mutation({
   args: { id: v.id('requests'), reviewedBy: v.string(), notes: v.optional(v.string()) },
   handler: async (ctx, { id, reviewedBy, notes }) => {
@@ -149,7 +130,6 @@ export const approve = mutation({
   },
 });
 
-/* ------------------------------- reject flow ------------------------------ */
 export const reject = mutation({
   args: { id: v.id('requests'), reviewedBy: v.string(), reason: v.string(), notes: v.optional(v.string()) },
   handler: async (ctx, { id, reviewedBy, reason, notes }) => {
@@ -180,11 +160,10 @@ export const reject = mutation({
   },
 });
 
-/* --------------------------------- metrics -------------------------------- */
 export const metrics = query({
   args: { days: v.optional(v.number()) },
   handler: async (ctx, { days }) => {
-    const range = Math.min(Math.max(days ?? 90, 7), 180); // clamp 7-180
+    const range = Math.min(Math.max(days ?? 90, 7), 180);
     const startTs = Date.now() - range * 24 * 60 * 60 * 1000;
 
     const [requests, stakeholders] = await Promise.all([
@@ -200,7 +179,12 @@ export const metrics = query({
     const now = Date.now();
     const dayKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
-    interface Daily { date: string; approved: number; rejected: number; pending: number }
+    interface Daily {
+      date: string;
+      approved: number;
+      rejected: number;
+      pending: number;
+    }
     const dailyMap: Record<string, Daily> = {};
 
     let approved30 = 0;
