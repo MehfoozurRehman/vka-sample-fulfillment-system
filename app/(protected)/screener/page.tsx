@@ -4,7 +4,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'rec
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import React, { useMemo, useState, useTransition } from 'react';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMutation, useQuery } from 'convex/react';
@@ -44,20 +44,12 @@ interface ScreenerMetrics {
   topPending: { company: string; count: number; vip: boolean }[];
   topVolume30d: { company: string; count: number; vip: boolean }[];
 }
-interface RequestDetail {
-  request: { requestId: string; applicationType: string; projectName: string; createdAt: number };
-  stakeholder: { companyName?: string; vipFlag?: boolean } | null;
-  productsDetailed: { id: string; productId?: string; name?: string; quantity: number; notes?: string }[];
-  lastFive: { id: Id<'requests'>; requestId: string; status: string; createdAtFmt: string; products: number }[];
-  totalSamples12mo: number;
-}
 
 export default function ScreenerPage() {
   const auth = useAuth();
   const { data: pendingData, isPending } = useQueryWithStatus(api.screener.pending, { limit: 500 });
   const pending = useMemo(() => (pendingData as PendingRow[] | undefined) ?? [], [pendingData]);
   const [selected, setSelected] = useState<PendingRow | null>(null);
-  const detail = useQuery(api.screener.detail, selected ? { id: selected.id } : 'skip');
   const [range, setRange] = useState('90');
   const metrics = useQuery(api.screener.metrics, { days: Number(range) }) as ScreenerMetrics | undefined;
   const [search, setSearch] = useState('');
@@ -76,14 +68,7 @@ export default function ScreenerPage() {
         </div>
         <ScreenerTable data={filtered} isPending={isPending} onSelect={(r) => setSelected(r)} search={search} setSearch={setSearch} />
       </div>
-      <RequestDrawer
-        open={!!selected}
-        onOpenChange={(o) => !o && setSelected(null)}
-        row={selected}
-        detail={detail as RequestDetail | null}
-        reviewerEmail={auth.email}
-        afterAction={() => setSelected(null)}
-      />
+      <RequestDrawer open={!!selected} onOpenChange={(o) => !o && setSelected(null)} row={selected} reviewerEmail={auth.email} afterAction={() => setSelected(null)} />
     </div>
   );
 }
@@ -264,14 +249,12 @@ function RequestDrawer({
   open,
   onOpenChange,
   row,
-  detail,
   reviewerEmail,
   afterAction,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   row: PendingRow | null;
-  detail: RequestDetail | null;
   reviewerEmail: string;
   afterAction: () => void;
 }) {
@@ -280,8 +263,21 @@ function RequestDrawer({
   const [notes, setNotes] = useState('');
   const [reason, setReason] = useState('');
   const [isSaving, startSaving] = useTransition();
+  const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
+  useEffect(() => {
+    if (row) setCurrentId(row.id);
+  }, [row]);
+
   const canReject = reason.trim().length > 2;
-  const vip = !!detail?.stakeholder?.vipFlag;
+  const detailData = useQuery(api.screener.detail, currentId ? { id: currentId } : 'skip');
+  const vip = !!detailData?.stakeholder?.vipFlag;
+
+  const handleSelect = (id: Id<'requests'>) => {
+    setCurrentId(id);
+    setNotes('');
+    setReason('');
+  };
+
   return (
     <Drawer direction={'right'} open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-w-xl">
@@ -291,22 +287,22 @@ function RequestDrawer({
         </DrawerHeader>
         <div className="p-4 space-y-6">
           {!row && <div className="text-xs text-muted-foreground">No request selected.</div>}
-          {row && !detail && <div className="text-xs text-muted-foreground animate-pulse">Loading details...</div>}
-          {row && detail && (
+          {row && !detailData && <div className="text-xs text-muted-foreground animate-pulse">Loading details...</div>}
+          {row && detailData && (
             <>
               <div className={`rounded-md border p-4 bg-card/40 backdrop-blur-sm space-y-3 relative ${vip ? 'ring-2 ring-destructive/40' : ''}`}>
                 <div className="flex items-center justify-between">
-                  <div className="font-medium text-sm font-mono">{detail.request.requestId}</div>
+                  <div className="font-medium text-sm font-mono">{detailData.request.requestId}</div>
                   {vip && <Badge variant="destructive">VIP</Badge>}
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] leading-relaxed">
-                  <LabelVal label="Company" value={detail.stakeholder?.companyName} />
-                  <LabelVal label="Application" value={detail.request.applicationType} />
-                  <LabelVal label="Project" value={detail.request.projectName} />
-                  <LabelVal label="Submitted" value={dayjs(detail.request.createdAt).format('MMM D, YYYY h:mm A')} />
+                  <LabelVal label="Company" value={detailData.stakeholder?.companyName} />
+                  <LabelVal label="Application" value={detailData.request.applicationType} />
+                  <LabelVal label="Project" value={detailData.request.projectName} />
+                  <LabelVal label="Submitted" value={dayjs(detailData.request.createdAt).format('MMM D, YYYY h:mm A')} />
                 </div>
               </div>
-              {detail.productsDetailed && detail.productsDetailed.length > 0 && (
+              {detailData.productsDetailed && detailData.productsDetailed.length > 0 && (
                 <Card className="border">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Requested Products</CardTitle>
@@ -324,7 +320,7 @@ function RequestDrawer({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {detail.productsDetailed.map((p: { id: string; productId?: string; name?: string; quantity: number; notes?: string }) => (
+                          {detailData.productsDetailed.map((p: { id: string; productId?: string; name?: string; quantity: number; notes?: string }) => (
                             <TableRow key={p.id}>
                               <TableCell className="font-mono text-xs">{p.productId || '—'}</TableCell>
                               <TableCell className="truncate" title={p.name}>
@@ -342,17 +338,17 @@ function RequestDrawer({
                   </CardContent>
                 </Card>
               )}
-              <RecentRequestsPanel data={detail.lastFive} total={detail.totalSamples12mo} />
+              <RecentRequestsPanel data={detailData.lastFive} total={detailData.totalSamples12mo} onSelect={handleSelect} activeId={currentId} />
               <div className="space-y-3">
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
                 <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
                 <div className="flex gap-2">
                   <Button
-                    disabled={isSaving || !row}
+                    disabled={isSaving || !currentId}
                     onClick={() => {
-                      if (!row) return;
+                      if (!currentId) return;
                       startSaving(async () => {
-                        await approveMut({ id: row.id, reviewedBy: reviewerEmail, notes: notes || undefined });
+                        await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
                         afterAction();
                       });
                     }}
@@ -361,11 +357,11 @@ function RequestDrawer({
                   </Button>
                   <Button
                     variant="destructive"
-                    disabled={isSaving || !row || !canReject}
+                    disabled={isSaving || !currentId || !canReject}
                     onClick={() => {
-                      if (!row || !canReject) return;
+                      if (!currentId || !canReject) return;
                       startSaving(async () => {
-                        await rejectMut({ id: row.id, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
+                        await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
                         afterAction();
                       });
                     }}
@@ -398,7 +394,17 @@ function LabelVal({ label, value }: { label: string; value?: string }) {
     </div>
   );
 }
-function RecentRequestsPanel({ data, total }: { data: { id: Id<'requests'>; requestId: string; status: string; createdAtFmt: string; products: number }[]; total: number }) {
+function RecentRequestsPanel({
+  data,
+  total,
+  onSelect,
+  activeId,
+}: {
+  data: { id: Id<'requests'>; requestId: string; status: string; createdAtFmt: string; products: number }[];
+  total: number;
+  onSelect: (id: Id<'requests'>) => void;
+  activeId: Id<'requests'> | null;
+}) {
   return (
     <Card className="border-dashed">
       <CardHeader className="pb-2">
@@ -408,7 +414,11 @@ function RecentRequestsPanel({ data, total }: { data: { id: Id<'requests'>; requ
       <CardContent className="pt-0">
         <ul className="space-y-1 text-xs max-h-40 overflow-auto pr-1">
           {data.map((i) => (
-            <li key={i.id} className="grid grid-cols-3 gap-2 items-center">
+            <li
+              key={i.id}
+              className={`grid grid-cols-3 gap-2 items-center cursor-pointer rounded-sm px-1 py-0.5 transition-colors ${activeId === i.id ? 'bg-muted' : 'hover:bg-muted/60'}`}
+              onClick={() => onSelect(i.id)}
+            >
               <span className="font-mono truncate" title={i.requestId}>
                 {i.requestId}
               </span>
