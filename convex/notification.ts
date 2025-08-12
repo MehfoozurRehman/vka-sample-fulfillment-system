@@ -62,3 +62,42 @@ export const markAllAsRead = mutation({
     return { ok: true, count: unread.length } as const;
   },
 });
+
+export const getNotificationTypes = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const all = await ctx.db
+      .query('notifications')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect();
+    const types = Array.from(new Set(all.map((n) => n.type))).sort();
+    return types;
+  },
+});
+
+export const getPreferences = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const prefs = await ctx.db
+      .query('notificationPreferences')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect();
+    return prefs;
+  },
+});
+
+export const setPreference = mutation({
+  args: { userId: v.id('users'), type: v.string(), enabled: v.boolean() },
+  handler: async (ctx, { userId, type, enabled }) => {
+    const existing = await ctx.db
+      .query('notificationPreferences')
+      .withIndex('by_user_type', (q) => q.eq('userId', userId).eq('type', type))
+      .unique();
+    if (existing) {
+      await ctx.db.patch(existing._id, { enabled, updatedAt: Date.now() });
+    } else {
+      await ctx.db.insert('notificationPreferences', { userId, type, enabled, updatedAt: Date.now() });
+    }
+    return { ok: true } as const;
+  },
+});
