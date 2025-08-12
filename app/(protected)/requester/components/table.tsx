@@ -4,6 +4,7 @@ import { ColumnDef, SortingState, flexRender, getCoreRowModel, getPaginationRowM
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -44,9 +45,9 @@ const columns: ColumnDef<RecentRequestsType[number]>[] = [
 
 export function DataTable({ data, isPending }: { data: RecentRequestsType; isPending: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [stageFilter, setStageFilter] = useState<string>('all');
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+  const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
+  const [stageFilter, setStageFilter] = useQueryState('stage', parseAsString.withDefault('all'));
   const [open, setOpen] = useState(false);
   const [activeRow, setActiveRow] = useState<(RecentRequestsType[number] & { id: Id<'requests'> }) | null>(null);
 
