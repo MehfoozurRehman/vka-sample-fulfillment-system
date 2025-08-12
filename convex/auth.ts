@@ -130,10 +130,6 @@ export const acceptInvite = mutation({
       throw new Error('Invalid invite');
     }
 
-    if (validInvite.active) {
-      throw new Error('Invite already accepted');
-    }
-
     if (validInvite.deletedAt) {
       throw new Error('Invite is deleted');
     }
