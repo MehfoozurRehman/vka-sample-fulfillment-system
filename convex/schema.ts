@@ -12,7 +12,7 @@ export default defineSchema({
     active: v.boolean(),
     profilePicture: v.optional(v.string()),
     lastLogin: v.optional(v.number()),
-    invitedBy: v.optional(v.id('users')),
+    invitedByUser: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
