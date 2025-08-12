@@ -20,7 +20,7 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
   const redirectingRef = useRef(false);
   const root = (pathname.split('/')[1] || '').toLowerCase();
 
-  const user = usePreloadedQuery(userQuery);
+  const user = usePreloadedQuery(userQuery) as (User & { activeRole?: string; roles?: string[] }) | null;
 
   const contextValue = useMemo(() => user, [user]);
 
@@ -29,11 +29,11 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
       router.replace('/');
       return;
     }
-
-    if (user.role && root !== user.role) {
+    const target = user.activeRole;
+    if (target && root !== target) {
       if (!redirectingRef.current) {
         redirectingRef.current = true;
-        router.replace(`/${user.role}`);
+        router.replace(`/${target}`);
         setTimeout(() => {
           redirectingRef.current = false;
         }, 300);
@@ -41,7 +41,7 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
     }
   }, [user, root, router]);
 
-  const showOverlay = !!user && root !== user.role;
+  const showOverlay = !!user && root !== user.activeRole;
 
   return (
     <AuthContext value={contextValue}>
