@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@convex-dev/resend':
         specifier: ^0.1.9
-        version: 0.1.9(convex-helpers@0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))(react@19.1.1)
+        version: 0.1.9(convex-helpers@0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))(react@19.1.1)
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -78,8 +78,8 @@ importers:
         specifier: ^1.25.4
         version: 1.25.4(react@19.1.1)
       convex-helpers:
-        specifier: ^0.1.101
-        version: 0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
+        specifier: ^0.1.102
+        version: 0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
@@ -1582,8 +1582,8 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  convex-helpers@0.1.101:
-    resolution: {integrity: sha512-NH7TerhVMZPwdgXmRJ2UGPm9O+9HOcy9wpWXjJBFEMB7CoqZNdi5BdfllbCcs5QX2KJD7bidZ1BhH/SNCVM1ig==}
+  convex-helpers@0.1.102:
+    resolution: {integrity: sha512-FISEUHjTKZFk4GE2jZZt6AvTFZCrzoSW6aXJUTY5IIlfuFvJCry3i6YMvOC3lL6ivR75lVEsGt56rwGP2kCcNQ==}
     hasBin: true
     peerDependencies:
       '@standard-schema/spec': ^1.0.0
@@ -1591,7 +1591,7 @@ packages:
       hono: ^4.0.5
       react: ^17.0.2 || ^18.0.0 || ^19.0.0
       typescript: ^5.5
-      zod: ^3.22.4
+      zod: ^3.22.4 || ^4.0.15
     peerDependenciesMeta:
       '@standard-schema/spec':
         optional: true
@@ -2995,22 +2995,22 @@ snapshots:
     optionalDependencies:
       react: 19.1.1
 
-  '@convex-dev/resend@0.1.9(convex-helpers@0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))(react@19.1.1)':
+  '@convex-dev/resend@0.1.9(convex-helpers@0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@convex-dev/rate-limiter': 0.2.12(convex@1.25.4(react@19.1.1))(react@19.1.1)
-      '@convex-dev/workpool': 0.2.17(convex-helpers@0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))
+      '@convex-dev/workpool': 0.2.17(convex-helpers@0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))
       convex: 1.25.4(react@19.1.1)
-      convex-helpers: 0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
+      convex-helpers: 0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
       remeda: 2.30.0
       svix: 1.71.0
     transitivePeerDependencies:
       - encoding
       - react
 
-  '@convex-dev/workpool@0.2.17(convex-helpers@0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))':
+  '@convex-dev/workpool@0.2.17(convex-helpers@0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17))(convex@1.25.4(react@19.1.1))':
     dependencies:
       convex: 1.25.4(react@19.1.1)
-      convex-helpers: 0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
+      convex-helpers: 0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17)
 
   '@dnd-kit/accessibility@3.1.1(react@19.1.1)':
     dependencies:
@@ -4286,7 +4286,7 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  convex-helpers@0.1.101(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17):
+  convex-helpers@0.1.102(@standard-schema/spec@1.0.0)(convex@1.25.4(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.0.17):
     dependencies:
       convex: 1.25.4(react@19.1.1)
     optionalDependencies:
