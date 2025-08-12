@@ -209,7 +209,7 @@ export const add = mutation({
       const isScreener = roles.includes('screener');
       const isRelated = relatedEmails.has(u.email);
       if (!isScreener && !isRelated) continue;
-      if (u._id === user._id) continue; // skip creator
+      if (u._id === user._id) continue;
       await ctx.db.insert('notifications', {
         userId: u._id,
         createdBy: user._id,
@@ -301,7 +301,7 @@ export const update = mutation({
     for (const u of allUsers) {
       if (u.deletedAt || !u.active) continue;
       const isRelated = relatedEmails.has(u.email);
-      if (!isRelated) continue; // only stakeholder parties on update
+      if (!isRelated) continue;
       if (u._id === actorUser._id) continue;
       await ctx.db.insert('notifications', {
         userId: u._id,
@@ -357,7 +357,6 @@ export const remove = mutation({
       timestamp: now,
     });
 
-    // Notifications to stakeholder related emails (but not creator)
     const stakeholder = await ctx.db.get(req.companyId as Id<'stakeholders'>);
     const relatedEmails = new Set<string>();
     if (stakeholder) {
