@@ -85,7 +85,10 @@ export const distributions = query({
   args: {},
   handler: async (ctx) => {
     const [users, products, requests, orders, stakeholders] = await Promise.all([
-      ctx.db.query('users').collect(),
+      ctx.db
+        .query('users')
+        .filter((q) => q.neq(q.field('googleId'), undefined))
+        .collect(),
       ctx.db.query('products').collect(),
       ctx.db.query('requests').collect(),
       ctx.db.query('orders').collect(),
