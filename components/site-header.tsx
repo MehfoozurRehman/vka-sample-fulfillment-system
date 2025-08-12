@@ -29,6 +29,9 @@ export function SiteHeader() {
 
   const isRoot = pathname.split('/').length === 2;
 
+  const root = pathname.split('/')[1] || '';
+  const isAdmin = root === 'admin';
+
   const previousPath = pathname.split('/').slice(0, -1).join('/');
 
   return (
@@ -43,7 +46,7 @@ export function SiteHeader() {
         )}
         <h1 className="text-base font-medium">{pageName}</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Notifications />
+          {!isAdmin && <Notifications />}
           <ThemeToggle />
         </div>
       </div>
