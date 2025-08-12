@@ -118,7 +118,6 @@ export const add = mutation({
     requestedBy: v.string(),
   },
   handler: async (ctx, args) => {
-    // Autonumber if blank or AUTO
     let requestId = (args.requestId || '').trim();
     if (!requestId || requestId.toUpperCase() === 'AUTO') {
       const all = await ctx.db
@@ -188,12 +187,115 @@ export const suggestions = query({
   args: {},
   handler: async (ctx) => {
     const reqs = await ctx.db.query('requests').collect();
+
     const applicationTypes = Array.from(new Set(reqs.filter((r) => !r.deletedAt && typeof r.applicationType === 'string' && r.applicationType.trim()).map((r) => r.applicationType.trim()))).sort(
       (a, b) => a.localeCompare(b),
     );
+
     const projectNames = Array.from(new Set(reqs.filter((r) => !r.deletedAt && typeof r.projectName === 'string' && r.projectName.trim()).map((r) => r.projectName.trim()))).sort((a, b) =>
       a.localeCompare(b),
     );
+
     return { applicationTypes, projectNames } as const;
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id('requests'),
+    contactName: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    country: v.string(),
+    applicationType: v.string(),
+    projectName: v.string(),
+    productsRequested: v.array(
+      v.object({
+        productId: v.id('products'),
+        quantity: v.number(),
+        notes: v.optional(v.string()),
+      }),
+    ),
+  },
+  handler: async (ctx, { id, ...rest }) => {
+    const req = await ctx.db.get(id);
+
+    if (!req || req.deletedAt) throw new Error('Request not found');
+
+    if (req.reviewedBy) throw new Error('Cannot edit a reviewed request');
+
+    const existingOrder = await ctx.db
+      .query('orders')
+      .withIndex('by_requestId', (q) => q.eq('requestId', id))
+      .first();
+
+    if (existingOrder) throw new Error('Cannot edit once order exists');
+
+    await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+
+    const actorUser = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('email'), req.requestedBy))
+      .first();
+
+    if (!actorUser) throw new Error('No actor user found');
+
+    await ctx.db.insert('auditLogs', {
+      userId: actorUser._id,
+      action: 'updateRequest',
+      table: 'requests',
+      recordId: id,
+      changes: rest,
+      timestamp: Date.now(),
+    });
+
+    return { ok: true } as const;
+  },
+});
+
+export const getOne = query({
+  args: { id: v.id('requests') },
+  handler: async (ctx, { id }) => {
+    const r = await ctx.db.get(id);
+    if (!r || r.deletedAt) return null;
+    return r;
+  },
+});
+
+export const remove = mutation({
+  args: { id: v.id('requests') },
+  handler: async (ctx, { id }) => {
+    const req = await ctx.db.get(id);
+
+    if (!req || req.deletedAt) throw new Error('Request not found');
+
+    if (req.reviewedBy) throw new Error('Cannot delete a reviewed request');
+
+    const existingOrder = await ctx.db
+      .query('orders')
+      .withIndex('by_requestId', (q) => q.eq('requestId', id))
+      .first();
+
+    if (existingOrder) throw new Error('Cannot delete once order exists');
+
+    await ctx.db.patch(id, { deletedAt: Date.now() });
+
+    const actorUser = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('email'), req.requestedBy))
+      .first();
+
+    if (!actorUser) throw new Error('No actor user found');
+
+    await ctx.db.insert('auditLogs', {
+      userId: actorUser._id,
+      action: 'deleteRequest',
+      table: 'requests',
+      recordId: id,
+      changes: { deletedAt: Date.now() },
+      timestamp: Date.now(),
+    });
+
+    return { ok: true } as const;
   },
 });
