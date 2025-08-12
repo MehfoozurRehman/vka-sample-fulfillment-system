@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useEffect } from 'react';
+import { createContext, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { Loader } from 'lucide-react';
@@ -8,24 +8,40 @@ import { User } from '@/types';
 
 export const AuthContext = createContext<User | null>(null);
 
-export default function AuthProvider({ children, user }: { children: React.ReactNode; user: User }) {
+interface AuthProviderProps {
+  children: React.ReactNode;
+  user: User | null;
+}
+
+export default function AuthProvider({ children, user }: AuthProviderProps) {
   const router = useRouter();
-
   const pathname = usePathname();
+  const redirectingRef = useRef(false);
+  const root = (pathname.split('/')[1] || '').toLowerCase();
 
-  const root = pathname.split('/')[1];
+  const contextValue = useMemo(() => user, [user]);
 
   useEffect(() => {
-    if (pathname !== `/${user.role}` && root !== user.role) {
-      router.push(`/${user.role}`);
+    if (!user) return;
+
+    if (user.role && root !== user.role) {
+      if (!redirectingRef.current) {
+        redirectingRef.current = true;
+        router.replace(`/${user.role}`);
+        setTimeout(() => {
+          redirectingRef.current = false;
+        }, 300);
+      }
     }
-  }, [pathname, user.role, root, router]);
+  }, [user, root, router]);
+
+  const showOverlay = !!user && root !== user.role;
 
   return (
-    <AuthContext value={user}>
-      {root !== user.role && (
-        <div suppressHydrationWarning className="flex flex-col gap-4 items-center justify-center h-screen position-fixed top-0 left-0 right-0 bg-background">
-          <Loader className="animate-spin" />
+    <AuthContext value={contextValue}>
+      {showOverlay && (
+        <div suppressHydrationWarning className="pointer-events-none fixed inset-0 z-50 flex h-screen flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm">
+          <Loader className="size-6 animate-spin" />
         </div>
       )}
       {children}
