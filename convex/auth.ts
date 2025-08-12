@@ -4,6 +4,10 @@ import { Id } from './_generated/dataModel';
 import { RoleType } from '@/constants';
 import { v } from 'convex/values';
 
+function now() {
+  return Date.now();
+}
+
 export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
@@ -44,24 +48,12 @@ export const checkUserRole = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const { userId } = args;
+    if (!userId) throw new Error('User ID is required');
 
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
+    const user = await ctx.db.get(userId as Id<'users'>);
+    if (!user) throw new Error('User not found');
 
-    const user = await ctx.db
-      .query('users')
-      .filter((q) => q.eq(q.field('_id'), userId))
-      .first();
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return {
-      id: user._id,
-      role: user.role as RoleType,
-    };
+    return { id: user._id, role: user.role as RoleType };
   },
 });
 
@@ -80,15 +72,15 @@ export const login = mutation({
     if (!user.active) throw new Error('User is inactive');
     if (user.deletedAt) throw new Error('User is deleted');
 
-    const now = Date.now();
-    await ctx.db.patch(user._id, { lastLogin: now });
+    const at = now();
+    await ctx.db.patch(user._id, { lastLogin: at });
     await ctx.db.insert('auditLogs', {
       userId: user._id,
       action: 'login',
       table: 'users',
       recordId: user._id,
-      changes: { lastLogin: now },
-      timestamp: now,
+      changes: { lastLogin: at },
+      timestamp: at,
     });
 
     return { id: user._id, role: user.role as RoleType };
@@ -99,65 +91,44 @@ export const acceptInvite = mutation({
   args: { picture: v.string(), googleId: v.string(), inviteId: v.string() },
   handler: async (ctx, args) => {
     const { picture, googleId, inviteId } = args;
+    if (!googleId || !inviteId) throw new Error('Google ID and invite ID are required');
 
-    if (!googleId || !inviteId) {
-      throw new Error('Google ID and invite ID are required');
-    }
+    const inviteDoc = await ctx.db.get(inviteId as Id<'users'>);
+    if (!inviteDoc || inviteDoc.deletedAt || inviteDoc.googleId) throw new Error('Invalid invite');
 
     const googleOwner = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('googleId'), googleId))
+      .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
       .first();
 
-    if (googleOwner && googleOwner._id !== (inviteId as unknown as Id<'users'>)) {
-      throw new Error('This Google account is already linked to another user');
-    }
+    if (googleOwner && googleOwner._id !== inviteDoc._id) throw new Error('Google account already linked');
 
-    const validInvite = await ctx.db
-      .query('users')
-      .filter((q) => q.eq(q.field('_id'), inviteId) && q.eq(q.field('googleId'), undefined))
-      .first();
+    await ctx.db.patch(inviteDoc._id, { googleId, active: true, profilePicture: picture });
 
-    if (!validInvite) {
-      throw new Error('Invalid invite');
-    }
-
-    if (validInvite.deletedAt) {
-      throw new Error('Invite is deleted');
-    }
-
-    await ctx.db.patch(inviteId as Id<'users'>, {
-      googleId,
-      active: true,
-      profilePicture: picture,
-    });
-
+    const at = now();
     await ctx.db.insert('auditLogs', {
-      userId: inviteId as Id<'users'>,
+      userId: inviteDoc._id,
       action: 'acceptInvite',
       table: 'users',
-      recordId: inviteId,
+      recordId: inviteDoc._id,
       changes: { googleId, active: true, profilePicture: picture },
-      timestamp: Date.now(),
+      timestamp: at,
     });
 
-    if (validInvite.invitedByUser) {
-      const inviter = await ctx.db.get(validInvite.invitedByUser as Id<'users'>);
+    if (inviteDoc.invitedByUser) {
+      const inviter = await ctx.db.get(inviteDoc.invitedByUser as Id<'users'>);
       if (inviter) {
         await ctx.db.insert('notifications', {
           userId: inviter._id,
-          createdBy: inviteId as Id<'users'>,
+          createdBy: inviteDoc._id,
           type: 'inviteAccepted',
-          message: `${validInvite.name || validInvite.email} accepted the invitation`,
+          message: `${inviteDoc.name || inviteDoc.email} accepted the invitation`,
           read: false,
-          createdAt: Date.now(),
+          createdAt: at,
         });
       }
     }
 
-    return {
-      id: inviteId,
-      role: validInvite?.role as RoleType,
-    };
+    return { id: inviteDoc._id, role: inviteDoc.role as RoleType };
   },
 });
