@@ -115,19 +115,13 @@ export default function AdminDashboard() {
               auditLogs.slice(0, 8).map((l) => (
                 <div key={l.id} className="py-1.5 border-b last:border-b-0 text-xs flex flex-col gap-0.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{l.action}</span>
+                    <span className="font-medium capitalize">{l.action.replace(/([a-z])([A-Z])/g, '$1 $2')}</span>
                     <span className="text-muted-foreground">{new Date(l.timestamp).toLocaleDateString()} </span>
                   </div>
                   <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground">
                     <span>{l.userName}</span>
                     <span>·</span>
                     <span>{l.table}</span>
-                    {l.recordId && (
-                      <>
-                        <span>·</span>
-                        <span className="font-mono">{l.recordId}</span>
-                      </>
-                    )}
                   </div>
                 </div>
               ))}
@@ -138,7 +132,6 @@ export default function AdminDashboard() {
           </CardFooter>
         </Card>
       </div>
-
       <div className="grid gap-6 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-3">
         <DistributionListCard title="Users by Role" items={top(distributions?.usersByRole)} emptyText="No roles" />
         <DistributionListCard title="Products by Category" items={top(distributions?.productsByCategory)} emptyText="No categories" />
