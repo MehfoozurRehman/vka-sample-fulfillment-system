@@ -3,8 +3,11 @@
 import { createContext, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
+import { Id } from '@/convex/_generated/dataModel';
 import { Loader } from 'lucide-react';
 import { User } from '@/types';
+import { api } from '@/convex/_generated/api';
+import { useQuery } from 'convex/react';
 
 export const AuthContext = createContext<User | null>(null);
 
@@ -13,11 +16,15 @@ interface AuthProviderProps {
   user: User | null;
 }
 
-export default function AuthProvider({ children, user }: AuthProviderProps) {
+export default function AuthProvider({ children, user: userProp }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const redirectingRef = useRef(false);
   const root = (pathname.split('/')[1] || '').toLowerCase();
+
+  const userClient = useQuery(api.auth.getUser, { userId: userProp?.id as Id<'users'> });
+
+  const user = userClient ?? userProp;
 
   const contextValue = useMemo(() => user, [user]);
 
