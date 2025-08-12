@@ -91,7 +91,7 @@ function Notifications() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-100 rounded-md border bg-popover text-popover-foreground shadow-md"
+            className="absolute right-0 mt-2 w-100 rounded-md border bg-popover text-popover-foreground shadow-md z-50"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <div className="text-sm font-medium">Notifications</div>
