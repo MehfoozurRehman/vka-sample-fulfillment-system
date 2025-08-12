@@ -35,6 +35,7 @@ import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
+import { useQueryState, parseAsString } from 'nuqs';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -51,7 +52,7 @@ const detailChartConfig = {
 } satisfies ChartConfig;
 
 export function DataTable({ data: initialData, isPending }: { data: ProductType[]; isPending: boolean }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
