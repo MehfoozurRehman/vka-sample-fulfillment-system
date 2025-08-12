@@ -16,7 +16,7 @@ interface AuthProviderProps {
   user: User | null;
 }
 
-export default function AuthProvider({ children, user: userProp }: AuthProviderProps) {
+export function AuthProvider({ children, user: userProp }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const redirectingRef = useRef(false);
