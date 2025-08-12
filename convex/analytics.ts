@@ -1,5 +1,33 @@
+import { Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { v } from 'convex/values';
+
+interface BaseDoc {
+  deletedAt?: number;
+  createdAt: number;
+}
+interface UserDoc extends BaseDoc {
+  active?: boolean;
+  roles?: string[];
+  activeRole?: string;
+  role?: string;
+}
+interface StakeholderDoc extends BaseDoc {
+  vipFlag: boolean;
+}
+interface ProductDoc extends BaseDoc {
+  category: string;
+}
+interface RequestDoc extends BaseDoc {
+  status: string;
+}
+interface OrderDoc extends BaseDoc {
+  status: string;
+}
+interface AuditLogDoc {
+  _id: Id<'auditLogs'>;
+  timestamp: number;
+}
 
 function isActive<T extends { deletedAt?: number | undefined }>(d: T) {
   return !d.deletedAt;
@@ -11,7 +39,7 @@ export const overview = query({
     const days = rangeDays ?? 30;
     const startTs = Date.now() - days * 24 * 60 * 60 * 1000;
 
-    const [users, stakeholders, products, requests, orders, auditLogs] = await Promise.all([
+    const [users, stakeholders, products, requests, orders, auditLogs] = (await Promise.all([
       ctx.db
         .query('users')
         .withIndex('by_createdAt', (q) => q.gte('createdAt', startTs))
@@ -36,7 +64,7 @@ export const overview = query({
         .query('auditLogs')
         .withIndex('by_timestamp', (q) => q.gte('timestamp', startTs))
         .collect(),
-    ]);
+    ])) as [UserDoc[], StakeholderDoc[], ProductDoc[], RequestDoc[], OrderDoc[], AuditLogDoc[]];
 
     const activeUsersArr = users.filter(isActive);
     const activeStakeholdersArr = stakeholders.filter(isActive);
@@ -83,7 +111,7 @@ export const timeseries = query({
     const startTs = Date.now() - rangeDays * 24 * 60 * 60 * 1000;
     const dateKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
-    const [users, stakeholders, products, requests, orders] = await Promise.all([
+    const [users, stakeholders, products, requests, orders] = (await Promise.all([
       ctx.db
         .query('users')
         .withIndex('by_createdAt', (q) => q.gte('createdAt', startTs))
@@ -104,16 +132,13 @@ export const timeseries = query({
         .query('orders')
         .withIndex('by_createdAt', (q) => q.gte('createdAt', startTs))
         .collect(),
-    ]);
+    ])) as [UserDoc[], StakeholderDoc[], ProductDoc[], RequestDoc[], OrderDoc[]];
 
     const map: Record<string, { date: string; users: number; stakeholders: number; products: number; requests: number; orders: number }> = {};
-
     function add(ts: number, field: keyof Omit<(typeof map)[string], 'date'>) {
       if (ts < startTs) return;
       const key = dateKey(ts);
-      if (!map[key]) {
-        map[key] = { date: key, users: 0, stakeholders: 0, products: 0, requests: 0, orders: 0 };
-      }
+      if (!map[key]) map[key] = { date: key, users: 0, stakeholders: 0, products: 0, requests: 0, orders: 0 };
       map[key][field] += 1;
     }
 
@@ -131,7 +156,7 @@ export const timeseries = query({
 export const distributions = query({
   args: {},
   handler: async (ctx) => {
-    const [users, products, requests, orders, stakeholders] = await Promise.all([
+    const [users, products, requests, orders, stakeholders] = (await Promise.all([
       ctx.db
         .query('users')
         .withIndex('by_createdAt', (q) => q.gte('createdAt', Date.now() - 180 * 24 * 60 * 60 * 1000))
@@ -140,7 +165,7 @@ export const distributions = query({
       ctx.db.query('requests').collect(),
       ctx.db.query('orders').collect(),
       ctx.db.query('stakeholders').collect(),
-    ]);
+    ])) as [UserDoc[], ProductDoc[], RequestDoc[], OrderDoc[], StakeholderDoc[]];
 
     function tally<T extends string | number>(items: T[]) {
       return Object.entries(
@@ -153,7 +178,13 @@ export const distributions = query({
         .sort((a, b) => b.value - a.value);
     }
 
-    const usersByRole = tally(users.filter(isActive).map((u) => u.role));
+    const usersByRole = tally(
+      users.filter(isActive).flatMap((u) => {
+        if (u.roles && u.roles.length) return Array.from(new Set(u.roles));
+        return [u.activeRole].filter(Boolean) as string[];
+      }),
+    );
+
     const productsByCategory = tally(products.filter(isActive).map((p) => p.category));
     const requestsByStatus = tally(requests.filter(isActive).map((r) => r.status));
     const ordersByStatus = tally(orders.filter(isActive).map((o) => o.status));
