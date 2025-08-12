@@ -117,3 +117,36 @@ export const updateStatus = mutation({
     return { ok: true };
   },
 });
+
+export const updateProfile = mutation({
+  args: {
+    userId: v.id('users'),
+    name: v.optional(v.string()),
+    designation: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId, name, designation }) => {
+    const u = await ctx.db.get(userId);
+
+    if (!u) throw new Error('User not found');
+
+    const patch: Partial<{ name: string; designation: string; profilePicture: string; updatedAt: number }> = { updatedAt: Date.now() };
+
+    if (typeof name === 'string') patch.name = name;
+
+    if (typeof designation === 'string') patch.designation = designation;
+
+    await ctx.db.patch(userId, patch);
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'updateProfile',
+      table: 'users',
+      recordId: userId,
+      changes: patch,
+      timestamp: Date.now(),
+    });
+
+    return { ok: true } as const;
+  },
+});
+
