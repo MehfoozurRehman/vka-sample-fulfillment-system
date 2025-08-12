@@ -7,6 +7,8 @@ export const list = query({
   handler: async (ctx) => {
     const items = await ctx.db
       .query('products')
+      .withIndex('by_createdAt')
+      .order('desc')
       .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
@@ -57,6 +59,8 @@ export const stats = query({
 
     const requests = await ctx.db
       .query('requests')
+      .withIndex('by_createdAt')
+      .order('desc')
       .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
@@ -72,6 +76,8 @@ export const stats = query({
 
     const orders = await ctx.db
       .query('orders')
+      .withIndex('by_createdAt')
+      .order('desc')
       .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
@@ -129,8 +135,9 @@ export const add = mutation({
 
     const duplicate = await ctx.db
       .query('products')
-      .filter((q) => q.and(q.eq(q.field('productId'), productId), q.eq(q.field('deletedAt'), undefined)))
-      .first();
+      .withIndex('by_productId', (q) => q.eq('productId', productId))
+      .filter((q) => q.eq(q.field('deletedAt'), undefined))
+      .unique();
     if (duplicate) throw new Error('Product with this productId already exists');
 
     const now = Date.now();
@@ -153,7 +160,8 @@ export const update = mutation({
 
     const dupe = await ctx.db
       .query('products')
-      .filter((q) => q.and(q.eq(q.field('productId'), rest.productId), q.neq(q.field('_id'), id), q.eq(q.field('deletedAt'), undefined)))
+      .withIndex('by_productId', (q) => q.eq('productId', rest.productId))
+      .filter((q) => q.and(q.eq(q.field('deletedAt'), undefined), q.neq(q.field('_id'), id)))
       .first();
     if (dupe) throw new Error('Another product with this productId exists');
 
