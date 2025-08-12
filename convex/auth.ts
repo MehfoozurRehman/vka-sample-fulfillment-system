@@ -170,6 +170,8 @@ export const acceptInvite = mutation({
           createdAt: Date.now(),
         });
       }
+    } else {
+      console.warn('acceptInvite: invitedBy missing on invite user record', { inviteId });
     }
 
     return {
