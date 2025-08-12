@@ -11,6 +11,8 @@ export const getUsers = query({
   handler: async (ctx) => {
     const users = await ctx.db
       .query('users')
+      .withIndex('by_createdAt')
+      .order('desc')
       .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
@@ -54,8 +56,8 @@ export const inviteUser = mutation({
 
     const existingUser = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('email'), email))
-      .first();
+      .withIndex('by_email', (q) => q.eq('email', email))
+      .unique();
 
     if (existingUser) {
       throw new Error('User with this email already exists');
