@@ -162,42 +162,52 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
               </Button>
             </div>
             <div className="flex flex-col gap-4">
-              {items.map((item, idx) => (
-                <div key={idx} className="grid gap-2 md:grid-cols-4">
-                  <div className="md:col-span-2">
-                    <InputWithSuggestions
-                      name={`product-${idx}`}
-                      value={item.productId}
-                      onValueChange={(v) => {
-                        setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, productId: v } : p)));
-                      }}
-                      options={productOptions}
-                      placeholder="Select product"
-                    />
+              {items.map((item, idx) => {
+                const selectedOthers = items
+                  .filter((_, i) => i !== idx)
+                  .map((i) => i.productId)
+                  .filter(Boolean);
+                const filteredProductOptions = productOptions.filter((o) => !selectedOthers.includes(o) || o === item.productId);
+                return (
+                  <div key={idx} className="grid gap-2 md:grid-cols-4">
+                    <div className="md:col-span-2">
+                      <InputWithSuggestions
+                        name={`product-${idx}`}
+                        value={item.productId}
+                        onValueChange={(v) => {
+                          // disallow selecting a product already chosen in another line
+                          const already = selectedOthers.includes(v);
+                          if (already) return; // ignore
+                          setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, productId: v } : p)));
+                        }}
+                        options={filteredProductOptions}
+                        placeholder="Select product"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        type="number"
+                        min={1}
+                        name={`qty-${idx}`}
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const qty = parseInt(e.target.value, 10) || 0;
+                          setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: qty } : p)));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Textarea
+                        name={`notes-${idx}`}
+                        value={item.notes}
+                        placeholder="Notes"
+                        className="resize-none h-10"
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, notes: e.target.value } : p)))}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Input
-                      type="number"
-                      min={1}
-                      name={`qty-${idx}`}
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const qty = parseInt(e.target.value, 10) || 0;
-                        setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: qty } : p)));
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Textarea
-                      name={`notes-${idx}`}
-                      value={item.notes}
-                      placeholder="Notes"
-                      className="resize-none h-10"
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, notes: e.target.value } : p)))}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {!items.length && <div className="text-sm text-muted-foreground">No products added yet.</div>}
             </div>
           </div>
