@@ -108,6 +108,7 @@ export const stats = query({
 
 export const add = mutation({
   args: {
+    userId: v.id('users'),
     productId: v.string(),
     productName: v.string(),
     category: v.string(),
@@ -141,20 +142,47 @@ export const add = mutation({
     if (duplicate) throw new Error('Product with this productId already exists');
 
     const now = Date.now();
-    const id = await ctx.db.insert('products', { ...args, productId, createdAt: now, updatedAt: now });
+    const id = await ctx.db.insert('products', { productId, productName: args.productName, category: args.category, location: args.location, createdAt: now, updatedAt: now });
+
+    await ctx.db.insert('auditLogs', {
+      userId: args.userId,
+      action: 'addProduct',
+      table: 'products',
+      recordId: id,
+      changes: { productId, productName: args.productName, category: args.category, location: args.location },
+      timestamp: now,
+    });
+
+    const adminUsers = await ctx.db.query('users').collect();
+    for (const u of adminUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      if (!roles.includes('admin')) continue;
+      if (u._id === args.userId) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: args.userId,
+        type: 'productAdded',
+        message: `Product ${productId} created`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
     return id;
   },
 });
 
 export const update = mutation({
   args: {
+    userId: v.id('users'),
     id: v.id('products'),
     productId: v.string(),
     productName: v.string(),
     category: v.string(),
     location: v.string(),
   },
-  handler: async (ctx, { id, ...rest }) => {
+  handler: async (ctx, { userId, id, ...rest }) => {
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Product not found');
 
@@ -166,16 +194,69 @@ export const update = mutation({
     if (dupe) throw new Error('Another product with this productId exists');
 
     await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'updateProduct',
+      table: 'products',
+      recordId: id,
+      changes: rest,
+      timestamp: Date.now(),
+    });
+
+    const now = Date.now();
+    const adminUsers = await ctx.db.query('users').collect();
+    for (const u of adminUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      if (!roles.includes('admin')) continue;
+      if (u._id === userId) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: userId,
+        type: 'productUpdated',
+        message: `Product ${rest.productId} updated`,
+        read: false,
+        createdAt: now,
+      });
+    }
     return { ok: true };
   },
 });
 
 export const remove = mutation({
-  args: { id: v.id('products') },
-  handler: async (ctx, { id }) => {
+  args: { userId: v.id('users'), id: v.id('products') },
+  handler: async (ctx, { userId, id }) => {
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Product not found');
     await ctx.db.patch(id, { deletedAt: Date.now() });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'deleteProduct',
+      table: 'products',
+      recordId: id,
+      changes: { deletedAt: Date.now() },
+      timestamp: Date.now(),
+    });
+
+    const now = Date.now();
+    const adminUsers = await ctx.db.query('users').collect();
+    for (const u of adminUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      if (!roles.includes('admin')) continue;
+      if (u._id === userId) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: userId,
+        type: 'productRemoved',
+        message: `Product ${existing.productId} removed`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
     return { ok: true };
   },
 });
