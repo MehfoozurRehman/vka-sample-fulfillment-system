@@ -36,6 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { useQueryState, parseAsString } from 'nuqs';
+import { useAuth } from '@/hooks/use-user';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -52,6 +53,8 @@ const detailChartConfig = {
 } satisfies ChartConfig;
 
 export function DataTable({ data: initialData, isPending }: { data: ProductType[]; isPending: boolean }) {
+  const auth = useAuth();
+
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
@@ -272,7 +275,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                 onClick={() => {
                   if (!selected) return;
                   startSaving(async () => {
-                    await remove({ id: selected.id as Id<'products'> });
+                    await remove({ userId: auth.id, id: selected.id as Id<'products'> });
                     setSelected(null);
                   });
                 }}
@@ -303,7 +306,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                     };
 
                     startSaving(async () => {
-                      await update(payload);
+                      await update({ userId: auth.id, ...payload });
                       setSelected({ ...selected, ...payload });
                       setEdit(null);
                     });
