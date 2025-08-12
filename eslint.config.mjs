@@ -17,6 +17,20 @@ const eslintConfig = [
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
+  {
+    files: ['**/*.{js,ts,tsx}'],
+    rules: {
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
+        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
+        { blankLine: 'always', prev: '*', next: 'return' },
+        { blankLine: 'always', prev: '*', next: ['function', 'class', 'block-like'] },
+        { blankLine: 'always', prev: ['function', 'class', 'block-like'], next: '*' },
+        { blankLine: 'always', prev: '*', next: 'export' },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;
