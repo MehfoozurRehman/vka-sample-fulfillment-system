@@ -19,7 +19,7 @@ export function NavUser() {
 
   const pathname = usePathname();
 
-  const root = pathname.split('/').slice(0, 3).join('/');
+  const root = pathname.split('/')[1] || '';
 
   const [isLoggingOut, startLogout] = useTransition();
 
@@ -61,7 +61,7 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href={`${root}/profile`}>
+              <Link href={`/${root}/profile`}>
                 <DropdownMenuItem>
                   <IconUserCircle />
                   Account
