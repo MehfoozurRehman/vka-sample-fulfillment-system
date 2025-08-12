@@ -7,8 +7,9 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { DataType } from '../type';
+import { useQueryState, parseAsString } from 'nuqs';
 
 const chartConfig = {
   created: {
@@ -19,7 +20,7 @@ const chartConfig = {
 
 export function Chart({ data }: { data: DataType[] }) {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState('90d');
+  const [timeRange, setTimeRange] = useQueryState('range', parseAsString.withDefault('90d'));
 
   const chartData = useMemo(() => {
     if (!data) return [];
@@ -38,7 +39,7 @@ export function Chart({ data }: { data: DataType[] }) {
     if (isMobile) {
       setTimeRange('7d');
     }
-  }, [isMobile]);
+  }, [isMobile, setTimeRange]);
 
   const referenceDate = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
   const filteredData = chartData.filter((item: { date: string; created: number }) => {
