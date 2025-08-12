@@ -37,6 +37,7 @@ import dayjs from 'dayjs';
 import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
+import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMutation } from 'convex/react';
 
@@ -113,6 +114,7 @@ const columns: ColumnDef<DataType>[] = [
 ];
 export function DataTable({ data: initialData, isPending }: { data: DataType[]; isPending: boolean }) {
   const isMobile = useIsMobile();
+  const currentUser = useAuth();
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
   const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
   const [selectedUser, setSelectedUser] = useState<null | (DataType & { roles?: string[]; activeRole?: string })>(null);
@@ -179,6 +181,12 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
       toast.error('No users selected');
       return;
     }
+
+    if (status === 'inactive' && selectedUsers.some((u) => u.id === currentUser.id)) {
+      toast.error('You cannot deactivate yourself');
+      return;
+    }
+
     startBulkActing(async () => {
       try {
         await Promise.all(selectedUsers.map((user) => updateStatus({ userId: user.id as Id<'users'>, status })));
@@ -192,6 +200,10 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
 
   const handleSetStatus = (status: 'active' | 'inactive') => {
     if (!selectedUser) return;
+    if (status === 'inactive' && selectedUser.id === currentUser.id) {
+      toast.error('You cannot deactivate yourself');
+      return;
+    }
     startActing(async () => {
       try {
         await updateStatus({ userId: selectedUser.id as Id<'users'>, status });
@@ -242,7 +254,12 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                   {isBulkActing && <Loader className="mr-2 size-4 animate-spin" />}
                   Bulk Activate
                 </Button>
-                <Button variant="destructive" size="sm" disabled={isBulkActing || selectedUsers.length === 0} onClick={() => handleBulkSetStatus('inactive')}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={isBulkActing || selectedUsers.length === 0 || selectedUsers.some((u) => u.id === currentUser.id)}
+                  onClick={() => handleBulkSetStatus('inactive')}
+                >
                   {isBulkActing && <Loader className="mr-2 size-4 animate-spin" />}
                   Bulk Deactivate
                 </Button>
@@ -519,7 +536,8 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                   <Button
                     onClick={() => handleSetStatus(selectedUser?.status === 'active' ? 'inactive' : 'active')}
                     variant={selectedUser?.status === 'active' ? 'destructive' : 'default'}
-                    disabled={isActing || !selectedUser}
+                    disabled={isActing || !selectedUser || (selectedUser?.status === 'active' && selectedUser.id === currentUser.id)}
+                    title={selectedUser?.status === 'active' && selectedUser.id === currentUser.id ? 'You cannot deactivate yourself' : undefined}
                   >
                     {isActing && <Loader className="mr-2 size-4 animate-spin" />}
                     {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
