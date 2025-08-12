@@ -17,7 +17,7 @@ export default async function LoginPage() {
     const user = await fetchQuery(api.auth.checkUserRole, { userId: token });
 
     if (user) {
-      return redirect(`/${user.role}`);
+      return redirect(`/${user.activeRole}`);
     }
   }
 
