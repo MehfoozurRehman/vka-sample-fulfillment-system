@@ -149,6 +149,20 @@ export const acceptInvite = mutation({
       timestamp: dayjs().unix(),
     });
 
+    if (validInvite.invitedBy) {
+      const inviter = await ctx.db.get(validInvite.invitedBy as unknown as Id<'users'>);
+      if (inviter) {
+        await ctx.db.insert('notifications', {
+          userId: inviter._id,
+          createdBy: inviteId as Id<'users'>,
+          type: 'inviteAccepted',
+          message: `${validInvite.name || validInvite.email} accepted the invitation`,
+          read: false,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
     return {
       id: inviteId,
       role: validInvite?.role as RoleType,
