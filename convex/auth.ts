@@ -8,23 +8,36 @@ function now() {
   return Date.now();
 }
 
+interface MinimalUser {
+  _id: Id<'users'>;
+  email: string;
+  name?: string;
+  designation?: string;
+  profilePicture?: string;
+  googleId?: string;
+  active: boolean;
+  deletedAt?: number;
+  lastLogin?: number;
+  roles?: string[];
+  activeRole?: string;
+  invitedByUser?: Id<'users'>;
+}
+
+function extractRoles(u: MinimalUser) {
+  const roles = u.roles && u.roles.length > 0 ? u.roles : [];
+  const activeRole = u.activeRole || (roles.length ? roles[0] : undefined);
+  return { roles, activeRole };
+}
+
 export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const { userId } = args;
-
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    const user = await ctx.db.get(userId as Id<'users'>);
-
-    if (!user) {
-      throw new Error('User not found');
-    }
+    if (!userId) throw new Error('User ID is required');
+    const user = (await ctx.db.get(userId as Id<'users'>)) as MinimalUser | null;
+    if (!user) throw new Error('User not found');
 
     let picture = '';
-
     if (typeof user.profilePicture === 'string' && user.profilePicture.startsWith('http')) {
       picture = user.profilePicture;
     } else if (user.profilePicture) {
@@ -32,11 +45,14 @@ export const getUser = query({
       picture = url ?? '';
     }
 
+    const { roles, activeRole } = extractRoles(user);
+
     return {
       picture,
       id: user._id,
       name: user.name,
-      role: user.role,
+      activeRole,
+      roles,
       email: user.email,
       designation: user.designation,
       status: (!user.googleId ? 'invited' : user.active ? 'active' : 'inactive') as 'invited' | 'active' | 'inactive',
@@ -48,12 +64,16 @@ export const checkUserRole = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const { userId } = args;
+
     if (!userId) throw new Error('User ID is required');
 
-    const user = await ctx.db.get(userId as Id<'users'>);
+    const user = (await ctx.db.get(userId as Id<'users'>)) as MinimalUser | null;
+
     if (!user) throw new Error('User not found');
 
-    return { id: user._id, role: user.role as RoleType };
+    const { roles, activeRole } = extractRoles(user);
+
+    return { id: user._id, activeRole: activeRole as RoleType, roles };
   },
 });
 
@@ -62,12 +82,10 @@ export const login = mutation({
   handler: async (ctx, args) => {
     const { googleId } = args;
     if (!googleId) throw new Error('Google ID is required');
-
-    const user = await ctx.db
+    const user = (await ctx.db
       .query('users')
       .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
-      .first();
-
+      .first()) as MinimalUser | null;
     if (!user) throw new Error('User not found');
     if (!user.active) throw new Error('User is inactive');
     if (user.deletedAt) throw new Error('User is deleted');
@@ -83,7 +101,8 @@ export const login = mutation({
       timestamp: at,
     });
 
-    return { id: user._id, role: user.role as RoleType };
+    const { roles, activeRole } = extractRoles(user);
+    return { id: user._id, activeRole: activeRole as RoleType, roles };
   },
 });
 
@@ -93,13 +112,13 @@ export const acceptInvite = mutation({
     const { picture, googleId, inviteId } = args;
     if (!googleId || !inviteId) throw new Error('Google ID and invite ID are required');
 
-    const inviteDoc = await ctx.db.get(inviteId as Id<'users'>);
+    const inviteDoc = (await ctx.db.get(inviteId as Id<'users'>)) as MinimalUser | null;
     if (!inviteDoc || inviteDoc.deletedAt || inviteDoc.googleId) throw new Error('Invalid invite');
 
-    const googleOwner = await ctx.db
+    const googleOwner = (await ctx.db
       .query('users')
       .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
-      .first();
+      .first()) as MinimalUser | null;
 
     if (googleOwner && googleOwner._id !== inviteDoc._id) throw new Error('Google account already linked');
 
@@ -129,6 +148,7 @@ export const acceptInvite = mutation({
       }
     }
 
-    return { id: inviteDoc._id, role: inviteDoc.role as RoleType };
+    const { roles, activeRole } = extractRoles(inviteDoc);
+    return { id: inviteDoc._id, activeRole: activeRole as RoleType, roles };
   },
 });
