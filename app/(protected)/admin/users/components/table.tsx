@@ -15,7 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Copy, Loader } from 'lucide-react';
+import { Copy, Loader, Mail } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,6 +33,7 @@ import { InviteUser } from './invite-user';
 import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -161,6 +162,9 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   const [isActing, startActing] = useTransition();
 
   const updateStatus = useMutation(api.user.updateStatus);
+  const updateRole = useMutation(api.user.updateRole);
+  const resendInvite = useMutation(api.user.resendInvite);
+  type RoleType = (typeof roles)[number];
 
   const [isBulkActing, startBulkActing] = useTransition();
   const selectedRowIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
@@ -354,6 +358,77 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                     <span className="font-medium">{selectedUser.createdAt ? dayjs(selectedUser.createdAt).format('MMM D, YYYY h:mm A') : '-'}</span>
                   </div>
                 </div>
+                {selectedUser?.status === 'invited' && (
+                  <div className="rounded-lg border border-dashed p-3 flex flex-col gap-3">
+                    <div className="text-sm">
+                      <span className="font-medium">Invitation Pending</span>
+                      <p className="text-xs text-muted-foreground">Resend the email or copy the direct invite link for manual sharing.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        size="sm"
+                        className="sm:flex-1"
+                        disabled={isActing}
+                        onClick={() => {
+                          startActing(async () => {
+                            try {
+                              await resendInvite({ userId: selectedUser.id as Id<'users'> });
+                              toast.success('Invite email re-sent');
+                            } catch (err) {
+                              toastError(err);
+                            }
+                          });
+                        }}
+                      >
+                        {isActing && <Loader className="mr-2 size-4 animate-spin" />}
+                        <Mail className="mr-2 size-4" /> Resend Email
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="sm:flex-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}?invite=${selectedUser.id}`);
+                          toast.success('Invite link copied');
+                        }}
+                      >
+                        <Copy className="mr-2 size-4" /> Copy Link
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {selectedUser && (
+                  <div className="flex flex-col gap-2 rounded-lg border p-3">
+                    <span className="text-xs text-muted-foreground">Change Role</span>
+                    <Select
+                      value={selectedUser.role}
+                      onValueChange={(role) => {
+                        if (window.confirm(`Are you sure you want to change the role to "${role.charAt(0).toUpperCase() + role.slice(1)}"?`)) {
+                          startActing(async () => {
+                            try {
+                              await updateRole({ userId: selectedUser.id as Id<'users'>, role: role as RoleType });
+                              setSelectedUser((prev) => (prev ? { ...prev, role } : prev));
+                              toast.success('Role updated');
+                            } catch (err) {
+                              toastError(err);
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full" disabled={isActing}>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r.charAt(0).toUpperCase() + r.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -370,19 +445,6 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                     {selectedUser?.status === 'active' ? 'Deactivate' : 'Activate'}
                   </Button>
                 </div>
-              )}
-              {selectedUser && selectedUser.status === 'invited' && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/invite?${selectedUser.id}`);
-                    toast.success('Invite link copied to clipboard');
-                  }}
-                >
-                  <Copy className="mr-2 size-4" />
-                  Copy Invite Link
-                </Button>
               )}
               <DrawerClose asChild>
                 <Button variant="outline">Close</Button>
