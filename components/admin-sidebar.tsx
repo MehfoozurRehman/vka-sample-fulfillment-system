@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { IconChartBar, IconDashboard, IconFolder, IconHelp, IconListDetails, IconSettings, IconUsers } from '@tabler/icons-react';
+import { IconChartBar, IconDashboard, IconFolder, IconHelp, IconListDetails, IconUsers } from '@tabler/icons-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 
 import { GalleryVerticalEnd } from 'lucide-react';
@@ -46,13 +46,8 @@ const data = {
   ],
   navSecondary: [
     {
-      title: 'Settings',
-      url: '#',
-      icon: IconSettings,
-    },
-    {
       title: 'Get Help',
-      url: '#',
+      url: '/admin/help',
       icon: IconHelp,
     },
   ],
