@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, GalleryVerticalEnd, Loader } from 'lucide-react';
+import { ChevronLeft, GalleryVerticalEnd, InfoIcon, Loader } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconAlertTriangle, IconBell, IconCircleCheck, IconDotsVertical, IconInfoCircle, IconLogout, IconUserCircle } from '@tabler/icons-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,7 +44,7 @@ export function SiteHeader() {
     <header className="flex h-[var(--header-height,56px)] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[var(--header-height,56px)]">
       <div className={`flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ${isAdmin ? '' : 'container mx-auto'}`}>
         {!isAdmin && (
-          <Link href="/" data-slot="logo" className="flex items-center gap-2 text-sm font-semibold border-white/70 transition-colors border-r-2 pr-2">
+          <Link href={'/' + root} data-slot="logo" className="flex items-center gap-2 text-sm font-semibold border-white/70 transition-colors border-r-2 pr-2">
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
               <GalleryVerticalEnd className="size-4" />
             </div>
@@ -60,6 +60,12 @@ export function SiteHeader() {
         )}
         <h1 className="text-base font-medium">{pageName}</h1>
         <div className="ml-auto flex items-center gap-2">
+          <Link href={`/${root}/help`}>
+            <Button variant="outline" size="icon">
+              <InfoIcon />
+              <span className="sr-only">Help</span>
+            </Button>
+          </Link>
           <Notifications />
           <ThemeToggle />
           <UserMenu />
