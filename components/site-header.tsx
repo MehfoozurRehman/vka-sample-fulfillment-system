@@ -1,7 +1,9 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronLeft, Loader } from 'lucide-react';
-import { IconAlertTriangle, IconBell, IconCircleCheck, IconInfoCircle } from '@tabler/icons-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { IconAlertTriangle, IconBell, IconCircleCheck, IconDotsVertical, IconInfoCircle, IconLogout, IconUserCircle } from '@tabler/icons-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -12,6 +14,7 @@ import { ThemeToggle } from './theme-button';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { motion } from 'motion/react';
+import { removeToken } from '@/actions/remove-token';
 import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
@@ -21,15 +24,17 @@ export function SiteHeader() {
 
   const pathname = usePathname();
 
-  const pageName = pathname
-    .split('/')
-    .filter((segment) => segment && segment !== 'admin')
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' / ');
+  const pageName =
+    pathname
+      .split('/')
+      .filter((segment) => segment && segment !== 'admin')
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(' / ') || 'Dashboard';
 
   const isRoot = pathname.split('/').length === 2;
 
   const root = pathname.split('/')[1] || '';
+
   const isAdmin = root === 'admin';
 
   const previousPath = pathname.split('/').slice(0, -1).join('/');
@@ -48,6 +53,7 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
           {!isAdmin && <Notifications />}
           <ThemeToggle />
+          <UserMenu />
         </div>
       </div>
     </header>
@@ -141,6 +147,70 @@ function Notifications() {
         )}
       </div>
     </ClickAwayListener>
+  );
+}
+
+function UserMenu() {
+  const user = useAuth();
+  const pathname = usePathname();
+  const root = pathname.split('/')[1] || '';
+  const [isLoggingOut, startLogout] = useTransition();
+
+  const initials = (user?.name || '')
+    .split(' ')
+    .map((n) => n.charAt(0))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const logout = () => {
+    startLogout(async () => {
+      await removeToken();
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 px-2 flex items-center gap-2">
+          <Avatar className="h-7 w-7">
+            {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <span className="hidden md:inline text-xs font-medium max-w-32 truncate">{user?.name || 'User'}</span>
+          <IconDotsVertical className="size-4 text-muted-foreground" />
+          <span className="sr-only">Open user menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-2 px-2 py-2">
+            <Avatar className="h-9 w-9">
+              {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <div className="text-xs leading-tight">
+              <p className="font-medium truncate max-w-40">{user?.name || '—'}</p>
+              <p className="text-muted-foreground truncate max-w-40">{user?.email || ''}</p>
+            </div>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <a href={`/${root}/profile`} className="flex items-center gap-2">
+              <IconUserCircle className="size-4" />
+              <span>Profile</span>
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout} className="text-destructive">
+          {isLoggingOut ? <Loader className="size-4 animate-spin" /> : <IconLogout className="size-4" />}
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
