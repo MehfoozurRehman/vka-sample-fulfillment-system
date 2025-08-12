@@ -236,12 +236,19 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 </div>
                 <div className="flex flex-col gap-4">
                   {productLines.map((line, idx) => {
+                    const otherSelected = productLines
+                      .filter((_, i) => i !== idx)
+                      .map((l) => l.productDisplay)
+                      .filter(Boolean);
+                    const allOptions = (products || []).map((p: ProductListItem) => `${p.productId} - ${p.productName}`);
+                    const filteredOptions = allOptions.filter((o) => !otherSelected.includes(o) || o === line.productDisplay);
                     return (
                       <div key={idx} className="grid gap-2 md:grid-cols-4 p-3 border rounded-md">
                         <div className="md:col-span-2">
                           <InputWithSuggestions
                             value={line.productDisplay}
                             onValueChange={(v) => {
+                              if (otherSelected.includes(v)) return; // prevent duplicates
                               setProductLines((prev) =>
                                 prev.map((l, i) => {
                                   if (i !== idx) return l;
@@ -254,7 +261,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                                 }),
                               );
                             }}
-                            options={(products || []).map((p: ProductListItem) => `${p.productId} - ${p.productName}`)}
+                            options={filteredOptions}
                             placeholder="Select product"
                           />
                         </div>
