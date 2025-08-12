@@ -12,7 +12,7 @@ import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function AdminDashboard() {
-  const overview = useQuery(api.analytics.overview);
+  const overview = useQuery(api.analytics.overview, {});
 
   const distributions = useQuery(api.analytics.distributions);
 
