@@ -8,8 +8,10 @@ import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { RecentRequestsType } from '../type';
+import { RequestDetailsDrawer } from './request-details';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const columns: ColumnDef<RecentRequestsType[number]>[] = [
@@ -44,6 +46,8 @@ export function DataTable({ data }: { data: RecentRequestsType }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const [open, setOpen] = useState(false);
+  const [activeRow, setActiveRow] = useState<(RecentRequestsType[number] & { id: Id<'requests'> }) | null>(null);
 
   const isMobile = useIsMobile();
 
@@ -165,7 +169,15 @@ export function DataTable({ data }: { data: RecentRequestsType }) {
             {table.getRowModel().rows.length ? (
               <>
                 {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => {
+                      setActiveRow(row.original as RecentRequestsType[number] & { id: Id<'requests'> });
+                      setOpen(true);
+                    }}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                     ))}
@@ -190,6 +202,7 @@ export function DataTable({ data }: { data: RecentRequestsType }) {
           Next
         </Button>
       </div>
+      <RequestDetailsDrawer open={open} onOpenChange={setOpen} row={activeRow} />
     </div>
   );
 }
