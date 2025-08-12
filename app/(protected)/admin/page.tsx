@@ -41,7 +41,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="overflow-x-auto pt-4">
             <div className="overflow-hidden rounded-lg border">
-              <Table>
+              <Table className="h-full">
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="min-w-[120px]">ID</TableHead>
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
                     <TableHead className="min-w-[170px]">Created</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="h-full">
                   {isPending && (
                     <TableRow>
                       <TableCell colSpan={9} className="p-2">
@@ -100,12 +100,10 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm">Recent Audit Logs</CardTitle>
             <CardDescription className="text-xs">Most recent changes</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
+          <CardContent className="flex-1 overflow-y-auto max-h-[400px]">
             {!auditLogs && (
-              <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
+              <div className="flex items-center justify-center h-full">
+                <Loader className="h-5 animate-spin" />
               </div>
             )}
             {auditLogs &&
