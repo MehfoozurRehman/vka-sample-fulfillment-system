@@ -175,9 +175,8 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         name={`product-${idx}`}
                         value={item.productId}
                         onValueChange={(v) => {
-                          // disallow selecting a product already chosen in another line
                           const already = selectedOthers.includes(v);
-                          if (already) return; // ignore
+                          if (already) return;
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, productId: v } : p)));
                         }}
                         options={filteredProductOptions}
