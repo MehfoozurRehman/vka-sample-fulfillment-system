@@ -38,7 +38,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
 
           if (gInfo && gInfo.email && gInfo.sub) {
-            let data: { id: string; role: RoleType } | null = null;
+            let data: { id: string; activeRole: RoleType } | null = null;
 
             if (inviteId) {
               data = await acceptInvite({
@@ -65,7 +65,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               toast.success(`Welcome back, ${gInfo.name}!`);
             }
 
-            router.replace(`/${data.role}`);
+            router.replace(`/${data.activeRole}`);
           } else {
             toast.error('Failed to fetch Google user info.');
           }
