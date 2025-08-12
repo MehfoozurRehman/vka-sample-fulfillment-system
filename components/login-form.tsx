@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { GoogleLoginResponse } from '@/types';
 import { Loader } from 'lucide-react';
-import { Roles } from '@/constants';
+import { RoleType } from '@/constants';
 import { api } from '@/convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { saveToken } from '@/actions/save-token';
@@ -38,7 +38,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
 
           if (gInfo && gInfo.email && gInfo.sub) {
-            let data: { id: string; role: Roles } | null = null;
+            let data: { id: string; role: RoleType } | null = null;
 
             if (inviteId) {
               data = await acceptInvite({
