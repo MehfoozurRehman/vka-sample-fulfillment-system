@@ -8,9 +8,8 @@ export const getNotifications = query({
   handler: async (ctx, args) => {
     const notifications = await ctx.db
       .query('notifications')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .withIndex('by_user_read', (q) => q.eq('userId', args.userId).eq('read', false))
       .order('desc')
-      .filter((q) => q.eq(q.field('read'), false))
       .collect();
 
     return notifications;
@@ -41,8 +40,7 @@ export const markAllAsRead = mutation({
   handler: async (ctx, { userId }) => {
     const unread = await ctx.db
       .query('notifications')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .filter((q) => q.eq(q.field('read'), false))
+      .withIndex('by_user_read', (q) => q.eq('userId', userId).eq('read', false))
       .collect();
 
     await Promise.all(
