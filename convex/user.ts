@@ -236,7 +236,6 @@ export const resendInvite = mutation({
 export const createFirstAdmin = mutation({
   args: { email: v.string(), name: v.string() },
   handler: async (ctx, { email, name }) => {
-    // Ensure no users exist yet
     const anyUser = await ctx.db.query('users').first();
     if (anyUser) {
       throw new Error('Initial admin already created');
