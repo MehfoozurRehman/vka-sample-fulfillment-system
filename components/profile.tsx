@@ -184,7 +184,7 @@ export function Profile() {
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
               {(notificationTypes || []).map((t) => {
                 const existing = prefs?.find((p) => p.type === t);
-                const enabled = existing ? existing.enabled : true; // default enabled
+                const enabled = existing ? existing.enabled : true;
                 return (
                   <label key={t} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 bg-card/40 text-xs capitalize">
                     <span className="truncate">{t.replace(/[-_]/g, ' ')}</span>
