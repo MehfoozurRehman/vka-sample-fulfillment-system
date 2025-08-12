@@ -13,6 +13,7 @@ import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
+import { useAuth } from '@/hooks/use-user';
 
 export function AddProduct() {
   const [open, setOpen] = useState(false);
@@ -22,6 +23,8 @@ export function AddProduct() {
   const nextId = useQuery(api.product.nextId);
 
   const products = useQuery(api.product.list);
+
+  const auth = useAuth();
 
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
@@ -76,7 +79,7 @@ export function AddProduct() {
       }
 
       try {
-        await add({ productId: productId?.trim() || '', productName, category, location });
+        await add({ userId: auth.id, productId: productId?.trim() || '', productName, category, location });
         setOpen(false);
         toast.success('Product added successfully');
       } catch (error) {
