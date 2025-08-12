@@ -4,12 +4,10 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'rec
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-// New Screener UI modeled after Products page (Stats + Chart + Table + Drawer)
 import React, { useMemo, useState, useTransition } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMutation, useQuery } from 'convex/react';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IconLoader } from '@tabler/icons-react';
@@ -23,7 +21,6 @@ import dayjs from 'dayjs';
 import { useAuth } from '@/hooks/use-user';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
-// ---------------- Types ---------------- //
 interface PendingRow {
   id: Id<'requests'>;
   requestId: string;
@@ -54,27 +51,21 @@ interface RequestDetail {
   totalSamples12mo: number;
 }
 
-// ---------------- Page ---------------- //
 export default function ScreenerPage() {
   const auth = useAuth();
   const { data: pendingData, isPending } = useQueryWithStatus(api.screener.pending, { limit: 500 });
   const pending = useMemo(() => (pendingData as PendingRow[] | undefined) ?? [], [pendingData]);
-
   const [selected, setSelected] = useState<PendingRow | null>(null);
   const detail = useQuery(api.screener.detail, selected ? { id: selected.id } : 'skip');
-
   const [range, setRange] = useState('90');
   const metrics = useQuery(api.screener.metrics, { days: Number(range) }) as ScreenerMetrics | undefined;
-
   const [search, setSearch] = useState('');
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return pending;
     return pending.filter((r) => [r.requestId, r.company, r.applicationType, r.projectName].some((f) => f.toLowerCase().includes(q)));
   }, [pending, search]);
-
   const stats = useMemo(() => computeStats(filtered), [filtered]);
-
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -96,7 +87,6 @@ export default function ScreenerPage() {
   );
 }
 
-// ---------------- Stats ---------------- //
 function ScreenerStats({ stats, isLoading }: { stats: ReturnType<typeof computeStats>; isLoading: boolean }) {
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
@@ -120,7 +110,6 @@ function StatCard({ label, value, loading }: { label: string; value: number; loa
   );
 }
 
-// ---------------- Chart ---------------- //
 const flowChartConfig: ChartConfig = {
   approved: { label: 'Approved', color: 'var(--success)' },
   rejected: { label: 'Rejected', color: 'var(--destructive)' },
@@ -186,7 +175,6 @@ function ScreenerChart({ metrics, range, setRange }: { metrics?: ScreenerMetrics
   );
 }
 
-// ---------------- Table ---------------- //
 function ScreenerTable({
   data,
   isPending,
@@ -271,7 +259,6 @@ function ScreenerTable({
   );
 }
 
-// ---------------- Drawer (Detail + Decision) ---------------- //
 function RequestDrawer({
   open,
   onOpenChange,
@@ -293,9 +280,7 @@ function RequestDrawer({
   const [reason, setReason] = useState('');
   const [isSaving, startSaving] = useTransition();
   const canReject = reason.trim().length > 2;
-
   const vip = !!detail?.stakeholder?.vipFlag;
-
   return (
     <Drawer direction={'right'} open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-w-xl">
@@ -404,7 +389,6 @@ function RequestDrawer({
   );
 }
 
-// ---------------- Detail Subcomponents ---------------- //
 function LabelVal({ label, value }: { label: string; value?: string }) {
   return (
     <div className="contents">
@@ -442,7 +426,6 @@ function RecentRequestsPanel({ data, total }: { data: { id: Id<'requests'>; requ
   );
 }
 
-// ---------------- Utilities ---------------- //
 function computeStats(rows: PendingRow[]) {
   const total = rows.length;
   const vip = rows.filter((r) => r.vip).length;
