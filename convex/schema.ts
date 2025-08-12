@@ -110,4 +110,13 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.number(),
   }).index('by_user', ['userId', 'createdAt']),
+
+  notificationPreferences: defineTable({
+    userId: v.id('users'),
+    type: v.string(),
+    enabled: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index('by_user_type', ['userId', 'type'])
+    .index('by_user', ['userId']),
 });
