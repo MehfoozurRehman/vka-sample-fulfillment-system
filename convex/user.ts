@@ -65,7 +65,7 @@ export const inviteUser = mutation({
       name,
       role,
       active: false,
-      invitedBy,
+      invitedByUser: invitedBy,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
