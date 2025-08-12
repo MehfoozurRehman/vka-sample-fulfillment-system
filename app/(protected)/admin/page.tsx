@@ -13,8 +13,11 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function AdminDashboard() {
   const overview = useQuery(api.analytics.overview);
+
   const distributions = useQuery(api.analytics.distributions);
+
   const { data: recent, isPending } = useQueryWithStatus(api.request.recent, { limit: 8 });
+
   const auditLogs = useQuery(api.audit.list, {});
 
   const top = (arr?: { label: string; value: number }[], n = 3) => (arr || []).slice(0, n);
@@ -29,7 +32,6 @@ export default function AdminDashboard() {
         <StatCard title="Pending Requests" value={overview?.pendingRequests} sub="waiting" icon={<IconClipboardText className="size-5" />} />
         <StatCard title="Audit Logs" value={overview?.totalAuditLogs} sub="records" icon={<IconClipboardText className="size-5" />} />
       </div>
-
       <div className="grid gap-6 px-4 lg:px-6 xl:grid-cols-3">
         <Card className="overflow-hidden xl:col-span-2">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-0">
@@ -94,7 +96,6 @@ export default function AdminDashboard() {
           </CardContent>
           <CardFooter className="text-xs text-muted-foreground">Showing latest {recent?.length || 0} requests.</CardFooter>
         </Card>
-
         <Card className="overflow-hidden h-full flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Recent Audit Logs</CardTitle>
