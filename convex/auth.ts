@@ -135,8 +135,6 @@ export const acceptInvite = mutation({
       .filter((q) => q.eq(q.field('_id'), inviteId) && q.eq(q.field('googleId'), undefined))
       .first();
 
-    console.log('acceptInvite fetched invite', { inviteId, invitedByUser: validInvite?.invitedByUser });
-
     if (!validInvite) {
       throw new Error('Invalid invite');
     }
