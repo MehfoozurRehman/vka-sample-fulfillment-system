@@ -169,72 +169,69 @@ export function Profile() {
           </CardFooter>
         </Card>
       </div>
-
-      {user?.activeRole !== 'admin' && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconBell className="size-5" /> Notification Preferences
-            </CardTitle>
-            <CardDescription className="text-xs">Choose which notification types you want to receive.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-[11px] text-muted-foreground">Toggle types below. Unchecked types will be muted.</div>
-            <Separator />
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-              {(notificationTypes || []).map((t) => {
-                const existing = prefs?.find((p) => p.type === t);
-                const enabled = existing ? existing.enabled : true;
-                return (
-                  <label key={t} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 bg-card/40 text-xs capitalize">
-                    <span className="truncate">{t.replace(/[-_]/g, ' ')}</span>
-                    <Checkbox
-                      checked={enabled}
-                      onCheckedChange={async (val) => {
-                        if (!user) return;
-                        try {
-                          await setPref({ userId: user.id as Id<'users'>, type: t, enabled: Boolean(val) });
-                          toast.success(`${t} ${val ? 'enabled' : 'disabled'}`);
-                        } catch {
-                          toast.error('Failed to update');
-                        }
-                      }}
-                    />
-                  </label>
-                );
-              })}
-              {(notificationTypes || []).length === 0 && <p className="text-[11px] text-muted-foreground">No notification types yet.</p>}
-            </div>
-            <Separator />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  if (!user) return;
-                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: true })));
-                  toast.success('All enabled');
-                }}
-                disabled={!notificationTypes || notificationTypes.length === 0}
-              >
-                Enable All
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  if (!user) return;
-                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: false })));
-                  toast.success('All disabled');
-                }}
-                disabled={!notificationTypes || notificationTypes.length === 0}
-              >
-                Disable All
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <IconBell className="size-5" /> Notification Preferences
+          </CardTitle>
+          <CardDescription className="text-xs">Choose which notification types you want to receive.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-[11px] text-muted-foreground">Toggle types below. Unchecked types will be muted.</div>
+          <Separator />
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {(notificationTypes || []).map((t) => {
+              const existing = prefs?.find((p) => p.type === t);
+              const enabled = existing ? existing.enabled : true;
+              return (
+                <label key={t} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 bg-card/40 text-xs capitalize">
+                  <span className="truncate">{t.replace(/[-_]/g, ' ')}</span>
+                  <Checkbox
+                    checked={enabled}
+                    onCheckedChange={async (val) => {
+                      if (!user) return;
+                      try {
+                        await setPref({ userId: user.id as Id<'users'>, type: t, enabled: Boolean(val) });
+                        toast.success(`${t} ${val ? 'enabled' : 'disabled'}`);
+                      } catch {
+                        toast.error('Failed to update');
+                      }
+                    }}
+                  />
+                </label>
+              );
+            })}
+            {(notificationTypes || []).length === 0 && <p className="text-[11px] text-muted-foreground">No notification types yet.</p>}
+          </div>
+          <Separator />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                if (!user) return;
+                await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: true })));
+                toast.success('All enabled');
+              }}
+              disabled={!notificationTypes || notificationTypes.length === 0}
+            >
+              Enable All
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                if (!user) return;
+                await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: false })));
+                toast.success('All disabled');
+              }}
+              disabled={!notificationTypes || notificationTypes.length === 0}
+            >
+              Disable All
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
