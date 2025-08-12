@@ -43,9 +43,9 @@ export const getUsers = query({
 });
 
 export const inviteUser = mutation({
-  args: { email: v.string(), name: v.string(), role: v.string() },
+  args: { email: v.string(), name: v.string(), role: v.string(), invitedBy: v.id('users') },
   handler: async (ctx, args) => {
-    const { email, name, role } = args;
+    const { email, name, role, invitedBy } = args;
 
     if (!email || !name || !role) {
       throw new Error('Email, name, and role are required');
@@ -65,6 +65,7 @@ export const inviteUser = mutation({
       name,
       role,
       active: false,
+      invitedBy,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -74,7 +75,7 @@ export const inviteUser = mutation({
       action: 'inviteUser',
       table: 'users',
       recordId: user,
-      changes: { email, name, role, active: false },
+      changes: { email, name, role, active: false, invitedBy },
       timestamp: Date.now(),
     });
 
