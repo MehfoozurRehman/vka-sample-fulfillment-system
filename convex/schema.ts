@@ -19,7 +19,8 @@ export default defineSchema({
   })
     .index('by_email', ['email'])
     .index('by_role', ['role'])
-    .index('by_googleId', ['googleId']),
+    .index('by_googleId', ['googleId'])
+    .index('by_createdAt', ['createdAt']),
 
   stakeholders: defineTable({
     companyName: v.string(),
@@ -32,7 +33,9 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
-  }).index('by_companyName', ['companyName']),
+  })
+    .index('by_companyName', ['companyName'])
+    .index('by_createdAt', ['createdAt']),
 
   products: defineTable({
     productId: v.string(),
@@ -44,7 +47,8 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index('by_productId', ['productId'])
-    .index('by_productName', ['productName']),
+    .index('by_productName', ['productName'])
+    .index('by_createdAt', ['createdAt']),
 
   requests: defineTable({
     requestId: v.string(),
@@ -74,7 +78,9 @@ export default defineSchema({
   })
     .index('by_status', ['status', 'createdAt'])
     .index('by_companyId', ['companyId'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_requestId', ['requestId'])
+    .index('by_createdAt', ['createdAt']),
 
   orders: defineTable({
     orderId: v.string(),
@@ -93,7 +99,8 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index('by_status', ['status', 'createdAt'])
-    .index('by_requestId', ['requestId']),
+    .index('by_requestId', ['requestId'])
+    .index('by_createdAt', ['createdAt']),
 
   auditLogs: defineTable({
     userId: v.id('users'),
@@ -102,7 +109,11 @@ export default defineSchema({
     recordId: v.string(),
     changes: v.any(),
     timestamp: v.number(),
-  }).index('by_user', ['userId', 'timestamp']),
+  })
+    .index('by_user', ['userId', 'timestamp'])
+    .index('by_timestamp', ['timestamp'])
+    .index('by_table', ['table'])
+    .index('by_action', ['action']),
 
   notifications: defineTable({
     userId: v.id('users'),
@@ -111,7 +122,10 @@ export default defineSchema({
     message: v.string(),
     read: v.boolean(),
     createdAt: v.number(),
-  }).index('by_user', ['userId', 'createdAt']),
+  })
+    .index('by_user', ['userId', 'createdAt'])
+    .index('by_user_read', ['userId', 'read'])
+    .index('by_createdAt', ['createdAt']),
 
   notificationPreferences: defineTable({
     userId: v.id('users'),
@@ -120,5 +134,6 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_user_type', ['userId', 'type'])
-    .index('by_user', ['userId']),
+    .index('by_user', ['userId'])
+    .index('by_createdAt', ['updatedAt']),
 });
