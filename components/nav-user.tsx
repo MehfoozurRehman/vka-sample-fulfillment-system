@@ -7,9 +7,12 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 
 import Link from 'next/link';
 import { Loader } from 'lucide-react';
+import { api } from '@/convex/_generated/api';
 import { removeToken } from '@/actions/remove-token';
 import { useAuth } from '@/hooks/use-user';
+import { useMutation } from 'convex/react';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 export function NavUser() {
@@ -18,6 +21,9 @@ export function NavUser() {
   const { isMobile } = useSidebar();
 
   const pathname = usePathname();
+  const router = useRouter();
+
+  const setActiveRole = useMutation(api.user.setActiveRole);
 
   const root = pathname.split('/')[1] || '';
 
@@ -68,6 +74,32 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {user.roles && user.roles.length > 1 && (
+              <>
+                <DropdownMenuLabel className="text-xs uppercase tracking-wide opacity-70">Switch Role</DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  {user.roles.map((r) => (
+                    <DropdownMenuItem
+                      key={r}
+                      disabled={user.activeRole === r || isLoggingOut}
+                      onClick={async () => {
+                        if (user.activeRole === r) return;
+                        try {
+                          await setActiveRole({ userId: user.id, role: r });
+                          router.push(`/${r}`);
+                        } catch {
+                          /* noop */
+                        }
+                      }}
+                    >
+                      {r === user.activeRole ? '✓ ' : ''}
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuGroup>
               <Link href={`/${root}/profile`}>
                 <DropdownMenuItem>
