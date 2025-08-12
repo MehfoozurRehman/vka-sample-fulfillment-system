@@ -17,7 +17,6 @@ import { countries } from '@/constants';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Define a narrowed product type matching product.list return shape
 interface ProductListItem {
   id: Id<'products'>;
   productId: string;
@@ -101,7 +100,6 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   }, [request, open, productMap]);
 
   useEffect(() => {
-    // keep form.productsRequested in sync with productLines
     setForm((f) => ({
       ...f,
       productsRequested: productLines.filter((l) => !!l.productId && l.quantity > 0).map((l) => ({ productId: l.productId as Id<'products'>, quantity: l.quantity, notes: l.notes || undefined })),
@@ -110,17 +108,26 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
   async function onSave() {
     if (!row) return;
-    // validation similar to AddRequest
     if (!form.contactName.trim()) return toast.error('Contact name required');
+
     if (!form.email.trim()) return toast.error('Email required');
+
     if (!form.country.trim()) return toast.error('Country required');
+
     if (!form.applicationType.trim()) return toast.error('Application type required');
+
     if (!form.projectName.trim()) return toast.error('Project name required');
+
     if (!productLines.length) return toast.error('Add at least one product');
+
     const invalid = productLines.some((l) => !l.productId || !l.quantity || l.quantity <= 0);
+
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
+
     await update({ id: row.id, ...form });
+
     setEditing(false);
+
     toast.success('Request updated');
   }
 
@@ -248,7 +255,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                           <InputWithSuggestions
                             value={line.productDisplay}
                             onValueChange={(v) => {
-                              if (otherSelected.includes(v)) return; // prevent duplicates
+                              if (otherSelected.includes(v)) return;
                               setProductLines((prev) =>
                                 prev.map((l, i) => {
                                   if (i !== idx) return l;
