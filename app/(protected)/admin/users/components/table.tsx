@@ -22,6 +22,7 @@ import { RoleType, roles } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState, useTransition } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -112,8 +113,8 @@ const columns: ColumnDef<DataType>[] = [
 ];
 export function DataTable({ data: initialData, isPending }: { data: DataType[]; isPending: boolean }) {
   const isMobile = useIsMobile();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'invited'>('all');
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+  const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
   const [selectedUser, setSelectedUser] = useState<null | DataType>(null);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -200,12 +201,12 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
 
   return (
     <>
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive' | 'invited')} className="w-full flex-col justify-start gap-6">
+      <Tabs value={statusFilter as 'all' | 'active' | 'inactive' | 'invited'} onValueChange={(v) => setStatusFilter(v)} className="w-full flex-col justify-start gap-6">
         <div className="flex items-center justify-between px-4 lg:px-6">
           <Label htmlFor="view-selector" className="sr-only">
             View
           </Label>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive' | 'invited')}>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
             <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
               <SelectValue placeholder="Select a status" />
             </SelectTrigger>
