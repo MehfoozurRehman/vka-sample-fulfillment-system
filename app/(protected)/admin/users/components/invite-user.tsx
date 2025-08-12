@@ -13,12 +13,14 @@ import { api } from '@/convex/_generated/api';
 import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
+import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 
 export function InviteUser() {
   const [open, setOpen] = useState(false);
 
   const inviteUser = useMutation(api.user.inviteUser);
+  const auth = useAuth();
 
   const [isPending, startTransition] = useTransition();
 
@@ -47,7 +49,7 @@ export function InviteUser() {
       }
 
       try {
-        await inviteUser({ name, email, role });
+        await inviteUser({ name, email, role, invitedBy: auth.id });
 
         setOpen(false);
 
