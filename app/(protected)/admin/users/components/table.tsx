@@ -18,7 +18,6 @@ import {
 import { Copy, Loader, Mail } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
-import { RoleType, roles } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,6 +34,7 @@ import { InviteUser } from './invite-user';
 import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -78,7 +78,7 @@ const columns: ColumnDef<DataType>[] = [
   {
     accessorKey: 'role',
     header: 'Role',
-    cell: ({ row }) => row.original.role,
+    cell: ({ row }) => row.original.activeRole,
   },
   {
     accessorKey: 'email',
@@ -115,14 +115,15 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   const isMobile = useIsMobile();
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
   const [statusFilter, setStatusFilter] = useQueryState('status', parseAsString.withDefault('all'));
-  const [selectedUser, setSelectedUser] = useState<null | DataType>(null);
+  const [selectedUser, setSelectedUser] = useState<null | (DataType & { roles?: string[]; activeRole?: string })>(null);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const filteredData = useMemo(() => {
-    let d = initialData;
+    type ExtendedUser = DataType & { roles?: string[]; activeRole?: string };
+    let d: ExtendedUser[] = initialData as ExtendedUser[];
     if (statusFilter !== 'all') {
       d = d.filter((u) => u.status === statusFilter);
     }
@@ -130,7 +131,8 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
     const q = normalize(search.trim());
     if (q) {
       d = d.filter((u) => {
-        const parts = [u.name || '', u.email || '', u.role || '', u.designation || '', u.status || ''];
+        const roleText = u.activeRole || (u.roles ? u.roles.join(' ') : '');
+        const parts = [u.name || '', u.email || '', roleText, u.designation || '', u.status || ''];
         return parts.some((p) => normalize(p).includes(q));
       });
     }
@@ -163,7 +165,9 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   const [isActing, startActing] = useTransition();
 
   const updateStatus = useMutation(api.user.updateStatus);
-  const updateRole = useMutation(api.user.updateRole);
+  const setActiveRole = useMutation(api.user.setActiveRole);
+  const addRole = useMutation(api.user.addRole);
+  const removeRole = useMutation(api.user.removeRole);
   const resendInvite = useMutation(api.user.resendInvite);
 
   const [isBulkActing, startBulkActing] = useTransition();
@@ -320,7 +324,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="capitalize">
-                      {selectedUser.role}
+                      {selectedUser.activeRole}
                     </Badge>
                     <Badge variant="outline" className="text-muted-foreground px-1.5 capitalize">
                       {selectedUser.status === 'active' ? (
@@ -343,7 +347,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Role</span>
-                    <span className="font-medium capitalize">{selectedUser.role}</span>
+                    <span className="font-medium capitalize">{selectedUser.roles && selectedUser.roles.length ? selectedUser.roles.join(', ') : selectedUser.activeRole}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Designation</span>
@@ -399,34 +403,110 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                 )}
                 {selectedUser && (
                   <div className="flex flex-col gap-2 rounded-lg border p-3">
-                    <span className="text-xs text-muted-foreground">Change Role</span>
+                    <span className="text-xs text-muted-foreground">Active Role</span>
                     <Select
-                      value={selectedUser.role}
+                      value={selectedUser.activeRole}
                       onValueChange={(role) => {
-                        if (window.confirm(`Are you sure you want to change the role to "${role.charAt(0).toUpperCase() + role.slice(1)}"?`)) {
+                        startActing(async () => {
+                          try {
+                            await setActiveRole({ userId: selectedUser.id as Id<'users'>, role });
+                            setSelectedUser((prev) => (prev ? { ...prev, role, activeRole: role } : prev));
+                            toast.success('Active role switched');
+                          } catch (err) {
+                            toastError(err);
+                          }
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full" disabled={isActing}>
+                        <SelectValue placeholder="Select active role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedUser.roles && selectedUser.roles.length > 0
+                          ? selectedUser.roles.map((r) => (
+                              <SelectItem key={r} value={r} className="capitalize">
+                                {r}
+                              </SelectItem>
+                            ))
+                          : roles.map((r) => (
+                              <SelectItem key={r} value={r} className="capitalize">
+                                {r}
+                              </SelectItem>
+                            ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedUser.roles &&
+                        selectedUser.roles.length > 0 &&
+                        selectedUser.roles.map((r) => (
+                          <Badge key={r} variant={selectedUser.activeRole === r ? 'default' : 'outline'} className="flex items-center gap-1 capitalize">
+                            {r}
+                            {selectedUser.roles.length > 1 && (
+                              <button
+                                type="button"
+                                className="text-xs hover:opacity-70"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Remove role ${r}?`)) {
+                                    startActing(async () => {
+                                      try {
+                                        await removeRole({ userId: selectedUser.id as Id<'users'>, role: r });
+                                        setSelectedUser((prev) =>
+                                          prev
+                                            ? {
+                                                ...prev,
+                                                roles: prev.roles?.filter((rr) => rr !== r),
+                                                activeRole: prev.activeRole === r ? prev.roles?.filter((rr) => rr !== r)[0] : prev.activeRole,
+                                              }
+                                            : prev,
+                                        );
+                                        toast.success('Role removed');
+                                      } catch (err) {
+                                        toastError(err);
+                                      }
+                                    });
+                                  }
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
+                      <Select
+                        onValueChange={(role) => {
                           startActing(async () => {
                             try {
-                              await updateRole({ userId: selectedUser.id as Id<'users'>, role: role as RoleType });
-                              setSelectedUser((prev) => (prev ? { ...prev, role } : prev));
-                              toast.success('Role updated');
+                              await addRole({ userId: selectedUser.id as Id<'users'>, role });
+                              setSelectedUser((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      roles: prev.roles ? Array.from(new Set([...prev.roles, role])) : ([role].filter(Boolean) as string[]),
+                                    }
+                                  : prev,
+                              );
+                              toast.success('Role added');
                             } catch (err) {
                               toastError(err);
                             }
                           });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full" disabled={isActing}>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((r) => (
-                          <SelectItem key={r} value={r}>
-                            {r.charAt(0).toUpperCase() + r.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        }}
+                      >
+                        <SelectTrigger className="w-fit" disabled={isActing}>
+                          <SelectValue placeholder="Add role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles
+                            .filter((r) => !(selectedUser.roles ? selectedUser.roles.includes(r) : selectedUser.activeRole === r))
+                            .map((r) => (
+                              <SelectItem key={r} value={r} className="capitalize">
+                                {r}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 )}
               </>
