@@ -170,6 +170,9 @@ function UserMenu() {
   const pathname = usePathname();
   const root = pathname.split('/')[1] || '';
   const [isLoggingOut, startLogout] = useTransition();
+  const [isSwitching, startSwitch] = useTransition();
+  const setActiveRole = useMutation(api.user.setActiveRole);
+  const router = useRouter();
 
   const initials = (user?.name || '')
     .split(' ')
@@ -211,6 +214,35 @@ function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {user?.roles && user.roles.length > 1 && (
+          <>
+            <DropdownMenuLabel className="text-[10px] uppercase tracking-wide opacity-70">Switch Role</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {user.roles.map((r) => (
+                <DropdownMenuItem
+                  key={r}
+                  disabled={isSwitching || user.activeRole === r}
+                  onClick={() => {
+                    if (user.activeRole === r) return;
+                    startSwitch(async () => {
+                      try {
+                        await setActiveRole({ userId: user.id, role: r });
+                        router.push(`/${r}`);
+                      } catch {
+                        /* noop */
+                      }
+                    });
+                  }}
+                  className="capitalize"
+                >
+                  {user.activeRole === r ? '✓ ' : ''}
+                  {r}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <a href={`/${root}/profile`} className="flex items-center gap-2">
