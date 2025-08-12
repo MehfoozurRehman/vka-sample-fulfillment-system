@@ -11,4 +11,7 @@ export interface GoogleLoginResponse {
   email_verified: boolean;
 }
 
-export type User = NonNullable<ReturnType<typeof useQuery<typeof api.auth.getUser>>>;
+export type User = NonNullable<ReturnType<typeof useQuery<typeof api.auth.getUser>>> & {
+  roles?: string[];
+  activeRole?: string;
+};
