@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
+import { Loader } from 'lucide-react';
 import { RecentRequestsType } from '../type';
 import { RequestDetailsDrawer } from './request-details';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -41,7 +42,7 @@ const columns: ColumnDef<RecentRequestsType[number]>[] = [
   { accessorKey: 'createdAt', header: 'Created At' },
 ];
 
-export function DataTable({ data }: { data: RecentRequestsType }) {
+export function DataTable({ data, isPending }: { data: RecentRequestsType; isPending: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -166,7 +167,15 @@ export function DataTable({ data }: { data: RecentRequestsType }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {isPending ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="flex items-center justify-center">
+                    <Loader className="animate-spin" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               <>
                 {table.getRowModel().rows.map((row) => (
                   <TableRow
