@@ -126,6 +126,32 @@ export const approve = mutation({
       timestamp: now,
     });
 
+    const stakeholder = req ? await ctx.db.get(req.companyId as Id<'stakeholders'>) : null;
+    const relatedEmails = new Set<string>();
+    if (stakeholder) {
+      [stakeholder.salesRepEmail, stakeholder.accountManagerEmail, stakeholder.complianceOfficerEmail].forEach((e) => e && relatedEmails.add(e));
+    }
+    const allUsers = await ctx.db.query('users').collect();
+    const requesterUser = req ? allUsers.find((u) => !u.deletedAt && u.active && u.email === req.requestedBy) : undefined;
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      const isPacker = roles.includes('packer');
+      const isRelated = relatedEmails.has(u.email);
+      const isRequester = requesterUser && requesterUser._id === u._id;
+      if (!isPacker && !isRelated && !isRequester) continue;
+      if (u._id === reviewer._id) continue;
+      const type = isPacker ? 'orderReady' : 'requestApproved';
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: reviewer._id,
+        type,
+        message: isPacker ? `Order for ${req?.requestId} ready to pack` : `Request ${req?.requestId} approved`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
     return { ok: true } as const;
   },
 });
@@ -155,6 +181,29 @@ export const reject = mutation({
       changes: { status: 'Rejected', reason },
       timestamp: now,
     });
+
+    const stakeholder = req ? await ctx.db.get(req.companyId as Id<'stakeholders'>) : null;
+    const relatedEmails = new Set<string>();
+    if (stakeholder) {
+      [stakeholder.salesRepEmail, stakeholder.accountManagerEmail, stakeholder.complianceOfficerEmail].forEach((e) => e && relatedEmails.add(e));
+    }
+    const allUsers = await ctx.db.query('users').collect();
+    const requesterUser = req ? allUsers.find((u) => !u.deletedAt && u.active && u.email === req.requestedBy) : undefined;
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const isRelated = relatedEmails.has(u.email);
+      const isRequester = requesterUser && requesterUser._id === u._id;
+      if (!isRelated && !isRequester) continue;
+      if (u._id === reviewer._id) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: reviewer._id,
+        type: 'requestRejected',
+        message: `Request ${req?.requestId} rejected`,
+        read: false,
+        createdAt: now,
+      });
+    }
 
     return { ok: true } as const;
   },
