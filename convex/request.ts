@@ -15,16 +15,16 @@ export const recent = query({
   handler: async (ctx, { limit }) => {
     const max = Math.min(limit ?? 10, 50);
 
-    const requests = (await ctx.db.query('requests').collect())
-      .filter((r) => !r.deletedAt)
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, max) as ReqDoc[];
+    const requests = (await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect()).filter((r) => !r.deletedAt).slice(0, max) as ReqDoc[];
 
     const stakeholderIds = Array.from(new Set(requests.map((r) => r.companyId as Id<'stakeholders'>)));
+
     const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+
     const stakeholderMap = new Map(stakeholders.filter(Boolean).map((s) => [s!._id, s! as StakeholderDoc]));
 
     const orderByRequestId = new Map<Id<'requests'>, OrderDoc>();
+
     for (const r of requests) {
       const order = (await ctx.db
         .query('orders')
@@ -34,6 +34,7 @@ export const recent = query({
     }
 
     const users = (await ctx.db.query('users').collect()) as UserDoc[];
+
     const userByEmail = new Map(users.map((u) => [u.email, u]));
 
     function deriveStage(r: ReqDoc, order: OrderDoc | undefined): string {
@@ -135,8 +136,8 @@ export const add = mutation({
 
     const duplicate = await ctx.db
       .query('requests')
-      .filter((q) => q.eq(q.field('requestId'), requestId))
-      .first();
+      .withIndex('by_requestId', (q) => q.eq('requestId', requestId))
+      .unique();
     if (duplicate) throw new Error('Request with this ID already exists');
 
     const now = Date.now();
@@ -159,8 +160,8 @@ export const add = mutation({
 
     const user = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('email'), args.requestedBy))
-      .first();
+      .withIndex('by_email', (q) => q.eq('email', args.requestedBy))
+      .unique();
 
     if (!user) throw new Error('User not found for requestedBy email');
 
@@ -229,8 +230,8 @@ export const update = mutation({
 
     const actorUser = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('email'), req.requestedBy))
-      .first();
+      .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+      .unique();
 
     if (!actorUser) throw new Error('No actor user found');
 
@@ -276,8 +277,8 @@ export const remove = mutation({
 
     const actorUser = await ctx.db
       .query('users')
-      .filter((q) => q.eq(q.field('email'), req.requestedBy))
-      .first();
+      .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+      .unique();
 
     if (!actorUser) throw new Error('No actor user found');
 
