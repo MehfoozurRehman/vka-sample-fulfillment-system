@@ -8,6 +8,7 @@ import { useMutation, useQuery } from 'convex/react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -17,11 +18,12 @@ import { useAuth } from '@/hooks/use-user';
 
 export function Profile() {
   const user = useAuth();
-  const notifications = useQuery(api.notification.getNotifications, user ? { userId: user.id as Id<'users'> } : 'skip');
-  const markAll = useMutation(api.notification.markAllAsRead);
   const updateProfile = useMutation(api.user.updateProfile);
   const getUploadUrl = useMutation(api.utils.generateUploadUrl);
   const uploadProfilePicture = useMutation(api.user.uploadProfilePicture);
+  const notificationTypes = useQuery(api.notification.getNotificationTypes, user ? { userId: user.id as Id<'users'> } : 'skip');
+  const prefs = useQuery(api.notification.getPreferences, user ? { userId: user.id as Id<'users'> } : 'skip');
+  const setPref = useMutation(api.notification.setPreference);
 
   const [name, setName] = useState(user?.name || '');
   const [designation, setDesignation] = useState(user?.designation || '');
@@ -96,12 +98,6 @@ export function Profile() {
     if (file) handleFile(file);
   };
 
-  const onMarkAll = useCallback(async () => {
-    if (!user) return;
-    await markAll({ userId: user.id as Id<'users'> });
-    toast.success('Notifications marked as read');
-  }, [user, markAll]);
-
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
       <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
@@ -140,7 +136,6 @@ export function Profile() {
             </CardFooter>
           )}
         </Card>
-
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Edit Details</CardTitle>
@@ -179,32 +174,64 @@ export function Profile() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <IconBell className="size-5" /> Notifications
+              <IconBell className="size-5" /> Notification Preferences
             </CardTitle>
-            <CardDescription className="text-xs">Unread alerts and actions.</CardDescription>
+            <CardDescription className="text-xs">Choose which notification types you want to receive.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">Unread ({notifications?.length || 0})</div>
-              <Button variant="outline" size="sm" onClick={onMarkAll} disabled={!notifications || notifications.length === 0}>
-                Mark all as read
-              </Button>
+            <div className="text-[11px] text-muted-foreground">Toggle types below. Unchecked types will be muted.</div>
+            <Separator />
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              {(notificationTypes || []).map((t) => {
+                const existing = prefs?.find((p) => p.type === t);
+                const enabled = existing ? existing.enabled : true; // default enabled
+                return (
+                  <label key={t} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 bg-card/40 text-xs capitalize">
+                    <span className="truncate">{t.replace(/[-_]/g, ' ')}</span>
+                    <Checkbox
+                      checked={enabled}
+                      onCheckedChange={async (val) => {
+                        if (!user) return;
+                        try {
+                          await setPref({ userId: user.id as Id<'users'>, type: t, enabled: Boolean(val) });
+                          toast.success(`${t} ${val ? 'enabled' : 'disabled'}`);
+                        } catch {
+                          toast.error('Failed to update');
+                        }
+                      }}
+                    />
+                  </label>
+                );
+              })}
+              {(notificationTypes || []).length === 0 && <p className="text-[11px] text-muted-foreground">No notification types yet.</p>}
             </div>
             <Separator />
-            <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {(notifications || []).map((n) => (
-                <li key={n._id} className="rounded-md border p-3 text-xs sm:text-sm bg-card/30 backdrop-blur-sm">
-                  <div className="font-medium flex items-center gap-2">
-                    <span>{n.type}</span>
-                    <Badge variant="outline" className="text-[10px]">
-                      New
-                    </Badge>
-                  </div>
-                  <div className="text-[11px] sm:text-xs text-muted-foreground mt-1 leading-relaxed">{n.message}</div>
-                </li>
-              ))}
-              {(notifications || []).length === 0 && <li className="text-[11px] text-muted-foreground">No unread notifications.</li>}
-            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  if (!user) return;
+                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: true })));
+                  toast.success('All enabled');
+                }}
+                disabled={!notificationTypes || notificationTypes.length === 0}
+              >
+                Enable All
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  if (!user) return;
+                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: false })));
+                  toast.success('All disabled');
+                }}
+                disabled={!notificationTypes || notificationTypes.length === 0}
+              >
+                Disable All
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
