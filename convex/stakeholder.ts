@@ -7,6 +7,8 @@ export const getStakeholders = query({
   handler: async (ctx) => {
     const stakeholders = await ctx.db
       .query('stakeholders')
+      .withIndex('by_createdAt')
+      .order('desc')
       .filter((q) => q.eq(q.field('deletedAt'), undefined))
       .collect();
 
@@ -37,8 +39,8 @@ export const addStakeholder = mutation({
 
     const existing = await ctx.db
       .query('stakeholders')
-      .filter((q) => q.eq(q.field('companyName'), companyName))
-      .first();
+      .withIndex('by_companyName', (q) => q.eq('companyName', companyName))
+      .unique();
 
     if (existing) {
       throw new Error('A stakeholder with this company name already exists');
@@ -91,7 +93,8 @@ export const updateStakeholder = mutation({
 
     const duplicate = await ctx.db
       .query('stakeholders')
-      .filter((q) => q.and(q.eq(q.field('companyName'), companyName), q.neq(q.field('_id'), id)))
+      .withIndex('by_companyName', (q) => q.eq('companyName', companyName))
+      .filter((q) => q.neq(q.field('_id'), id))
       .first();
     if (duplicate) throw new Error('Another stakeholder with this company name already exists');
 
