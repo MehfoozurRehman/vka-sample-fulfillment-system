@@ -232,3 +232,35 @@ export const resendInvite = mutation({
     return { ok: true } as const;
   },
 });
+
+export const createFirstAdmin = mutation({
+  args: { email: v.string(), name: v.string() },
+  handler: async (ctx, { email, name }) => {
+    // Ensure no users exist yet
+    const anyUser = await ctx.db.query('users').first();
+    if (anyUser) {
+      throw new Error('Initial admin already created');
+    }
+
+    const now = Date.now();
+    const adminId = await ctx.db.insert('users', {
+      email,
+      name,
+      role: 'admin',
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await ctx.db.insert('auditLogs', {
+      userId: adminId,
+      action: 'createFirstAdmin',
+      table: 'users',
+      recordId: adminId,
+      changes: { email, name, role: 'admin', active: true },
+      timestamp: now,
+    });
+
+    return { id: adminId, email, name, role: 'admin' as const };
+  },
+});
