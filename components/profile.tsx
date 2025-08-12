@@ -127,7 +127,7 @@ export function Profile() {
                 )}
               </div>
               <div className="text-xs text-muted-foreground break-all">{user?.email}</div>
-              <div className="text-[11px] text-muted-foreground capitalize">Role: {user?.role}</div>
+              <div className="text-[11px] text-muted-foreground capitalize">Role: {user?.activeRole}</div>
             </div>
           </CardContent>
           {dirty && (
@@ -155,7 +155,7 @@ export function Profile() {
             <Field label="Role">
               <div>
                 <Badge variant="secondary" className="capitalize">
-                  {user?.role}
+                  {user?.activeRole}
                 </Badge>
               </div>
             </Field>
@@ -170,7 +170,7 @@ export function Profile() {
         </Card>
       </div>
 
-      {user?.role !== 'admin' && (
+      {user?.activeRole !== 'admin' && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
