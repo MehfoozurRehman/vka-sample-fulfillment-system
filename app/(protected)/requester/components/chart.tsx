@@ -7,8 +7,9 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '
 import { RecentRequestsType } from '../type';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQueryState, parseAsString } from 'nuqs';
 
 const chartConfig = {
   created: {
@@ -19,7 +20,7 @@ const chartConfig = {
 
 export function Chart({ data }: { data: RecentRequestsType }) {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState('90d');
+  const [timeRange, setTimeRange] = useQueryState('range', parseAsString.withDefault('90d'));
 
   const chartData = useMemo(() => {
     const grouped: Record<string, number> = {};
@@ -34,7 +35,7 @@ export function Chart({ data }: { data: RecentRequestsType }) {
 
   useEffect(() => {
     if (isMobile) setTimeRange('7d');
-  }, [isMobile]);
+  }, [isMobile, setTimeRange]);
 
   const referenceDate = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
   const filteredData = chartData.filter((item) => {
