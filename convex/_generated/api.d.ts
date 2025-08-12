@@ -16,6 +16,7 @@ import type * as notification from "../notification.js";
 import type * as product from "../product.js";
 import type * as request from "../request.js";
 import type * as resend from "../resend.js";
+import type * as screener from "../screener.js";
 import type * as stakeholder from "../stakeholder.js";
 import type * as user from "../user.js";
 import type * as utils from "../utils.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   product: typeof product;
   request: typeof request;
   resend: typeof resend;
+  screener: typeof screener;
   stakeholder: typeof stakeholder;
   user: typeof user;
   utils: typeof utils;
