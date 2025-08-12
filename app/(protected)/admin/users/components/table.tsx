@@ -18,6 +18,7 @@ import {
 import { Copy, Loader, Mail } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
+import { RoleType, roles } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,7 +34,6 @@ import { InviteUser } from './invite-user';
 import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
-import { roles } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -164,7 +164,6 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   const updateStatus = useMutation(api.user.updateStatus);
   const updateRole = useMutation(api.user.updateRole);
   const resendInvite = useMutation(api.user.resendInvite);
-  type RoleType = (typeof roles)[number];
 
   const [isBulkActing, startBulkActing] = useTransition();
   const selectedRowIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
