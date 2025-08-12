@@ -104,7 +104,7 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
   return (
     <>
       <Tabs value={vipFilter} onValueChange={(v) => setVipFilter(v as 'all' | 'vip' | 'non-vip')} className="w-full flex-col justify-start gap-6">
-        <div className="flex items-center justify-between px-4 lg:px-6">
+        <div className="flex items-center justify-between px-4 lg:px-6 gap-2">
           <Label htmlFor="view-selector" className="sr-only">
             View
           </Label>
@@ -129,8 +129,8 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
               Non-VIP <Badge variant="secondary">{nonVip}</Badge>
             </TabsTrigger>
           </TabsList>
-          <div className="flex items-center gap-2">
-            <Input placeholder="Search company or emails..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="flex items-center gap-2 flex-1">
+            <Input placeholder="Search company or emails..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
             <AddStakeholder />
           </div>
         </div>
