@@ -5,6 +5,14 @@ import { mutation } from './_generated/server';
 import { query } from './_generated/server';
 import { v } from 'convex/values';
 
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 type ReqDoc = Doc<'requests'>;
 type OrderDoc = Doc<'orders'>;
 type StakeholderDoc = Doc<'stakeholders'>;
@@ -134,11 +142,24 @@ export const add = mutation({
       requestId = `${prefix}${padded}`;
     }
 
-    const duplicate = await ctx.db
+    const duplicateId = await ctx.db
       .query('requests')
       .withIndex('by_requestId', (q) => q.eq('requestId', requestId))
       .unique();
-    if (duplicate) throw new Error('Request with this ID already exists');
+    if (duplicateId) throw new Error('Request with this ID already exists');
+
+    const dayKey = dayjs().format('YYYYMMDD');
+    const sortedProductIds = [...args.productsRequested.map((p) => String(p.productId))].sort();
+    const raw = `${args.companyId}|${sortedProductIds.join(',')}|${dayKey}`;
+    const duplicateHash = await sha256Hex(raw);
+
+    const existingSameDay = await ctx.db
+      .query('requests')
+      .withIndex('by_duplicateHash', (q) => q.eq('duplicateHash', duplicateHash))
+      .first();
+    if (existingSameDay && !existingSameDay.deletedAt) {
+      throw new Error('Duplicate request (same company & products already submitted today)');
+    }
 
     const now = Date.now();
     const id = await ctx.db.insert('requests', {
@@ -154,6 +175,7 @@ export const add = mutation({
       productsRequested: args.productsRequested,
       status: 'Pending Review',
       requestedBy: args.requestedBy,
+      duplicateHash,
       createdAt: now,
       updatedAt: now,
     });
@@ -170,7 +192,7 @@ export const add = mutation({
       action: 'addRequest',
       table: 'requests',
       recordId: id,
-      changes: { requestId },
+      changes: { requestId, duplicateHash },
       timestamp: now,
     });
 
