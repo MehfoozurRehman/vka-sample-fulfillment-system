@@ -1,4 +1,4 @@
-import AuthProvider from '@/providers/auth';
+import { AuthProvider } from '@/providers/auth';
 import { TOKEN_COOKIE_NAME } from '@/constants';
 import { api } from '@/convex/_generated/api';
 import { cookies } from 'next/headers';
