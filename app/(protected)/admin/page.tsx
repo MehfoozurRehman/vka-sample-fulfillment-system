@@ -20,7 +20,11 @@ export default function AdminDashboard() {
 
   const auditLogs = useQuery(api.audit.list, {});
 
-  const top = (arr?: { label: string; value: number }[], n = 3) => (arr || []).slice(0, n);
+  const top = (arr?: { label: string; value: number }[], n = 3) =>
+    (arr || []).slice(0, n).map((item) => ({
+      label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
+      value: item.value,
+    }));
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-6 pb-6">
