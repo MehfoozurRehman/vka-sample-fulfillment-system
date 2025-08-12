@@ -19,11 +19,6 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: 'Analytics',
-      url: '/admin/anaytics',
-      icon: IconChartBar,
-    },
-    {
       title: 'Products',
       url: '/admin/products',
       icon: IconFolder,
@@ -37,6 +32,11 @@ const data = {
       title: 'Users',
       url: '/admin/users',
       icon: IconUsers,
+    },
+    {
+      title: 'Analytics',
+      url: '/admin/anaytics',
+      icon: IconChartBar,
     },
     {
       title: 'Audit Logs',
