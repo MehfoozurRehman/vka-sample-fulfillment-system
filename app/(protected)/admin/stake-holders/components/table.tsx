@@ -32,6 +32,7 @@ import { Loader } from 'lucide-react';
 import { StakeholderType } from '../type';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMutation } from 'convex/react';
 import { useTransition } from 'react';
@@ -55,6 +56,8 @@ const columns: ColumnDef<StakeholderType>[] = [
 ];
 
 export function DataTable({ data: initialData, isPending }: { data: StakeholderType[]; isPending: boolean }) {
+  const auth = useAuth();
+
   const [search, setSearch] = useState('');
 
   const [vipFilter, setVipFilter] = useState<'all' | 'vip' | 'non-vip'>('all');
@@ -274,7 +277,7 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                     };
 
                     startSaving(async () => {
-                      await updateStakeholder(payload);
+                      await updateStakeholder({ userId: auth.id, ...payload });
                       setSelected({ ...selected, ...payload });
                       setEdit(null);
                     });
