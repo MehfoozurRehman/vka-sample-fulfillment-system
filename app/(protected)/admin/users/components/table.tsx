@@ -206,7 +206,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
   return (
     <>
       <Tabs value={statusFilter as 'all' | 'active' | 'inactive' | 'invited'} onValueChange={(v) => setStatusFilter(v)} className="w-full flex-col justify-start gap-6">
-        <div className="flex items-center justify-between px-4 lg:px-6">
+        <div className="flex items-center justify-between px-4 lg:px-6 gap-2">
           <Label htmlFor="view-selector" className="sr-only">
             View
           </Label>
@@ -235,7 +235,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
               Pending Invite <Badge variant="secondary">{noOfInvitedUsers}</Badge>
             </TabsTrigger>
           </TabsList>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             {rowSelection && Object.keys(rowSelection).length > 0 && (
               <>
                 <Button variant="default" size="sm" disabled={isBulkActing || selectedUsers.length === 0} onClick={() => handleBulkSetStatus('active')}>
@@ -248,7 +248,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                 </Button>
               </>
             )}
-            <Input placeholder="Search name, email, role..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Search name, email, role..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
             <InviteUser />
           </div>
         </div>
