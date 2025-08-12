@@ -48,8 +48,8 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 export default function AnalyticsPage() {
   const [range, setRange] = React.useState('90');
 
-  const { data: overview } = useQueryWithStatus(api.analytics.overview);
-  const { data: distributions } = useQueryWithStatus(api.analytics.distributions);
+  const { data: overview } = useQueryWithStatus(api.analytics.overview, {});
+  const { data: distributions } = useQueryWithStatus(api.analytics.distributions, {});
   const { data: timeseries, isPending: tsLoading } = useQueryWithStatus(api.analytics.timeseries, { days: Number(range) });
 
   return (
