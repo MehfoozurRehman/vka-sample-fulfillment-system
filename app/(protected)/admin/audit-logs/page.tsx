@@ -19,17 +19,18 @@ import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import { useQueryState, parseAsString } from 'nuqs';
 
 type AuditRow = NonNullable<ReturnType<typeof useQuery<typeof api.audit.list>>>[number];
 
 export default function AuditLogsPage() {
-  const [selectedUser, setSelectedUser] = useState<string>('');
-  const [action, setAction] = useState<string>('');
-  const [tableName, setTableName] = useState<string>('');
-  const [search, setSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useQueryState('user', parseAsString.withDefault(''));
+  const [actionFilter, setActionFilter] = useQueryState('act', parseAsString.withDefault(''));
+  const [tableName, setTableName] = useQueryState('tbl', parseAsString.withDefault(''));
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [start, setStart] = useState<string>('');
-  const [end, setEnd] = useState<string>('');
+  const [start, setStart] = useQueryState('start', parseAsString.withDefault(''));
+  const [end, setEnd] = useQueryState('end', parseAsString.withDefault(''));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditRow | null>(null);
 
@@ -42,7 +43,7 @@ export default function AuditLogsPage() {
 
   const { data: logsRaw, isPending } = useQueryWithStatus(api.audit.list, {
     userId: selectedUser && selectedUser !== 'all' ? (selectedUser as unknown as Id<'users'>) : undefined,
-    action: action && action !== 'all' ? action : undefined,
+    action: actionFilter && actionFilter !== 'all' ? actionFilter : undefined,
     table: tableName && tableName !== 'all' ? tableName : undefined,
     start: start ? dayjs(start).valueOf() : undefined,
     end: end ? dayjs(end).endOf('day').valueOf() : undefined,
@@ -117,7 +118,7 @@ export default function AuditLogsPage() {
           </div>
           <div className="flex flex-col gap-2 min-w-48">
             <Label htmlFor="action">Action</Label>
-            <Select value={action} onValueChange={setAction}>
+            <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger id="action" className="w-44">
                 <SelectValue placeholder="All actions" />
               </SelectTrigger>
@@ -169,7 +170,7 @@ export default function AuditLogsPage() {
             variant="outline"
             onClick={() => {
               setSelectedUser('');
-              setAction('');
+              setActionFilter('');
               setTableName('');
               setSearch('');
               setStart('');
