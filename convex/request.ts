@@ -1,6 +1,7 @@
 import { Doc, Id } from './_generated/dataModel';
 
 import dayjs from 'dayjs';
+import { mutation } from './_generated/server';
 import { query } from './_generated/server';
 import { v } from 'convex/values';
 
@@ -71,5 +72,128 @@ export const recent = query({
         createdAt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss'),
       } as const;
     });
+  },
+});
+
+export const nextId = query({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db
+      .query('requests')
+      .filter((q) => q.eq(q.field('deletedAt'), undefined))
+      .collect();
+    const prefix = 'REQ-';
+    const width = 5;
+    let maxNum = 0;
+    for (const r of items) {
+      const m = /^REQ-(\d{5})$/.exec(r.requestId || '');
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    const next = maxNum + 1;
+    const padded = String(next).padStart(width, '0');
+    return `${prefix}${padded}`;
+  },
+});
+
+export const add = mutation({
+  args: {
+    requestId: v.string(),
+    companyId: v.id('stakeholders'),
+    contactName: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    country: v.string(),
+    applicationType: v.string(),
+    projectName: v.string(),
+    productsRequested: v.array(
+      v.object({
+        productId: v.id('products'),
+        quantity: v.number(),
+        notes: v.optional(v.string()),
+      }),
+    ),
+    requestedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Autonumber if blank or AUTO
+    let requestId = (args.requestId || '').trim();
+    if (!requestId || requestId.toUpperCase() === 'AUTO') {
+      const all = await ctx.db
+        .query('requests')
+        .filter((q) => q.eq(q.field('deletedAt'), undefined))
+        .collect();
+      const prefix = 'REQ-';
+      const width = 5;
+      let maxNum = 0;
+      for (const r of all) {
+        const m = /^REQ-(\d{5})$/.exec(r.requestId || '');
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      }
+      const next = maxNum + 1;
+      const padded = String(next).padStart(width, '0');
+      requestId = `${prefix}${padded}`;
+    }
+
+    const duplicate = await ctx.db
+      .query('requests')
+      .filter((q) => q.eq(q.field('requestId'), requestId))
+      .first();
+    if (duplicate) throw new Error('Request with this ID already exists');
+
+    const now = Date.now();
+    const id = await ctx.db.insert('requests', {
+      requestId,
+      timestamp: now,
+      companyId: args.companyId,
+      contactName: args.contactName,
+      email: args.email,
+      phone: args.phone,
+      country: args.country,
+      applicationType: args.applicationType,
+      projectName: args.projectName,
+      productsRequested: args.productsRequested,
+      status: 'Pending Review',
+      requestedBy: args.requestedBy,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const user = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('email'), args.requestedBy))
+      .first();
+
+    if (!user) throw new Error('User not found for requestedBy email');
+
+    await ctx.db.insert('auditLogs', {
+      userId: user._id,
+      action: 'addRequest',
+      table: 'requests',
+      recordId: id,
+      changes: { requestId },
+      timestamp: now,
+    });
+
+    return { id, requestId } as const;
+  },
+});
+
+export const suggestions = query({
+  args: {},
+  handler: async (ctx) => {
+    const reqs = await ctx.db.query('requests').collect();
+    const applicationTypes = Array.from(new Set(reqs.filter((r) => !r.deletedAt && typeof r.applicationType === 'string' && r.applicationType.trim()).map((r) => r.applicationType.trim()))).sort(
+      (a, b) => a.localeCompare(b),
+    );
+    const projectNames = Array.from(new Set(reqs.filter((r) => !r.deletedAt && typeof r.projectName === 'string' && r.projectName.trim()).map((r) => r.projectName.trim()))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+    return { applicationTypes, projectNames } as const;
   },
 });
