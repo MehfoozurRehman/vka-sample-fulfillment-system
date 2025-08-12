@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Loader } from 'lucide-react';
+import { ChevronLeft, GalleryVerticalEnd, Loader } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconAlertTriangle, IconBell, IconCircleCheck, IconDotsVertical, IconInfoCircle, IconLogout, IconUserCircle } from '@tabler/icons-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useState, useTransition } from 'react';
 
 import { Button } from './ui/button';
 import ClickAwayListener from 'react-click-away-listener';
+import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
 import { api } from '@/convex/_generated/api';
@@ -42,6 +43,14 @@ export function SiteHeader() {
   return (
     <header className="flex h-[var(--header-height,56px)] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[var(--header-height,56px)]">
       <div className={`flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ${isAdmin ? '' : 'container mx-auto'}`}>
+        {!isAdmin && (
+          <Link href="/" data-slot="logo" className="flex items-center gap-2 text-sm font-semibold border-white/70 transition-colors border-r-2 pr-2">
+            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            <span className="text-base font-semibold">VKA Sample Fulfillment</span>
+          </Link>
+        )}
         {isAdmin && <SidebarTrigger className="-ml-1" />}
         {!isRoot && (
           <Button onClick={() => router.push(previousPath)} data-slot="back-button" variant="ghost" size="icon">
