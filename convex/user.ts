@@ -150,3 +150,24 @@ export const updateProfile = mutation({
   },
 });
 
+export const uploadProfilePicture = mutation({
+  args: { userId: v.id('users'), storageId: v.string() },
+  handler: async (ctx, { userId, storageId }) => {
+    const user = await ctx.db.get(userId);
+
+    if (!user) throw new Error('User not found');
+
+    await ctx.db.patch(userId, { profilePicture: storageId, updatedAt: Date.now() });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'uploadProfilePicture',
+      table: 'users',
+      recordId: userId,
+      changes: { profilePicture: storageId },
+      timestamp: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
