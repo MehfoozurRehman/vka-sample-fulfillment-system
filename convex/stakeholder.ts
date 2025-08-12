@@ -80,6 +80,7 @@ export const addStakeholder = mutation({
 
 export const updateStakeholder = mutation({
   args: {
+    userId: v.id('users'),
     id: v.id('stakeholders'),
     companyName: v.string(),
     salesRepEmail: v.string(),
@@ -87,7 +88,7 @@ export const updateStakeholder = mutation({
     complianceOfficerEmail: v.string(),
     vipFlag: v.boolean(),
   },
-  handler: async (ctx, { id, companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag }) => {
+  handler: async (ctx, { userId, id, companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag }) => {
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Stakeholder not found');
 
@@ -106,6 +107,36 @@ export const updateStakeholder = mutation({
       vipFlag,
       updatedAt: Date.now(),
     });
+
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'updateStakeholder',
+      table: 'stakeholders',
+      recordId: id,
+      changes: { companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag },
+      timestamp: Date.now(),
+    });
+
+    const now = Date.now();
+    const allUsers = await ctx.db.query('users').collect();
+    const relatedEmails = new Set([salesRepEmail, accountManagerEmail, complianceOfficerEmail].filter(Boolean));
+
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      const isAdmin = roles.includes('admin');
+      const isRelated = relatedEmails.has(u.email);
+      if (!isAdmin && !isRelated) continue;
+      if (u._id === userId) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: userId,
+        type: 'stakeholderUpdated',
+        message: `Stakeholder ${companyName} updated`,
+        read: false,
+        createdAt: now,
+      });
+    }
 
     return { ok: true };
   },
