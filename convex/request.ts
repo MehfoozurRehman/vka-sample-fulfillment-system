@@ -106,6 +106,7 @@ export const nextId = query({
 
 export const add = mutation({
   args: {
+    userId: v.id('users'),
     requestId: v.string(),
     companyId: v.id('stakeholders'),
     contactName: v.string(),
@@ -196,6 +197,29 @@ export const add = mutation({
       timestamp: now,
     });
 
+    const stakeholder = await ctx.db.get(args.companyId);
+    const relatedEmails = new Set<string>();
+    if (stakeholder) {
+      [stakeholder.salesRepEmail, stakeholder.accountManagerEmail, stakeholder.complianceOfficerEmail].forEach((e) => e && relatedEmails.add(e));
+    }
+    const allUsers = await ctx.db.query('users').collect();
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const roles: string[] = (u.roles || []).filter(Boolean);
+      const isScreener = roles.includes('screener');
+      const isRelated = relatedEmails.has(u.email);
+      if (!isScreener && !isRelated) continue;
+      if (u._id === user._id) continue; // skip creator
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: user._id,
+        type: 'requestCreated',
+        message: `Request ${requestId} created`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
     return { id, requestId } as const;
   },
 });
@@ -219,6 +243,7 @@ export const suggestions = query({
 
 export const update = mutation({
   args: {
+    userId: v.id('users'),
     id: v.id('requests'),
     contactName: v.string(),
     email: v.string(),
@@ -266,6 +291,28 @@ export const update = mutation({
       timestamp: Date.now(),
     });
 
+    const stakeholder = await ctx.db.get(req.companyId as Id<'stakeholders'>);
+    const relatedEmails = new Set<string>();
+    if (stakeholder) {
+      [stakeholder.salesRepEmail, stakeholder.accountManagerEmail, stakeholder.complianceOfficerEmail].forEach((e) => e && relatedEmails.add(e));
+    }
+    const now = Date.now();
+    const allUsers = await ctx.db.query('users').collect();
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const isRelated = relatedEmails.has(u.email);
+      if (!isRelated) continue; // only stakeholder parties on update
+      if (u._id === actorUser._id) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: actorUser._id,
+        type: 'requestUpdated',
+        message: `Request ${req.requestId} updated`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
     return { ok: true } as const;
   },
 });
@@ -280,28 +327,25 @@ export const getOne = query({
 });
 
 export const remove = mutation({
-  args: { id: v.id('requests') },
+  args: { userId: v.id('users'), id: v.id('requests') },
   handler: async (ctx, { id }) => {
     const req = await ctx.db.get(id);
-
     if (!req || req.deletedAt) throw new Error('Request not found');
-
     if (req.reviewedBy) throw new Error('Cannot delete a reviewed request');
 
     const existingOrder = await ctx.db
       .query('orders')
       .withIndex('by_requestId', (q) => q.eq('requestId', id))
       .first();
-
     if (existingOrder) throw new Error('Cannot delete once order exists');
 
-    await ctx.db.patch(id, { deletedAt: Date.now() });
+    const now = Date.now();
+    await ctx.db.patch(id, { deletedAt: now });
 
     const actorUser = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
       .unique();
-
     if (!actorUser) throw new Error('No actor user found');
 
     await ctx.db.insert('auditLogs', {
@@ -309,9 +353,31 @@ export const remove = mutation({
       action: 'deleteRequest',
       table: 'requests',
       recordId: id,
-      changes: { deletedAt: Date.now() },
-      timestamp: Date.now(),
+      changes: { deletedAt: now },
+      timestamp: now,
     });
+
+    // Notifications to stakeholder related emails (but not creator)
+    const stakeholder = await ctx.db.get(req.companyId as Id<'stakeholders'>);
+    const relatedEmails = new Set<string>();
+    if (stakeholder) {
+      [stakeholder.salesRepEmail, stakeholder.accountManagerEmail, stakeholder.complianceOfficerEmail].forEach((e) => e && relatedEmails.add(e));
+    }
+    const allUsers = await ctx.db.query('users').collect();
+    for (const u of allUsers) {
+      if (u.deletedAt || !u.active) continue;
+      const isRelated = relatedEmails.has(u.email);
+      if (!isRelated) continue;
+      if (u._id === actorUser._id) continue;
+      await ctx.db.insert('notifications', {
+        userId: u._id,
+        createdBy: actorUser._id,
+        type: 'requestDeleted',
+        message: `Request ${req.requestId} deleted`,
+        read: false,
+        createdAt: now,
+      });
+    }
 
     return { ok: true } as const;
   },
