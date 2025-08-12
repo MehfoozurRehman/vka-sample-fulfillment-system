@@ -8,7 +8,8 @@ export default defineSchema({
     designation: v.optional(v.string()),
     name: v.optional(v.string()),
     email: v.string(),
-    role: v.string(),
+    roles: v.array(v.string()),
+    activeRole: v.string(),
     active: v.boolean(),
     profilePicture: v.optional(v.string()),
     lastLogin: v.optional(v.number()),
@@ -18,7 +19,7 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index('by_email', ['email'])
-    .index('by_role', ['role'])
+    .index('by_activeRole', ['activeRole'])
     .index('by_googleId', ['googleId'])
     .index('by_createdAt', ['createdAt']),
 
