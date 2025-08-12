@@ -73,6 +73,8 @@ export default defineSchema({
     reviewedBy: v.optional(v.string()),
     reviewDate: v.optional(v.number()),
     reviewNotes: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    duplicateHash: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
@@ -82,7 +84,8 @@ export default defineSchema({
     .index('by_email', ['email'])
     .index('by_requestId', ['requestId'])
     .index('by_createdAt', ['createdAt'])
-    .index('by_company_status', ['companyId', 'status']),
+    .index('by_company_status', ['companyId', 'status'])
+    .index('by_duplicateHash', ['duplicateHash']),
 
   orders: defineTable({
     orderId: v.string(),
@@ -96,6 +99,17 @@ export default defineSchema({
     shippedDate: v.optional(v.number()),
     carrier: v.optional(v.string()),
     trackingNumber: v.optional(v.string()),
+    pickedCorrect: v.optional(v.boolean()),
+    coaIncluded: v.optional(v.boolean()),
+    sdsIncluded: v.optional(v.boolean()),
+    specsIncluded: v.optional(v.boolean()),
+    labelsApplied: v.optional(v.boolean()),
+    packingListIncluded: v.optional(v.boolean()),
+    packageCount: v.optional(v.number()),
+    totalWeight: v.optional(v.number()),
+    serviceLevel: v.optional(v.string()),
+    internationalDocsIncluded: v.optional(v.boolean()),
+    shippedEmailSent: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
