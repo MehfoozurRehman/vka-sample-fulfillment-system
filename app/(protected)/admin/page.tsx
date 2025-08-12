@@ -13,19 +13,25 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function AdminDashboard() {
   const overview = useQuery(api.analytics.overview);
-
+  const distributions = useQuery(api.analytics.distributions);
   const { data: recent, isPending } = useQueryWithStatus(api.request.recent, { limit: 8 });
+  const auditLogs = useQuery(api.audit.list, {});
+
+  const top = (arr?: { label: string; value: number }[], n = 3) => (arr || []).slice(0, n);
 
   return (
-    <div className="@container/main flex flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-          <StatCard title="Users" value={overview?.totalUsers} sub={overview ? `${overview.activeUsers} active` : ''} icon={<IconUser className="size-5" />} />
-          <StatCard title="Stakeholders" value={overview?.totalStakeholders} sub={overview ? `${overview.vipStakeholders} VIP` : ''} icon={<IconClipboardText className="size-5" />} />
-          <StatCard title="Products" value={overview?.totalProducts} sub={overview ? `${overview.totalRequests} requests` : ''} icon={<IconPackage className="size-5" />} />
-          <StatCard title="Orders" value={overview?.totalOrders} sub={overview ? `${overview.openOrders} open` : ''} icon={<IconTruck className="size-5" />} />
-        </div>
-        <Card className="mx-4 lg:mx-6 overflow-hidden">
+    <div className="@container/main flex flex-1 flex-col gap-6 pb-6">
+      <div className="grid gap-4 px-4 pt-4 lg:px-6 md:grid-cols-2 xl:grid-cols-3 @5xl/main:grid-cols-6">
+        <StatCard title="Users" value={overview?.totalUsers} sub={overview ? `${overview.activeUsers} active` : ''} icon={<IconUser className="size-5" />} />
+        <StatCard title="Stakeholders" value={overview?.totalStakeholders} sub={overview ? `${overview.vipStakeholders} VIP` : ''} icon={<IconClipboardText className="size-5" />} />
+        <StatCard title="Products" value={overview?.totalProducts} sub={overview ? `${overview.totalRequests} requests` : ''} icon={<IconPackage className="size-5" />} />
+        <StatCard title="Orders" value={overview?.totalOrders} sub={overview ? `${overview.openOrders} open` : ''} icon={<IconTruck className="size-5" />} />
+        <StatCard title="Pending Requests" value={overview?.pendingRequests} sub="waiting" icon={<IconClipboardText className="size-5" />} />
+        <StatCard title="Audit Logs" value={overview?.totalAuditLogs} sub="records" icon={<IconClipboardText className="size-5" />} />
+      </div>
+
+      <div className="grid gap-6 px-4 lg:px-6 xl:grid-cols-3">
+        <Card className="overflow-hidden xl:col-span-2">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-0">
             <div>
               <CardTitle>Recent Requests</CardTitle>
@@ -88,6 +94,52 @@ export default function AdminDashboard() {
           </CardContent>
           <CardFooter className="text-xs text-muted-foreground">Showing latest {recent?.length || 0} requests.</CardFooter>
         </Card>
+
+        <Card className="overflow-hidden h-full flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Recent Audit Logs</CardTitle>
+            <CardDescription className="text-xs">Most recent changes</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto">
+            {!auditLogs && (
+              <div className="space-y-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+            )}
+            {auditLogs &&
+              auditLogs.slice(0, 8).map((l) => (
+                <div key={l.id} className="py-1.5 border-b last:border-b-0 text-xs flex flex-col gap-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{l.action}</span>
+                    <span className="text-muted-foreground">{new Date(l.timestamp).toLocaleDateString()} </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+                    <span>{l.userName}</span>
+                    <span>·</span>
+                    <span>{l.table}</span>
+                    {l.recordId && (
+                      <>
+                        <span>·</span>
+                        <span className="font-mono">{l.recordId}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            {auditLogs && auditLogs.length === 0 && <div className="text-xs text-muted-foreground">No audit logs.</div>}
+          </CardContent>
+          <CardFooter className="text-[10px] text-muted-foreground">
+            Showing {Math.min(auditLogs?.length || 0, 8)} of {auditLogs?.length || 0} logs.
+          </CardFooter>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-3">
+        <DistributionListCard title="Users by Role" items={top(distributions?.usersByRole)} emptyText="No roles" />
+        <DistributionListCard title="Products by Category" items={top(distributions?.productsByCategory)} emptyText="No categories" />
+        <DistributionListCard title="Requests by Status" items={top(distributions?.requestsByStatus)} emptyText="No requests" />
       </div>
     </div>
   );
@@ -119,4 +171,33 @@ function StatusBadge({ status }: { status: string }) {
   else if (['approved', 'open'].some((s) => normalized.includes(s))) variant = 'default';
   else if (['rejected', 'cancel', 'error'].some((s) => normalized.includes(s))) variant = 'destructive';
   return <Badge variant={variant}>{status}</Badge>;
+}
+
+function DistributionListCard({ title, items, emptyText }: { title: string; items: { label: string; value: number }[]; emptyText: string }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <span>{title}</span>
+          {items?.length > 0 && <span className="text-[10px] text-muted-foreground">Top {items.length}</span>}
+        </CardTitle>
+        <CardDescription className="text-xs">{items?.length ? 'Most common' : emptyText}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-2">
+        <ul className="space-y-2">
+          {items?.length === 0 && <li className="text-xs text-muted-foreground">{emptyText}</li>}
+          {items?.map((it) => (
+            <li key={it.label} className="flex items-center justify-between text-xs">
+              <span className="truncate max-w-[60%]" title={it.label}>
+                {it.label}
+              </span>
+              <Badge variant="secondary" className="font-mono text-[10px] px-1 py-0.5">
+                {it.value}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
 }
