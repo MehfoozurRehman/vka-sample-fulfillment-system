@@ -25,7 +25,6 @@ export const list = query({
 export const nextId = query({
   args: {},
   handler: async (ctx) => {
-    // Include ALL products (even soft-deleted) so we never reuse an ID.
     const items = await ctx.db.query('products').collect();
 
     const prefix = 'FLV-';
@@ -112,7 +111,6 @@ export const add = mutation({
     let productId = (args.productId || '').trim();
 
     if (!productId || productId.toUpperCase() === 'AUTO') {
-      // Include deleted products when generating next sequential ID to avoid reuse
       const items = await ctx.db.query('products').collect();
       const prefix = 'FLV-';
       const width = 5;
