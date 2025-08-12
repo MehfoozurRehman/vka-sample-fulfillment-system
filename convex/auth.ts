@@ -1,7 +1,7 @@
 import { mutation, query } from './_generated/server';
 
 import { Id } from './_generated/dataModel';
-import { Roles } from '@/constants';
+import { RoleType } from '@/constants';
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
 
@@ -61,7 +61,7 @@ export const checkUserRole = query({
 
     return {
       id: user._id,
-      role: user.role as Roles,
+      role: user.role as RoleType,
     };
   },
 });
@@ -107,7 +107,7 @@ export const login = mutation({
 
     return {
       id: user._id,
-      role: user.role as Roles,
+      role: user.role as RoleType,
     };
   },
 });
@@ -155,7 +155,7 @@ export const acceptInvite = mutation({
 
     return {
       id: inviteId,
-      role: validInvite?.role as Roles,
+      role: validInvite?.role as RoleType,
     };
   },
 });
