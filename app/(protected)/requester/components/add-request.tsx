@@ -30,7 +30,7 @@ interface StakeholderRow {
   companyName: string;
 }
 
-export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
+export function AddRequest() {
   const [open, setOpen] = useState(false);
 
   const nextId = useQuery(api.request.nextId);
@@ -119,7 +119,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
           applicationType: (event.currentTarget.elements.namedItem('applicationType') as HTMLInputElement).value.trim(),
           projectName: (event.currentTarget.elements.namedItem('projectName') as HTMLInputElement).value.trim(),
           productsRequested,
-          requestedBy: requesterEmail,
+          requestedBy: auth.email,
         });
         toast.success('Request submitted');
         setOpen(false);
@@ -160,7 +160,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Contact Email</Label>
-              <Input id="email" name="email" type="email" defaultValue={requesterEmail} />
+              <Input id="email" name="email" type="email" defaultValue={auth.email} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone</Label>
