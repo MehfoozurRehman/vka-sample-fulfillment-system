@@ -76,7 +76,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     productsRequested: [] as { productId: Id<'products'>; quantity: number; notes?: string }[],
   });
 
-  type ProductLine = { productId: Id<'products'> | null; quantity: number; notes?: string; productDisplay: string };
+  type ProductLine = { productId: Id<'products'> | null; quantity: number | ''; notes?: string; productDisplay: string };
   const [productLines, setProductLines] = useState<ProductLine[]>([]);
 
   useEffect(() => {
@@ -112,7 +112,9 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   useEffect(() => {
     setForm((f) => ({
       ...f,
-      productsRequested: productLines.filter((l) => !!l.productId && l.quantity > 0).map((l) => ({ productId: l.productId as Id<'products'>, quantity: l.quantity, notes: l.notes || undefined })),
+      productsRequested: productLines
+        .filter((l) => !!l.productId && l.quantity !== '' && l.quantity > 0)
+        .map((l) => ({ productId: l.productId as Id<'products'>, quantity: l.quantity as number, notes: l.notes || undefined })),
     }));
   }, [productLines]);
 
@@ -130,7 +132,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
     if (!productLines.length) return toast.error('Add at least one product');
 
-    const invalid = productLines.some((l) => !l.productId || !l.quantity || l.quantity <= 0);
+    const invalid = productLines.some((l) => !l.productId || l.quantity === '' || l.quantity <= 0);
 
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
@@ -291,9 +293,11 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                           <Input
                             type="number"
                             min={1}
-                            value={line.quantity}
+                            value={line.quantity === '' ? '' : line.quantity}
                             onChange={(e) => {
-                              const qty = parseInt(e.target.value, 10) || 0;
+                              const raw = e.target.value;
+
+                              const qty = raw === '' ? '' : parseInt(raw, 10);
 
                               setProductLines((prev) => prev.map((l, i) => (i === idx ? { ...l, quantity: qty } : l)));
                             }}
