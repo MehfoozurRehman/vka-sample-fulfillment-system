@@ -19,6 +19,19 @@ interface PendingRowLite {
   requestId: string;
 }
 
+interface PriorNote {
+  requestId: string;
+  status: string;
+  reviewDate?: number;
+  reviewDateFmt?: string | null;
+  reviewNotes?: string;
+  rejectionReason?: string;
+}
+interface FrequentProduct {
+  name: string;
+  count: number;
+}
+
 export default function RequestDrawer({
   open,
   onOpenChange,
@@ -30,7 +43,7 @@ export default function RequestDrawer({
   onOpenChange: (o: boolean) => void;
   row: PendingRowLite | null;
   reviewerEmail: string;
-  afterAction: () => void;
+  afterAction: (processedId: Id<'requests'>, action: 'approve' | 'reject') => void;
 }) {
   const approveMut = useMutation(api.screener.approve);
   const rejectMut = useMutation(api.screener.reject);
@@ -124,6 +137,64 @@ export default function RequestDrawer({
                 </Card>
               )}
               <RecentRequestsPanel data={detailData.lastFive} total={detailData.totalSamples12mo} onSelect={handleSelect} activeId={currentId} />
+              <div className="grid gap-3 md:grid-cols-2">
+                <Card className="border">
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-sm font-medium">Decision Counts</CardTitle>
+                    <CardDescription className="text-xs">History for this customer</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 text-[11px] grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="font-semibold">Approved:</span> {detailData.decisionCounts?.approved ?? 0}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Rejected:</span> {detailData.decisionCounts?.rejected ?? 0}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Pending:</span> {detailData.decisionCounts?.pending ?? 0}
+                    </div>
+                  </CardContent>
+                </Card>
+                {detailData.frequentProductsTop?.length ? (
+                  <Card className="border">
+                    <CardHeader className="pb-1">
+                      <CardTitle className="text-sm font-medium">Frequent Products</CardTitle>
+                      <CardDescription className="text-xs">Top 5 for this customer</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0 text-[11px] space-y-1 max-h-28 overflow-auto">
+                      {detailData.frequentProductsTop.map((p: FrequentProduct) => (
+                        <div key={p.name} className="flex justify-between">
+                          <span>{p.name}</span>
+                          <span className="text-muted-foreground">{p.count}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+              {detailData.priorNotes?.length ? (
+                <Card className="border">
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-sm font-medium">Prior Notes & Reasons</CardTitle>
+                    <CardDescription className="text-xs">From previous decisions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 text-[11px] space-y-2 max-h-40 overflow-auto">
+                    {detailData.priorNotes.slice(0, 10).map((n: PriorNote) => (
+                      <div key={n.requestId} className="rounded border p-2 bg-background/50">
+                        <div className="flex justify-between font-mono text-[10px] mb-1">
+                          <span>{n.requestId}</span>
+                          <span>{n.reviewDateFmt || '—'}</span>
+                        </div>
+                        <div className="flex gap-2 flex-wrap text-[10px] mb-1">
+                          <span className="font-semibold">{n.status}</span>
+                          {n.rejectionReason && <span className="text-destructive">({n.rejectionReason})</span>}
+                        </div>
+                        {n.reviewNotes && <div className="text-[10px] whitespace-pre-wrap text-muted-foreground">{n.reviewNotes}</div>}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null}
               <div className="space-y-3">
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
                 <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
@@ -206,7 +277,7 @@ export default function RequestDrawer({
                   if (!currentId || awaitingInfo) return;
                   startSaving(async () => {
                     await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
-                    afterAction();
+                    afterAction(currentId, 'approve');
                   });
                 }}
               >
@@ -219,7 +290,7 @@ export default function RequestDrawer({
                   if (!currentId || !canReject || awaitingInfo) return;
                   startSaving(async () => {
                     await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
-                    afterAction();
+                    afterAction(currentId, 'reject');
                   });
                 }}
               >
