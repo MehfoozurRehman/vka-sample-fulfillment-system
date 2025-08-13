@@ -3,7 +3,6 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, D
 import { LabelVal, RecentRequestsPanel } from './request-drawer.parts';
 import React, { useEffect, useState, useTransition } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMutation, useQuery } from 'convex/react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,8 @@ import { Loader } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { useMutation } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 interface PendingRowLite {
   id: Id<'requests'>;
@@ -71,7 +72,7 @@ export default function RequestDrawer({
 
   const canReject = reason.trim().length > 2;
 
-  const detailData = useQuery(api.screener.detail, currentId ? { id: currentId } : 'skip');
+  const { data: detailData } = useQueryWithStatus(api.screener.detail, currentId ? { id: currentId } : 'skip');
 
   const vip = !!detailData?.stakeholder?.vipFlag;
 
