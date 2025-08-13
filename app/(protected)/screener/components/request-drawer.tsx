@@ -207,13 +207,15 @@ export default function RequestDrawer({
                   </CardContent>
                 </Card>
               ) : null}
-              <div className="space-y-3">
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
-                <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
-                <div className="text-[10px] text-muted-foreground">
-                  Approvals create an order. Rejections require a reason. All actions are audit logged. {awaitingInfo && 'Awaiting requester info response.'}
+              {detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected' ? null : (
+                <div className="space-y-3">
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
+                  <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
+                  <div className="text-[10px] text-muted-foreground">
+                    Approvals create an order. Rejections require a reason. All actions are audit logged. {awaitingInfo && 'Awaiting requester info response.'}
+                  </div>
                 </div>
-              </div>
+              )}
               {(detailData.request.infoRequestedAt || detailData.request.infoRequestMessage) && (
                 <Card className="border">
                   <CardHeader className="pb-2">
@@ -284,7 +286,7 @@ export default function RequestDrawer({
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex gap-2">
               <Button
-                disabled={isSaving || !currentId || awaitingInfo}
+                disabled={isSaving || !currentId || awaitingInfo || detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected'}
                 onClick={() => {
                   if (!currentId || awaitingInfo) return;
                   startSaving(async () => {
