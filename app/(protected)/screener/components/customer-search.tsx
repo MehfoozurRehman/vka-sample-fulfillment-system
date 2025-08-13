@@ -6,8 +6,10 @@ import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
+import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { useQuery } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 interface SearchResult {
   id: string;
@@ -15,22 +17,13 @@ interface SearchResult {
   vipFlag: boolean;
   requestCount: number;
 }
-interface OverviewType {
-  stakeholder: { id: string; companyName: string; vipFlag: boolean };
-  firstRequest: string | null;
-  totalRequests: number;
-  totalSamples: number;
-  rejectionRate: number;
-  recent: { id: string; requestId: string; dateFmt: string; status: string }[];
-  frequentProducts: { name: string; count: number }[];
-}
 
 export default function CustomerSearch() {
   const [q, setQ] = useState('');
 
   const [selected, setSelected] = useState<string | null>(null);
 
-  const all = useQuery(api.screener.listCustomers, {});
+  const { data: all, isPending: isCustomerPending } = useQueryWithStatus(api.screener.listCustomers, {});
 
   const results = useMemo(() => {
     if (!all) return [] as SearchResult[];
@@ -43,7 +36,7 @@ export default function CustomerSearch() {
     return list.filter((r) => r.companyName.toLowerCase().includes(term)).sort((a, b) => a.companyName.localeCompare(b.companyName));
   }, [all, q]);
 
-  const overview = useQuery(api.screener.customerOverview, selected ? { stakeholderId: selected as unknown as Id<'stakeholders'> } : 'skip') as OverviewType | undefined;
+  const { data: overview, isPending } = useQueryWithStatus(api.screener.customerOverview, selected ? { stakeholderId: selected as unknown as Id<'stakeholders'> } : 'skip');
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,10 +56,15 @@ export default function CustomerSearch() {
         <CardContent>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2 max-h-[460px] overflow-auto rounded border p-2 text-xs bg-background/40">
+              {isCustomerPending && (
+                <div className="text-muted-foreground flex items-center justify-center h-24">
+                  <Loader className="animate-spin" />
+                </div>
+              )}
               {results.map((r) => (
                 <div
                   key={r.id}
-                  className={`cursor-pointer rounded px-2 py-1 transition-colors border border-transparent hover:border-border/60 ${selected === r.id ? 'bg-primary/10 ring-1 ring-primary/40' : ''}`}
+                  className={`cursor-pointer rounded px-3 py-2 transition-colors border border-transparent hover:border-border/60 ${selected === r.id ? 'bg-primary/10 ring-1 ring-primary/40' : ''}`}
                   onClick={() => setSelected(r.id)}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -80,11 +78,18 @@ export default function CustomerSearch() {
                   </div>
                 </div>
               ))}
-              {!q && <div className="text-muted-foreground">Type to filter...</div>}
-              {!results.length && <div className="text-muted-foreground">No matches.</div>}
+              {!results.length && <div className="text-muted-foreground flex items-center justify-center h-24">No matches.</div>}
             </div>
             <div className="md:col-span-2 space-y-4">
-              {!overview && <div className="text-xs text-muted-foreground">Select a customer to view details.</div>}
+              {!selected ? (
+                <div className="text-xs text-muted-foreground">Select a customer to view details.</div>
+              ) : (
+                isPending && (
+                  <div className="text-muted-foreground flex items-center justify-center h-24">
+                    <Loader className="animate-spin" />
+                  </div>
+                )
+              )}
               {overview && (
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
