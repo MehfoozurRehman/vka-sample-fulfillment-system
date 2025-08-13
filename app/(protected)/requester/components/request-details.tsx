@@ -1,7 +1,7 @@
 'use client';
 
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { Label } from '@/components/ui/label';
+import { Loader } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
@@ -69,6 +70,10 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const remove = useMutation(api.request.remove);
 
   const respondInfo = useMutation(api.screener.respondInfo);
+
+  const [isSaving, startSaving] = useTransition();
+
+  const [isDeleting, startDeleting] = useTransition();
 
   const isDraft = row && row.status === 'Pending Review' && row.stage === 'Submitted';
 
@@ -140,33 +145,28 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   async function onSave() {
     if (!row) return;
     if (!form.contactName.trim()) return toast.error('Contact name required');
-
     if (!form.email.trim()) return toast.error('Email required');
-
     if (!form.country.trim()) return toast.error('Country required');
-
     if (!form.applicationType.trim()) return toast.error('Application type required');
-
     if (!form.projectName.trim()) return toast.error('Project name required');
-
     if (!productLines.length) return toast.error('Add at least one product');
-
     const invalid = productLines.some((l) => !l.productId || l.quantity === '' || l.quantity <= 0);
-
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
-    await update({ userId: auth.id, id: row.id, ...form });
-
-    setEditing(false);
-
-    toast.success('Request updated');
+    startSaving(async () => {
+      await update({ userId: auth.id, id: row.id, ...form });
+      setEditing(false);
+      toast.success('Request updated');
+    });
   }
 
   async function onDelete() {
     if (!row) return;
     if (!confirm('Delete this draft request?')) return;
-    await remove({ userId: auth.id, id: row.id });
-    onOpenChange(false);
+    startDeleting(async () => {
+      await remove({ userId: auth.id, id: row.id });
+      onOpenChange(false);
+    });
   }
 
   function updateField<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
@@ -417,8 +417,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   </Button>
                 )}
                 {isDraft && (
-                  <Button size="sm" variant="destructive" onClick={onDelete}>
-                    Delete
+                  <Button size="sm" variant="destructive" onClick={onDelete} disabled={isDeleting}>
+                    {isDeleting && <Loader className="mr-2 size-4 animate-spin" />} Delete
                   </Button>
                 )}
               </div>
@@ -432,15 +432,15 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
           {editing && (
             <div className="flex w-full justify-between gap-2">
               <div className="flex gap-2">
-                <Button size="sm" onClick={onSave}>
-                  Save
+                <Button size="sm" onClick={onSave} disabled={isSaving}>
+                  {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Save
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                <Button size="sm" variant="outline" onClick={() => setEditing(false)} disabled={isSaving}>
                   Cancel
                 </Button>
               </div>
               <DrawerClose asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" disabled={isSaving}>
                   Close
                 </Button>
               </DrawerClose>
@@ -464,7 +464,7 @@ interface InfoRequestData {
 function InfoRequestPanel({ request, onRespond, showRespondForm }: { request: InfoRequestData; onRespond: (message: string) => Promise<void>; showRespondForm?: boolean }) {
   const [msg, setMsg] = useState('');
 
-  const [sending, setSending] = useState(false);
+  const [isSending, startSending] = useTransition();
 
   const canSend = msg.trim().length >= 5;
 
@@ -498,20 +498,16 @@ function InfoRequestPanel({ request, onRespond, showRespondForm }: { request: In
             <span className="text-[10px] text-muted-foreground">{canSend ? 'Ready to send' : 'Enter at least 5 characters'}</span>
             <Button
               size="sm"
-              disabled={!canSend || sending}
-              onClick={async () => {
+              disabled={!canSend || isSending}
+              onClick={() => {
                 if (!canSend) return;
-                setSending(true);
-
-                try {
+                startSending(async () => {
                   await onRespond(msg.trim());
                   setMsg('');
-                } finally {
-                  setSending(false);
-                }
+                });
               }}
             >
-              {sending ? 'Sending...' : 'Send Info'}
+              {isSending && <Loader className="mr-2 size-3 animate-spin" />} Send Info
             </Button>
           </div>
         </div>
