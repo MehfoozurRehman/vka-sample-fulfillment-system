@@ -12,10 +12,10 @@ export const list = query({
     start: v.optional(v.number()),
     end: v.optional(v.number()),
     search: v.optional(v.string()),
-    limit: v.optional(v.number()), // optional cap (most recent first)
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, { userId, action, table, start, end, search, limit }) => {
-    const cap = Math.min(Math.max(limit ?? 0, 0), 5000); // safety cap if provided
+    const cap = Math.min(Math.max(limit ?? 0, 0), 5000);
 
     let base: Doc<'auditLogs'>[] = [];
     if (userId) {
@@ -28,7 +28,6 @@ export const list = query({
       base = await ctx.db.query('auditLogs').withIndex('by_timestamp').order('desc').collect();
     }
 
-    // Already desc ordered; apply filters
     let filtered = base
       .filter((l) => (action ? l.action === action : true))
       .filter((l) => (table ? l.table === table : true))
