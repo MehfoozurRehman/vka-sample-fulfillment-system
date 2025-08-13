@@ -3,6 +3,7 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
+import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 
 async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, email: string): Promise<Doc<'users'>> {
   const user = await ctx.db
@@ -158,6 +159,25 @@ export const approve = mutation({
       timestamp: now,
     });
 
+    const requesterUser = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+      .unique();
+    if (requesterUser) {
+      await sendInternalNotifications(ctx, reviewer._id, 'request.approved', `Request ${req.requestId} approved.`, [requesterUser._id]);
+    }
+    const allUsers = await ctx.db.query('users').collect();
+    const packers = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('packer')) || u.activeRole === 'packer')) as { _id: Id<'users'> }[];
+    if (packers.length) {
+      await sendInternalNotifications(
+        ctx,
+        reviewer._id,
+        'order.ready',
+        `Order for request ${req.requestId} is ready for packing.`,
+        packers.map((p) => p._id),
+      );
+    }
+
     return { ok: true } as const;
   },
 });
@@ -188,6 +208,14 @@ export const reject = mutation({
       timestamp: now,
     });
 
+    const requesterUser = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+      .unique();
+    if (requesterUser) {
+      await sendInternalNotifications(ctx, reviewer._id, 'request.rejected', `Request ${req.requestId} rejected: ${reason}`, [requesterUser._id]);
+    }
+
     return { ok: true } as const;
   },
 });
@@ -215,6 +243,14 @@ export const requestInfo = mutation({
       changes: { status: 'Pending Info', message },
       timestamp: now,
     });
+
+    const requesterUser = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+      .unique();
+    if (requesterUser) {
+      await sendInternalNotifications(ctx, reviewer._id, 'request.infoRequested', `Additional info requested for ${req.requestId}: ${message}`, [requesterUser._id]);
+    }
     return { ok: true } as const;
   },
 });
@@ -246,6 +282,18 @@ export const respondInfo = mutation({
         changes: { status: 'Pending Review' },
         timestamp: now,
       });
+    }
+
+    const allUsers = await ctx.db.query('users').collect();
+    const screeners = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')) as { _id: Id<'users'> }[];
+    if (owner && screeners.length) {
+      await sendInternalNotifications(
+        ctx,
+        owner._id,
+        'request.infoResponded',
+        `Requester responded with additional info for ${req.requestId}.`,
+        screeners.map((s) => s._id),
+      );
     }
     return { ok: true } as const;
   },
