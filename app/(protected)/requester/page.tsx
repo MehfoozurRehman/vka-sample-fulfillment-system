@@ -41,7 +41,7 @@ export default function RequesterPage() {
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <Tabs defaultValue="dashboard">
+        <Tabs defaultValue="dashboard" className="px-4">
           <TabsList>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="history">My History</TabsTrigger>
