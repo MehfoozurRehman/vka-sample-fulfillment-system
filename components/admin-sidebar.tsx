@@ -43,6 +43,11 @@ const data = {
       url: '/admin/audit-logs',
       icon: IconListDetails,
     },
+    {
+      title: 'Emails',
+      url: '/admin/emails',
+      icon: IconListDetails,
+    },
   ],
   navSecondary: [
     {
