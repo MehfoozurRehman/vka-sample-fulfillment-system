@@ -91,11 +91,22 @@ export const setPreference = mutation({
       .query('notificationPreferences')
       .withIndex('by_user_type', (q) => q.eq('userId', userId).eq('type', type))
       .unique();
+    const now = Date.now();
+    let prefId: Id<'notificationPreferences'>;
     if (existing) {
-      await ctx.db.patch(existing._id, { enabled, updatedAt: Date.now() });
+      await ctx.db.patch(existing._id, { enabled, updatedAt: now });
+      prefId = existing._id;
     } else {
-      await ctx.db.insert('notificationPreferences', { userId, type, enabled, updatedAt: Date.now() });
+      prefId = await ctx.db.insert('notificationPreferences', { userId, type, enabled, updatedAt: now });
     }
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'setNotificationPreference',
+      table: 'notificationPreferences',
+      recordId: prefId,
+      changes: { type, enabled },
+      timestamp: now,
+    });
     return { ok: true } as const;
   },
 });
