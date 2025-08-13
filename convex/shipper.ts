@@ -139,7 +139,6 @@ export const markShipped = mutation({
       timestamp: now,
     });
 
-    // Notify requester + sales rep + stakeholder contacts
     const req = await ctx.db.get(order.requestId);
     if (req) {
       const stakeholder = await ctx.db.get(req.companyId as Id<'stakeholders'>);
