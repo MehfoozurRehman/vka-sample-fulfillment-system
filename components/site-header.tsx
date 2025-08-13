@@ -9,6 +9,7 @@ import { useState, useTransition } from 'react';
 
 import { Button } from './ui/button';
 import ClickAwayListener from 'react-click-away-listener';
+import type { Doc } from '@/convex/_generated/dataModel';
 import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from './theme-button';
@@ -84,13 +85,23 @@ function Notifications() {
     userId: user.id,
   });
 
-  const markAsRead = useMutation(api.notification.markAsRead);
+  // Load user notification preferences to filter on the client
+  const { data: prefs } = useQueryWithStatus(api.notification.getPreferences, {
+    userId: user.id,
+  });
 
-  const markAllAsRead = useMutation(api.notification.markAllAsRead);
+  const markAsRead = useMutation(api.notification.markAsRead);
 
   const [isActing, startTransition] = useTransition();
 
-  const unreadCount = data?.length ?? 0;
+  // Build a set of disabled types and filter notifications client-side
+  const prefList: Doc<'notificationPreferences'>[] = (prefs as Doc<'notificationPreferences'>[] | undefined) ?? [];
+  const disabledTypes = new Set(prefList.filter((p) => !p.enabled).map((p) => p.type));
+
+  const notifications: Doc<'notifications'>[] = (data as Doc<'notifications'>[] | undefined) ?? [];
+  const visibleData: Doc<'notifications'>[] = notifications.filter((n) => !disabledTypes.has(n.type));
+
+  const unreadCount = visibleData.length;
 
   return (
     <ClickAwayListener onClickAway={() => setIsOpen(false)}>
@@ -118,7 +129,7 @@ function Notifications() {
                 disabled={unreadCount === 0 || isPending || isActing}
                 onClick={() =>
                   startTransition(async () => {
-                    await markAllAsRead({ userId: user.id });
+                    await Promise.all(visibleData.map((n) => markAsRead({ notificationId: n._id })));
                   })
                 }
                 className="text-xs"
@@ -135,7 +146,7 @@ function Notifications() {
                 <div className="p-6 text-center text-sm text-muted-foreground">You&apos;re all caught up</div>
               ) : (
                 <ul className="divide-y">
-                  {data!.map((n) => (
+                  {visibleData.map((n) => (
                     <li key={n._id} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/40">
                       <TypeIcon type={n.type} />
                       <div className="flex-1">
