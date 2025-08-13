@@ -1,8 +1,8 @@
 import { Doc, Id } from './_generated/dataModel';
+import { mutation, query } from './_generated/server';
 
 import dayjs from 'dayjs';
-import { mutation } from './_generated/server';
-import { query } from './_generated/server';
+import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
 async function sha256Hex(input: string): Promise<string> {
@@ -197,6 +197,18 @@ export const add = mutation({
       timestamp: now,
     });
 
+    const allUsers = await ctx.db.query('users').collect();
+    const screenerUsers = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')) as { _id: Id<'users'> }[];
+    if (screenerUsers.length) {
+      await sendInternalNotifications(
+        ctx,
+        user._id,
+        'request.created',
+        `New request ${requestId} submitted by ${user.name || user.email}`,
+        screenerUsers.map((u) => u._id),
+      );
+    }
+
     return { id, requestId } as const;
   },
 });
@@ -268,6 +280,19 @@ export const update = mutation({
       timestamp: Date.now(),
     });
 
+    if (req.status.toLowerCase().includes('pending')) {
+      const allUsers = await ctx.db.query('users').collect();
+      const screeners = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')) as { _id: Id<'users'> }[];
+      if (screeners.length) {
+        await sendInternalNotifications(
+          ctx,
+          actorUser._id,
+          'request.updated',
+          `Request ${req.requestId} updated by ${actorUser.name || actorUser.email}`,
+          screeners.map((s) => s._id),
+        );
+      }
+    }
     return { ok: true } as const;
   },
 });
@@ -312,6 +337,19 @@ export const remove = mutation({
       timestamp: now,
     });
 
+    if (req.status.toLowerCase().includes('pending')) {
+      const allUsers = await ctx.db.query('users').collect();
+      const screeners = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')) as { _id: Id<'users'> }[];
+      if (screeners.length) {
+        await sendInternalNotifications(
+          ctx,
+          actorUser._id,
+          'request.deleted',
+          `Request ${req.requestId} deleted by ${actorUser.name || actorUser.email}`,
+          screeners.map((s) => s._id),
+        );
+      }
+    }
     return { ok: true } as const;
   },
 });
