@@ -163,4 +163,51 @@ export default defineSchema({
     .index('by_user_type', ['userId', 'type'])
     .index('by_user', ['userId'])
     .index('by_createdAt', ['updatedAt']),
+
+  emails: defineTable({
+    type: v.string(),
+    createdBy: v.id('users'),
+    from: v.string(),
+    to: v.array(v.string()),
+    cc: v.optional(v.array(v.string())),
+    bcc: v.optional(v.array(v.string())),
+    replyTo: v.optional(v.array(v.string())),
+    subject: v.string(),
+    text: v.optional(v.string()),
+    html: v.optional(v.string()),
+    headers: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          value: v.string(),
+        }),
+      ),
+    ),
+    status: v.string(),
+    resendId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    opened: v.optional(v.boolean()),
+    complained: v.optional(v.boolean()),
+    attemptCount: v.number(),
+    nextAttemptAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    finalizedAt: v.optional(v.number()),
+    sentAt: v.optional(v.number()),
+    scheduledAt: v.optional(v.number()),
+    related: v.optional(
+      v.object({
+        requestId: v.optional(v.id('requests')),
+        orderId: v.optional(v.id('orders')),
+        stakeholderId: v.optional(v.id('stakeholders')),
+      }),
+    ),
+    metadata: v.optional(v.any()),
+  })
+    .index('by_createdAt', ['createdAt'])
+    .index('by_status', ['status', 'createdAt'])
+    .index('by_resendId', ['resendId'])
+    .index('by_type', ['type'])
+    .index('by_createdBy', ['createdBy'])
+    .index('by_nextAttemptAt', ['nextAttemptAt']),
 });
