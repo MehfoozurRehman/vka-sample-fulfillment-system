@@ -2,6 +2,7 @@
 
 import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import type { EmailRow, EmailStats } from './types';
 import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight, IconFilter } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,7 +19,6 @@ import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQueryWithStatus } from '@/hooks/use-query';
-import type { EmailRow, EmailStats } from './types';
 
 export default function EmailsPage() {
   const [status, setStatus] = useQueryState('status', parseAsString.withDefault(''));
