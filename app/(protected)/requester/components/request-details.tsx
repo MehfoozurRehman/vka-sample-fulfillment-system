@@ -2,7 +2,6 @@
 
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMutation } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 dayjs.extend(relativeTime);
 
@@ -48,15 +49,15 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
-  const request = useQuery(api.request.getOne, row ? { id: row.id } : 'skip');
+  const { data: request } = useQueryWithStatus(api.request.getOne, row ? { id: row.id } : 'skip');
 
   const auth = useAuth();
 
-  const suggestions = useQuery(api.request.suggestions);
+  const { data: suggestions } = useQueryWithStatus(api.request.suggestions);
 
-  const products = useQuery(api.product.list, {});
+  const { data: products } = useQueryWithStatus(api.product.list, {});
 
-  const order = useQuery(api.request.orderSummary, row ? { requestId: row.id } : 'skip');
+  const { data: order } = useQueryWithStatus(api.request.orderSummary, row ? { requestId: row.id } : 'skip');
 
   const productMap = useMemo(() => {
     if (!products) return new Map<Id<'products'>, ProductListItem>();
