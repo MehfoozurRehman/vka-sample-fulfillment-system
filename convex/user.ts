@@ -259,6 +259,7 @@ export const resendInvite = mutation({
         <p>Best regards,<br/>VKA Team</p>
       `,
     });
+
     await ctx.db.insert('auditLogs', {
       userId,
       action: 'resendInvite',
@@ -267,6 +268,7 @@ export const resendInvite = mutation({
       changes: {},
       timestamp: Date.now(),
     });
+
     return { ok: true } as const;
   },
 });
