@@ -18,110 +18,6 @@ async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, emai
   return user;
 }
 
-export const pending = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, { limit }) => {
-    const max = Math.min(limit ?? 50, 100);
-    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
-
-    const pendingReqs = recent.filter((r) => !r.deletedAt && r.status.toLowerCase().includes('pending')).slice(0, max);
-
-    const stakeholderIds = Array.from(new Set(pendingReqs.map((r) => r.companyId)));
-    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
-    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
-
-    return pendingReqs.map((r) => {
-      const st = stakeholderMap.get(r.companyId);
-      return {
-        id: r._id,
-        requestId: r.requestId,
-        company: st?.companyName || 'Unknown',
-        vip: !!st?.vipFlag,
-        products: r.productsRequested.length,
-        applicationType: r.applicationType,
-        projectName: r.projectName,
-        createdAt: r.createdAt,
-        createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
-        status: r.status,
-      };
-    });
-  },
-});
-
-export const recentDecisions = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, { limit }) => {
-    const max = Math.min(limit ?? 200, 500);
-    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
-    const decided = recent.filter((r) => !r.deletedAt && ['approved', 'rejected'].includes(r.status.toLowerCase())).slice(0, max);
-    const stakeholderIds = Array.from(new Set(decided.map((r) => r.companyId)));
-    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
-    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
-    return decided.map((r) => {
-      const st = stakeholderMap.get(r.companyId);
-      return {
-        id: r._id,
-        requestId: r.requestId,
-        company: st?.companyName || 'Unknown',
-        vip: !!st?.vipFlag,
-        products: r.productsRequested.length,
-        applicationType: r.applicationType,
-        projectName: r.projectName,
-        createdAt: r.createdAt,
-        createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
-        status: r.status,
-        reviewedBy: r.reviewedBy,
-        reviewDate: r.reviewDate,
-        reviewDateFmt: r.reviewDate ? dayjs(r.reviewDate).format('YYYY-MM-DD HH:mm') : null,
-        rejectionReason: r.rejectionReason,
-      } as const;
-    });
-  },
-});
-
-export const detail = query({
-  args: { id: v.id('requests') },
-  handler: async (ctx, { id }) => {
-    const r = await ctx.db.get(id);
-    if (!r || r.deletedAt) return null;
-    const stakeholder = await ctx.db.get(r.companyId);
-
-    const productsDetailed = await Promise.all(
-      (r.productsRequested || []).map(async (item) => {
-        const prod = await ctx.db.get(item.productId);
-        return {
-          id: item.productId,
-          productId: prod?.productId,
-          name: prod?.productName,
-          quantity: item.quantity,
-          notes: item.notes,
-        } as const;
-      }),
-    );
-
-    const companyReqs = await ctx.db
-      .query('requests')
-      .withIndex('by_companyId', (q) => q.eq('companyId', r.companyId))
-      .collect();
-
-    const activeCompanyReqs = companyReqs.filter((x) => !x.deletedAt).sort((a, b) => b.createdAt - a.createdAt);
-
-    const lastFive = activeCompanyReqs.slice(0, 5).map((x) => ({
-      id: x._id,
-      requestId: x.requestId,
-      status: x.status,
-      createdAt: x.createdAt,
-      createdAtFmt: dayjs(x.createdAt).format('YYYY-MM-DD'),
-      products: x.productsRequested.length,
-    }));
-
-    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-    const totalSamples12mo = activeCompanyReqs.filter((x) => x.createdAt >= oneYearAgo).reduce((sum, x) => sum + x.productsRequested.reduce((s, p) => s + p.quantity, 0), 0);
-
-    return { request: r, stakeholder, productsDetailed, lastFive, totalSamples12mo } as const;
-  },
-});
-
 export const approve = mutation({
   args: { id: v.id('requests'), reviewedBy: v.string(), notes: v.optional(v.string()) },
   handler: async (ctx, { id, reviewedBy, notes }) => {
@@ -406,5 +302,406 @@ export const metrics = query({
       topPending,
       topVolume30d,
     } as const;
+  },
+});
+
+export const pending = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const max = Math.min(limit ?? 50, 100);
+    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
+
+    const pendingReqs = recent.filter((r) => !r.deletedAt && r.status.toLowerCase().includes('pending')).slice(0, max);
+
+    const stakeholderIds = Array.from(new Set(pendingReqs.map((r) => r.companyId)));
+    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
+
+    return pendingReqs.map((r) => {
+      const st = stakeholderMap.get(r.companyId);
+      return {
+        id: r._id,
+        requestId: r.requestId,
+        company: st?.companyName || 'Unknown',
+        vip: !!st?.vipFlag,
+        products: r.productsRequested.length,
+        applicationType: r.applicationType,
+        projectName: r.projectName,
+        createdAt: r.createdAt,
+        createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
+        status: r.status,
+      };
+    });
+  },
+});
+
+export const recentDecisions = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const max = Math.min(limit ?? 200, 500);
+    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
+    const decided = recent.filter((r) => !r.deletedAt && ['approved', 'rejected'].includes(r.status.toLowerCase())).slice(0, max);
+    const stakeholderIds = Array.from(new Set(decided.map((r) => r.companyId)));
+    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
+    return decided.map((r) => {
+      const st = stakeholderMap.get(r.companyId);
+      return {
+        id: r._id,
+        requestId: r.requestId,
+        company: st?.companyName || 'Unknown',
+        vip: !!st?.vipFlag,
+        products: r.productsRequested.length,
+        applicationType: r.applicationType,
+        projectName: r.projectName,
+        createdAt: r.createdAt,
+        createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
+        status: r.status,
+        reviewedBy: r.reviewedBy,
+        reviewDate: r.reviewDate,
+        reviewDateFmt: r.reviewDate ? dayjs(r.reviewDate).format('YYYY-MM-DD HH:mm') : null,
+        rejectionReason: r.rejectionReason,
+      } as const;
+    });
+  },
+});
+
+export const detail = query({
+  args: { id: v.id('requests') },
+  handler: async (ctx, { id }) => {
+    const r = await ctx.db.get(id);
+    if (!r || r.deletedAt) return null;
+    const stakeholder = await ctx.db.get(r.companyId);
+
+    const productsDetailed = await Promise.all(
+      (r.productsRequested || []).map(async (item) => {
+        const prod = await ctx.db.get(item.productId);
+        return {
+          id: item.productId,
+          productId: prod?.productId,
+          name: prod?.productName,
+          quantity: item.quantity,
+          notes: item.notes,
+        } as const;
+      }),
+    );
+
+    const companyReqs = await ctx.db
+      .query('requests')
+      .withIndex('by_companyId', (q) => q.eq('companyId', r.companyId))
+      .collect();
+
+    const activeCompanyReqs = companyReqs.filter((x) => !x.deletedAt).sort((a, b) => b.createdAt - a.createdAt);
+
+    const lastFive = activeCompanyReqs.slice(0, 5).map((x) => ({
+      id: x._id,
+      requestId: x.requestId,
+      status: x.status,
+      createdAt: x.createdAt,
+      createdAtFmt: dayjs(x.createdAt).format('YYYY-MM-DD'),
+      products: x.productsRequested.length,
+    }));
+
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    const totalSamples12mo = activeCompanyReqs.filter((x) => x.createdAt >= oneYearAgo).reduce((sum, x) => sum + x.productsRequested.reduce((s, p) => s + p.quantity, 0), 0);
+
+    let approved = 0;
+    let rejected = 0;
+    let pending = 0;
+    const priorNotes: Array<{
+      requestId: string;
+      status: string;
+      reviewDate?: number;
+      reviewDateFmt?: string | null;
+      reviewNotes?: string;
+      rejectionReason?: string;
+    }> = [];
+    const productFreq: Record<string, { name: string; count: number }> = {};
+
+    for (const req of activeCompanyReqs) {
+      const statusLower = req.status.toLowerCase();
+      if (statusLower === 'approved') approved++;
+      else if (statusLower === 'rejected') rejected++;
+      else if (statusLower.includes('pending')) pending++;
+      if (req.reviewNotes || req.rejectionReason) {
+        priorNotes.push({
+          requestId: req.requestId,
+          status: req.status,
+          reviewDate: req.reviewDate,
+          reviewDateFmt: req.reviewDate ? dayjs(req.reviewDate).format('YYYY-MM-DD') : null,
+          reviewNotes: req.reviewNotes,
+          rejectionReason: req.rejectionReason,
+        });
+      }
+      for (const pr of req.productsRequested) {
+        const prod = await ctx.db.get(pr.productId);
+        const key = prod?.productName || 'Unknown';
+        if (!productFreq[key]) productFreq[key] = { name: key, count: 0 };
+        productFreq[key].count += 1;
+      }
+    }
+
+    const frequentProductsTop = Object.values(productFreq)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return { request: r, stakeholder, productsDetailed, lastFive, totalSamples12mo, decisionCounts: { approved, rejected, pending }, priorNotes, frequentProductsTop } as const;
+  },
+});
+
+export const searchCustomer = query({
+  args: { partial: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { partial, limit }) => {
+    const q = partial.trim().toLowerCase();
+    if (!q) return [] as { id: Id<'stakeholders'>; companyName: string; vipFlag: boolean; requestCount: number }[];
+    const max = Math.min(limit ?? 20, 50);
+    const stakeholders = await ctx.db.query('stakeholders').collect();
+    const matched = stakeholders.filter((s) => !s.deletedAt && s.companyName.toLowerCase().includes(q)).slice(0, max);
+    const allRequests = await ctx.db.query('requests').collect();
+    const summary = matched.map((m) => {
+      const reqs = allRequests.filter((r) => !r.deletedAt && r.companyId === m._id);
+      return {
+        id: m._id,
+        companyName: m.companyName,
+        vipFlag: m.vipFlag,
+        requestCount: reqs.length,
+      };
+    });
+    return summary;
+  },
+});
+
+export const customerOverview = query({
+  args: { stakeholderId: v.id('stakeholders') },
+  handler: async (ctx, { stakeholderId }) => {
+    const stakeholder = await ctx.db.get(stakeholderId);
+    if (!stakeholder || stakeholder.deletedAt) return null;
+    const reqs = await ctx.db
+      .query('requests')
+      .withIndex('by_companyId', (q) => q.eq('companyId', stakeholderId))
+      .collect();
+    const active = reqs.filter((r) => !r.deletedAt);
+    active.sort((a, b) => a.createdAt - b.createdAt);
+    const first = active[0];
+    const firstDate = first ? dayjs(first.createdAt).format('MMM YYYY') : null;
+    let totalSamples = 0;
+    let approved = 0;
+    let rejected = 0;
+    const productCounts: Record<string, { name: string; count: number }> = {};
+    for (const r of active) {
+      const statusLower = r.status.toLowerCase();
+      if (statusLower === 'approved') approved++;
+      else if (statusLower === 'rejected') rejected++;
+      for (const p of r.productsRequested) {
+        totalSamples += p.quantity;
+        const prod = await ctx.db.get(p.productId);
+        const key = prod?.productName || 'Unknown';
+        if (!productCounts[key]) productCounts[key] = { name: key, count: 0 };
+        productCounts[key].count += 1;
+      }
+    }
+    const rejectionRate = approved + rejected > 0 ? rejected / (approved + rejected) : 0;
+    const recent = [...active]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 10)
+      .map((r) => ({
+        id: r._id,
+        requestId: r.requestId,
+        createdAt: r.createdAt,
+        dateFmt: dayjs(r.createdAt).format('MMM D, YYYY'),
+        products: r.productsRequested.length,
+        status: r.status,
+        rejectionReason: r.rejectionReason,
+      }));
+    const freq = Object.values(productCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    return {
+      stakeholder: { id: stakeholder._id, companyName: stakeholder.companyName, vipFlag: stakeholder.vipFlag },
+      firstRequest: firstDate,
+      totalRequests: active.length,
+      totalSamples,
+      rejectionRate,
+      recent,
+      frequentProducts: freq,
+    } as const;
+  },
+});
+
+export const customerFrequentProducts = query({
+  args: { stakeholderId: v.id('stakeholders'), from: v.number(), to: v.number() },
+  handler: async (ctx, { stakeholderId, from, to }) => {
+    const reqs = await ctx.db
+      .query('requests')
+      .withIndex('by_companyId', (q) => q.eq('companyId', stakeholderId))
+      .collect();
+    const filtered = reqs.filter((r) => !r.deletedAt && r.createdAt >= from && r.createdAt <= to);
+    const productCounts: Record<string, { name: string; count: number }> = {};
+    for (const r of filtered) {
+      for (const p of r.productsRequested) {
+        const prod = await ctx.db.get(p.productId);
+        const key = prod?.productName || 'Unknown';
+        if (!productCounts[key]) productCounts[key] = { name: key, count: 0 };
+        productCounts[key].count += 1;
+      }
+    }
+    return Object.values(productCounts).sort((a, b) => b.count - a.count);
+  },
+});
+
+export const reports = query({
+  args: {
+    report: v.string(),
+    from: v.number(),
+    to: v.number(),
+    stakeholderId: v.optional(v.id('stakeholders')),
+  },
+  handler: async (ctx, { report, from, to, stakeholderId }) => {
+    const all = await ctx.db
+      .query('requests')
+      .withIndex('by_createdAt', (q) => q.gte('createdAt', from))
+      .collect();
+    const data = all.filter((r) => !r.deletedAt && r.createdAt <= to);
+    const lower = report.toLowerCase();
+
+    if (lower === 'pendingrequestsbyage') {
+      const now = Date.now();
+      let under24 = 0;
+      let between24and48 = 0;
+      let over48 = 0;
+      data.forEach((r) => {
+        if (!r.status.toLowerCase().includes('pending')) return;
+        const age = now - r.createdAt;
+        if (age > 48 * 3600 * 1000) over48++;
+        else if (age > 24 * 3600 * 1000) between24and48++;
+        else under24++;
+      });
+      return { type: report, under24, between24and48, over48 } as const;
+    }
+    if (lower === 'top10customersthismonth' || lower === 'topcustomers') {
+      const companyCounts: Record<string, { companyId: Id<'stakeholders'>; count: number }> = {};
+      for (const r of data) {
+        if (!companyCounts[r.companyId as string]) companyCounts[r.companyId as string] = { companyId: r.companyId, count: 0 };
+        companyCounts[r.companyId as string].count++;
+      }
+      const stakeholders = await Promise.all(Object.values(companyCounts).map((c) => ctx.db.get(c.companyId)));
+      const arr = Object.values(companyCounts)
+        .map((c) => ({ company: stakeholders.find((s) => s?._id === c.companyId)?.companyName || 'Unknown', count: c.count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      return { type: report, top: arr } as const;
+    }
+    if (lower === 'productsrequestedthisweek' || lower === 'productsrequested') {
+      const productCounts: Record<string, { name: string; count: number }> = {};
+      for (const r of data) {
+        for (const p of r.productsRequested) {
+          const prod = await ctx.db.get(p.productId);
+          const key = prod?.productName || 'Unknown';
+          if (!productCounts[key]) productCounts[key] = { name: key, count: 0 };
+          productCounts[key].count += p.quantity;
+        }
+      }
+      const arr = Object.values(productCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 25);
+      return { type: report, products: arr } as const;
+    }
+    if (lower === 'rejectionreasonssummary') {
+      const reasons: Record<string, number> = {};
+      data.forEach((r) => {
+        if (r.status.toLowerCase() === 'rejected' && r.rejectionReason) {
+          const key = r.rejectionReason.trim();
+          reasons[key] = (reasons[key] || 0) + 1;
+        }
+      });
+      const arr = Object.entries(reasons)
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count);
+      return { type: report, reasons: arr } as const;
+    }
+    if (lower === 'averageprocessingtime') {
+      let total = 0;
+      let count = 0;
+      data.forEach((r) => {
+        if (['approved', 'rejected'].includes(r.status.toLowerCase()) && r.reviewDate) {
+          total += r.reviewDate - r.createdAt;
+          count++;
+        }
+      });
+      const avgMs = count ? total / count : 0;
+      return { type: report, averageMs: avgMs, averageHours: avgMs / 3600000 } as const;
+    }
+    if (lower === 'customerrequesthistory' && stakeholderId) {
+      const arr = data
+        .filter((r) => r.companyId === stakeholderId)
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .map((r) => ({
+          requestId: r.requestId,
+          createdAt: r.createdAt,
+          date: dayjs(r.createdAt).format('YYYY-MM-DD'),
+          status: r.status,
+          products: r.productsRequested.length,
+          rejectionReason: r.rejectionReason,
+        }));
+      return { type: report, history: arr } as const;
+    }
+
+    return { type: report, message: 'Unknown report type or insufficient parameters' } as const;
+  },
+});
+
+export const exportRequests = query({
+  args: {
+    all: v.optional(v.boolean()),
+    from: v.optional(v.number()),
+    to: v.optional(v.number()),
+    stakeholderId: v.optional(v.id('stakeholders')),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, { all, from, to, stakeholderId, status }) => {
+    let reqs = await ctx.db.query('requests').collect();
+    reqs = reqs.filter((r) => !r.deletedAt);
+    if (!all) {
+      if (from) reqs = reqs.filter((r) => r.createdAt >= from);
+      if (to) reqs = reqs.filter((r) => r.createdAt <= to);
+    }
+    if (stakeholderId) reqs = reqs.filter((r) => r.companyId === stakeholderId);
+    if (status) reqs = reqs.filter((r) => r.status.toLowerCase().includes(status.toLowerCase()));
+
+    const stakeholders = await ctx.db.query('stakeholders').collect();
+    const stakeholderName = (id: Id<'stakeholders'>) => stakeholders.find((s) => s._id === id)?.companyName || '';
+
+    const rows = [
+      ['RequestID', 'Company', 'CreatedAt', 'Status', 'ReviewedBy', 'ReviewDate', 'RejectionReason', 'ApplicationType', 'ProjectName', 'ItemsCount', 'TotalQuantity'],
+      ...reqs.map((r) => [
+        r.requestId,
+        stakeholderName(r.companyId),
+        dayjs(r.createdAt).toISOString(),
+        r.status,
+        r.reviewedBy || '',
+        r.reviewDate ? dayjs(r.reviewDate).toISOString() : '',
+        r.rejectionReason || '',
+        r.applicationType,
+        r.projectName,
+        String(r.productsRequested.length),
+        String(r.productsRequested.reduce((s, p) => s + p.quantity, 0)),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const filename = `requests_export_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
+    return { filename, csv } as const;
+  },
+});
+
+export const listCustomers = query({
+  args: {},
+  handler: async (ctx) => {
+    const stakeholders = await ctx.db.query('stakeholders').collect();
+    const activeStakeholders = stakeholders.filter((s) => !s.deletedAt);
+    const allRequests = await ctx.db.query('requests').collect();
+    return activeStakeholders.map((s) => {
+      const count = allRequests.filter((r) => !r.deletedAt && r.companyId === s._id).length;
+      return { id: s._id, companyName: s.companyName, vipFlag: s.vipFlag, requestCount: count };
+    });
   },
 });
