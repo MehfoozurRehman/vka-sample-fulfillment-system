@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 
+import { AddRequest } from './add-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Id } from '@/convex/_generated/dataModel';
@@ -154,7 +155,8 @@ export function DataTable({ data, isPending }: { data: RecentRequestsType; isPen
               </Tabs>
             )}
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-1">
+            <Input placeholder="Search requests..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full flex-1" />
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className="w-full lg:max-w-44">
                 <SelectValue placeholder="All Stages" />
@@ -168,7 +170,7 @@ export function DataTable({ data, isPending }: { data: RecentRequestsType; isPen
                 ))}
               </SelectContent>
             </Select>
-            <Input placeholder="Search requests..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full lg:max-w-sm" />
+            <AddRequest />
           </div>
         </div>
       </div>
