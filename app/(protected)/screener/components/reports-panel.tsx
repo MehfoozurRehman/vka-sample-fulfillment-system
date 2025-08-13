@@ -7,10 +7,12 @@ import React, { useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { Button } from '@/components/ui/button';
+import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { useQuery } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 const reportOptions = [
   { value: 'PendingRequestsByAge', label: 'Pending Requests by Age' },
@@ -44,8 +46,6 @@ interface AvgProcTimeReport {
   averageHours: number;
 }
 
-type ReportData = PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport | { type: string; [k: string]: unknown };
-
 type ChartRow = { bucket: string; value: number } | { label: string; count: number };
 
 export default function ReportsPanel() {
@@ -57,11 +57,11 @@ export default function ReportsPanel() {
 
   const from = useMemo(() => anchorTo - Number(range) * 24 * 3600 * 1000, [range, anchorTo]);
 
-  const data = useQuery(api.screener.reports, { report, from, to: anchorTo }) as ReportData | undefined;
+  const { data, isPending } = useQueryWithStatus(api.screener.reports, { report, from, to: anchorTo });
 
   const [exportOpen, setExportOpen] = useState(false);
 
-  const exportData = useQuery(api.screener.exportRequests, exportOpen ? { all: false, from, to: anchorTo } : 'skip');
+  const { data: exportData } = useQueryWithStatus(api.screener.exportRequests, exportOpen ? { all: false, from, to: anchorTo } : 'skip');
 
   const chart = useMemo(() => {
     if (!data) return null;
@@ -95,7 +95,7 @@ export default function ReportsPanel() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-0">
+      <Card>
         <CardHeader className="pb-3 space-y-2">
           <CardTitle className="text-sm">Reports & Export</CardTitle>
           <CardDescription>Visual summaries of screening activity</CardDescription>
@@ -176,7 +176,11 @@ export default function ReportsPanel() {
           </div>
         </CardHeader>
         <CardContent className="pt-2">
-          {!data && <div className="text-xs text-muted-foreground">Loading...</div>}
+          {isPending && (
+            <div className="text-xs text-muted-foreground flex items-center justify-center h-24">
+              <Loader className="animate-spin" />
+            </div>
+          )}
           {data && chart?.kind === 'bar' && (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
