@@ -13,8 +13,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: 'VK Fulfillment System',
-  description: 'VK Fulfillment System Admin Dashboard',
+  title: 'VKA Fulfillment System',
+  description: 'VKA Fulfillment System Admin Dashboard',
 };
 
 export default function RootLayout({
