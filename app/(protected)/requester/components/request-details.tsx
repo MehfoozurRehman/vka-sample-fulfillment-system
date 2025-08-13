@@ -55,6 +55,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const suggestions = useQuery(api.request.suggestions);
 
   const products = useQuery(api.product.list, {});
+
   const order = useQuery(api.request.orderSummary, row ? { requestId: row.id } : 'skip');
 
   const productMap = useMemo(() => {

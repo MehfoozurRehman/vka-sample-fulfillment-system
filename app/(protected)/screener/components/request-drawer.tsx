@@ -46,15 +46,23 @@ export default function RequestDrawer({
   afterAction: (processedId: Id<'requests'>, action: 'approve' | 'reject') => void;
 }) {
   const approveMut = useMutation(api.screener.approve);
+
   const rejectMut = useMutation(api.screener.reject);
+
   const requestInfoMut = useMutation(api.screener.requestInfo);
 
   const [notes, setNotes] = useState('');
+
   const [reason, setReason] = useState('');
+
   const [infoMsg, setInfoMsg] = useState('');
+
   const [showInfoForm, setShowInfoForm] = useState(false);
+
   const [isSaving, startSaving] = useTransition();
+
   const [isRequesting, startRequesting] = useTransition();
+
   const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
 
   useEffect(() => {
@@ -62,7 +70,9 @@ export default function RequestDrawer({
   }, [row]);
 
   const canReject = reason.trim().length > 2;
+
   const detailData = useQuery(api.screener.detail, currentId ? { id: currentId } : 'skip');
+
   const vip = !!detailData?.stakeholder?.vipFlag;
 
   const handleSelect = (id: Id<'requests'>) => {
@@ -74,6 +84,7 @@ export default function RequestDrawer({
   };
 
   const status = detailData?.request?.status || '';
+
   const awaitingInfo = status === 'Pending Info';
 
   return (

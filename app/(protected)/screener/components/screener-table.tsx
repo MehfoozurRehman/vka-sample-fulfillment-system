@@ -47,7 +47,9 @@ export default function ScreenerTable({ data, isPending, onSelect, search, setSe
               ) : data.length ? (
                 data.map((row) => {
                   const ageH = (Date.now() - row.createdAt) / 3600000;
+
                   const dot = ageH > 48 ? 'bg-red-500' : ageH > 24 ? 'bg-amber-500' : 'bg-emerald-500';
+
                   return (
                     <TableRow key={row.id} className="relative z-0 cursor-pointer" onClick={() => onSelect(row)}>
                       <TableCell className="font-mono text-xs flex items-center gap-2">

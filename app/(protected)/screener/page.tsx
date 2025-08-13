@@ -31,17 +31,24 @@ export default function ScreenerPage() {
   const auth = useAuth();
 
   const { data: pendingData, isPending } = useQueryWithStatus(api.screener.pending, { limit: 500 });
+
   const pending = useMemo(() => (pendingData as PendingRow[] | undefined) ?? [], [pendingData]);
 
   const [selected, setSelected] = useState<PendingRow | null>(null);
+
   const [range, setRange] = useState('90');
+
   const metrics = useQuery(api.screener.metrics, { days: Number(range) }) as ScreenerMetrics | undefined;
+
   const [search, setSearch] = useState('');
+
   const [tab, setTab] = useState('queue');
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!q) return pending;
+
     return pending.filter((r) => [r.requestId, r.company, r.applicationType, r.projectName].some((f) => f.toLowerCase().includes(q)));
   }, [pending, search]);
 
@@ -50,8 +57,11 @@ export default function ScreenerPage() {
   const handleAfterAction = useCallback(
     (id: string) => {
       const ordered = [...filtered].sort((a, b) => a.createdAt - b.createdAt);
+
       const idx = ordered.findIndex((r) => r.id === id);
+
       const next = ordered[idx + 1] || null;
+
       if (next) setSelected(next);
       else setSelected(null);
     },

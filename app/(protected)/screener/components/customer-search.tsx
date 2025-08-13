@@ -27,16 +27,24 @@ interface OverviewType {
 
 export default function CustomerSearch() {
   const [q, setQ] = useState('');
+
   const [selected, setSelected] = useState<string | null>(null);
+
   const all = useQuery(api.screener.listCustomers, {});
+
   const results = useMemo(() => {
     if (!all) return [] as SearchResult[];
     const list = all as SearchResult[];
+
     const term = q.trim().toLowerCase();
+
     if (!term) return [...list].sort((a, b) => a.companyName.localeCompare(b.companyName));
+
     return list.filter((r) => r.companyName.toLowerCase().includes(term)).sort((a, b) => a.companyName.localeCompare(b.companyName));
   }, [all, q]);
+
   const overview = useQuery(api.screener.customerOverview, selected ? { stakeholderId: selected as unknown as Id<'stakeholders'> } : 'skip') as OverviewType | undefined;
+
   return (
     <div className="flex flex-col gap-6">
       <Card>

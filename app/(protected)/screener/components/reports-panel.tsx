@@ -50,15 +50,22 @@ type ChartRow = { bucket: string; value: number } | { label: string; count: numb
 
 export default function ReportsPanel() {
   const [report, setReport] = useState('PendingRequestsByAge');
+
   const [range, setRange] = useState('30');
+
   const [anchorTo, setAnchorTo] = useState(() => Date.now());
+
   const from = useMemo(() => anchorTo - Number(range) * 24 * 3600 * 1000, [range, anchorTo]);
+
   const data = useQuery(api.screener.reports, { report, from, to: anchorTo }) as ReportData | undefined;
+
   const [exportOpen, setExportOpen] = useState(false);
+
   const exportData = useQuery(api.screener.exportRequests, exportOpen ? { all: false, from, to: anchorTo } : 'skip');
 
   const chart = useMemo(() => {
     if (!data) return null;
+
     switch (data.type) {
       case 'PendingRequestsByAge':
         return {
@@ -144,8 +151,11 @@ export default function ReportsPanel() {
                       size="sm"
                       onClick={() => {
                         const blob = new Blob([exportData.csv], { type: 'text/csv;charset=utf-8;' });
+
                         const link = window.document.createElement('a');
+
                         const url = URL.createObjectURL(blob);
+
                         link.setAttribute('href', url);
                         link.setAttribute('download', exportData.filename);
                         link.style.visibility = 'hidden';
@@ -172,9 +182,13 @@ export default function ReportsPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 {(() => {
                   const rows = chart.rows as ChartRow[];
+
                   const first = rows[0] as ChartRow | undefined;
+
                   const hasBucket = !!first && 'bucket' in first;
+
                   const valueKey = hasBucket ? 'value' : 'count';
+
                   return (
                     <BarChart data={rows}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
