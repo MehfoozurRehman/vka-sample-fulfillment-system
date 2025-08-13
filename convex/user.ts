@@ -4,6 +4,7 @@ import { mutation, query } from './_generated/server';
 import { Id } from './_generated/dataModel';
 import dayjs from 'dayjs';
 import { resend } from './resend';
+import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
 interface UserDocLike {
@@ -112,6 +113,17 @@ export const inviteUser = mutation({
       `,
     });
 
+    const allUsers = await ctx.db.query('users').collect();
+    const admins = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    if (admins.length) {
+      await sendInternalNotifications(
+        ctx,
+        args.invitedBy,
+        'user.invited',
+        `User ${name} invited with role ${newRole}`,
+        admins.map((a) => a._id as Id<'users'>),
+      );
+    }
     return user;
   },
 });
@@ -130,6 +142,11 @@ export const updateStatus = mutation({
       changes: { active: status === 'active' },
       timestamp: Date.now(),
     });
+
+    const allUsers = await ctx.db.query('users').collect();
+    const admins = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    const recipients = [userId, ...admins.map((a) => a._id as Id<'users'>)];
+    await sendInternalNotifications(ctx, userId, 'user.statusChanged', `User status changed to ${status}`, Array.from(new Set(recipients)) as Id<'users'>[]);
     return { ok: true };
   },
 });
@@ -210,6 +227,11 @@ export const addRole = mutation({
       changes: { roles: nextRoles },
       timestamp: Date.now(),
     });
+
+    const allUsers = await ctx.db.query('users').collect();
+    const admins = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    const recipients = [userId, ...admins.map((a) => a._id as Id<'users'>)];
+    await sendInternalNotifications(ctx, userId, 'user.roleAdded', `Role ${role} added to user`, Array.from(new Set(recipients)) as Id<'users'>[]);
     return { ok: true } as const;
   },
 });
@@ -233,6 +255,11 @@ export const removeRole = mutation({
       changes: { roles: nextRoles, activeRole: nextActive },
       timestamp: Date.now(),
     });
+
+    const allUsers = await ctx.db.query('users').collect();
+    const admins = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    const recipients = [userId, ...admins.map((a) => a._id as Id<'users'>)];
+    await sendInternalNotifications(ctx, userId, 'user.roleRemoved', `Role ${role} removed from user`, Array.from(new Set(recipients)) as Id<'users'>[]);
     return { ok: true } as const;
   },
 });
@@ -277,8 +304,11 @@ export const createFirstAdmin = mutation({
   args: { email: v.string(), name: v.string() },
   handler: async (ctx, { email, name }) => {
     const anyUser = await ctx.db.query('users').first();
+
     if (anyUser) throw new Error('Initial admin already created');
+
     const now = Date.now();
+
     const adminId = await ctx.db.insert('users', {
       email,
       name,
@@ -288,6 +318,7 @@ export const createFirstAdmin = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
     await ctx.db.insert('auditLogs', {
       userId: adminId,
       action: 'createFirstAdmin',
@@ -296,6 +327,7 @@ export const createFirstAdmin = mutation({
       changes: { email, name, roles: ['admin'], activeRole: 'admin', active: true },
       timestamp: now,
     });
+
     return { id: adminId, email, name, role: 'admin' as const };
   },
 });
