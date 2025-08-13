@@ -159,3 +159,25 @@ export const markPacked = mutation({
     return { ok: true } as const;
   },
 });
+
+export const myHistory = query({
+  args: { email: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, limit }) => {
+    const cap = Math.min(limit ?? 200, 500);
+    const orders = await ctx.db
+      .query('orders')
+      .withIndex('by_packedBy', (q) => q.eq('packedBy', email))
+      .order('desc')
+      .collect();
+    const trimmed = orders.filter((o) => !o.deletedAt && o.packedDate).slice(0, cap);
+    const reqs = await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)));
+    return trimmed.map((o, i) => ({
+      id: o._id,
+      orderId: o.orderId,
+      packedDate: o.packedDate,
+      shippedDate: o.shippedDate,
+      status: o.status,
+      requestId: reqs[i]?.requestId,
+    }));
+  },
+});
