@@ -62,15 +62,19 @@ export const addAuditLog = mutation({
     userId: v.id('users'),
     action: v.string(),
     table: v.string(),
+    recordId: v.optional(v.string()),
+    changes: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
-    await ctx.db.insert('auditLogs', {
-      userId: args.userId,
-      action: args.action,
-      table: args.table,
-      recordId: '',
-      changes: { read: true },
+  handler: async (ctx, { userId, action, table, recordId, changes }) => {
+    const id = await ctx.db.insert('auditLogs', {
+      userId,
+      action,
+      table,
+      recordId: recordId || '',
+      changes: changes ?? {},
       timestamp: Date.now(),
     });
+
+    return { id };
   },
 });
