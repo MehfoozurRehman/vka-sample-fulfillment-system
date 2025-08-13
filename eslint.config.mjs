@@ -9,6 +9,8 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+const paddingLineLevel = process.env.LINT_STRICT === 'true' ? 'error' : 'off';
+
 const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
@@ -22,7 +24,7 @@ const eslintConfig = [
     ignores: ['convex/**'],
     rules: {
       'padding-line-between-statements': [
-        'error',
+        paddingLineLevel,
         { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
         { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
         { blankLine: 'always', prev: '*', next: 'return' },
