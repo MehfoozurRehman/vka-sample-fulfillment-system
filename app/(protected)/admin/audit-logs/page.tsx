@@ -99,6 +99,7 @@ export default function AuditLogsPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    initialState: { pagination: { pageSize: 15 } },
   });
 
   const actions = useMemo(() => Array.from(new Set(tableData.map((l) => l.action))), [tableData]);
