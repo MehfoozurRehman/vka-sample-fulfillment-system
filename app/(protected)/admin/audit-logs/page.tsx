@@ -19,7 +19,6 @@ import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function AuditLogsPage() {
@@ -47,7 +46,7 @@ export default function AuditLogsPage() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const users = useQuery(api.user.getUsers);
+  const { data: users } = useQueryWithStatus(api.user.getUsers);
 
   const { data: logsRaw, isPending } = useQueryWithStatus(api.audit.list, {
     userId: selectedUser && selectedUser !== 'all' ? (selectedUser as unknown as Id<'users'>) : undefined,
