@@ -19,10 +19,10 @@ interface Props {
 export default function ScreenerTable({ data, isPending, onSelect, search, setSearch }: Props) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end px-4 lg:px-6 gap-2">
+      <div className="flex items-center justify-end gap-2">
         <Input placeholder="Search id, company, app, project..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
-      <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+      <div className="relative flex flex-col gap-4 overflow-auto">
         <div className="overflow-hidden rounded-lg border">
           <Table>
             <TableHeader className="bg-muted sticky top-0 z-10">
