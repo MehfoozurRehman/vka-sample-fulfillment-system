@@ -9,7 +9,6 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { Label } from '@/components/ui/label';
-import { RecentRequestsType } from '../type';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
@@ -36,7 +35,7 @@ interface ProductListItem {
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  row: (RecentRequestsType[number] & { id: Id<'requests'> }) | null;
+  row: { id: Id<'requests'>; requestId: string; status: string; stage: string; company: string } | null;
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
