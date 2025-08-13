@@ -33,15 +33,15 @@ export default function RequestDrawer({
   afterAction: () => void;
 }) {
   const approveMut = useMutation(api.screener.approve);
-
   const rejectMut = useMutation(api.screener.reject);
+  const requestInfoMut = useMutation(api.screener.requestInfo);
 
   const [notes, setNotes] = useState('');
-
   const [reason, setReason] = useState('');
-
+  const [infoMsg, setInfoMsg] = useState('');
+  const [showInfoForm, setShowInfoForm] = useState(false);
   const [isSaving, startSaving] = useTransition();
-
+  const [isRequesting, startRequesting] = useTransition();
   const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
 
   useEffect(() => {
@@ -50,23 +50,27 @@ export default function RequestDrawer({
 
   const canReject = reason.trim().length > 2;
   const detailData = useQuery(api.screener.detail, currentId ? { id: currentId } : 'skip');
-
   const vip = !!detailData?.stakeholder?.vipFlag;
 
   const handleSelect = (id: Id<'requests'>) => {
     setCurrentId(id);
     setNotes('');
     setReason('');
+    setInfoMsg('');
+    setShowInfoForm(false);
   };
+
+  const status = detailData?.request?.status || '';
+  const awaitingInfo = status === 'Pending Info';
 
   return (
     <Drawer direction={'right'} open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-w-xl">
+      <DrawerContent className="max-w-xl h-screen sm:h-auto flex flex-col">
         <DrawerHeader>
           <DrawerTitle>Request Details</DrawerTitle>
           <DrawerDescription>{row ? 'Review & take action' : 'Select a request'}</DrawerDescription>
         </DrawerHeader>
-        <div className="p-4 space-y-6">
+        <div className="flex flex-col w-full overflow-y-auto p-4 space-y-6">
           {!row && <div className="text-xs text-muted-foreground">No request selected.</div>}
           {row && !detailData && <div className="text-xs text-muted-foreground animate-pulse">Loading details...</div>}
           {row && detailData && (
@@ -123,40 +127,105 @@ export default function RequestDrawer({
               <div className="space-y-3">
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
                 <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
-                <div className="flex gap-2">
-                  <Button
-                    disabled={isSaving || !currentId}
-                    onClick={() => {
-                      if (!currentId) return;
-                      startSaving(async () => {
-                        await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
-                        afterAction();
-                      });
-                    }}
-                  >
-                    {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={isSaving || !currentId || !canReject}
-                    onClick={() => {
-                      if (!currentId || !canReject) return;
-                      startSaving(async () => {
-                        await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
-                        afterAction();
-                      });
-                    }}
-                  >
-                    {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Reject
-                  </Button>
+                <div className="text-[10px] text-muted-foreground">
+                  Approvals create an order. Rejections require a reason. All actions are audit logged. {awaitingInfo && 'Awaiting requester info response.'}
                 </div>
-                <div className="text-[10px] text-muted-foreground">Approvals create an order. Rejections require a reason. All actions are audit logged.</div>
               </div>
+              {(detailData.request.infoRequestedAt || detailData.request.infoRequestMessage) && (
+                <Card className="border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">Info Request {awaitingInfo && <Badge variant="outline">Awaiting Response</Badge>}</CardTitle>
+                    <CardDescription className="text-xs">History of information requested from requester</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3 text-xs">
+                    <div className="space-y-1">
+                      <div className="font-semibold">Requested</div>
+                      <div className="text-muted-foreground">{detailData.request.infoRequestedAt ? dayjs(detailData.request.infoRequestedAt).format('MMM D, YYYY h:mm A') : '—'}</div>
+                      {detailData.request.infoRequestMessage && <div className="rounded-md bg-muted p-2 whitespace-pre-wrap text-[11px]">{detailData.request.infoRequestMessage}</div>}
+                    </div>
+                    {(detailData.request.infoResponseAt || detailData.request.infoResponseMessage) && (
+                      <div className="space-y-1">
+                        <div className="font-semibold">Response</div>
+                        <div className="text-muted-foreground">{detailData.request.infoResponseAt ? dayjs(detailData.request.infoResponseAt).format('MMM D, YYYY h:mm A') : '—'}</div>
+                        {detailData.request.infoResponseMessage && <div className="rounded-md bg-background border p-2 whitespace-pre-wrap text-[11px]">{detailData.request.infoResponseMessage}</div>}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+              {!detailData.request.infoResponseMessage && !awaitingInfo && status.toLowerCase().includes('pending') && (
+                <div className="space-y-2">
+                  {!showInfoForm && (
+                    <Button variant="secondary" size="sm" onClick={() => setShowInfoForm(true)} disabled={!currentId}>
+                      Request Additional Info
+                    </Button>
+                  )}
+                  {showInfoForm && (
+                    <div className="space-y-2 rounded-md border p-3 bg-card/40">
+                      <Textarea value={infoMsg} onChange={(e) => setInfoMsg(e.target.value)} placeholder="Describe what additional information you need..." className="h-24 resize-none text-xs" />
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowInfoForm(false);
+                            setInfoMsg('');
+                          }}
+                          disabled={isRequesting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (!currentId || !infoMsg.trim()) return;
+                            startRequesting(async () => {
+                              await requestInfoMut({ id: currentId, screenerEmail: reviewerEmail, message: infoMsg.trim() });
+                              setShowInfoForm(false);
+                              setInfoMsg('');
+                            });
+                          }}
+                          disabled={isRequesting || !infoMsg.trim()}
+                        >
+                          {isRequesting && <Loader className="mr-2 size-3 animate-spin" />} Send Request
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
         <DrawerFooter>
-          <div className="flex w-full items-center justify-end gap-2">
+          <div className="flex w-full items-center justify-between gap-2">
+            <div className="flex gap-2">
+              <Button
+                disabled={isSaving || !currentId || awaitingInfo}
+                onClick={() => {
+                  if (!currentId || awaitingInfo) return;
+                  startSaving(async () => {
+                    await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
+                    afterAction();
+                  });
+                }}
+              >
+                {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Approve
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={isSaving || !currentId || !canReject || awaitingInfo}
+                onClick={() => {
+                  if (!currentId || !canReject || awaitingInfo) return;
+                  startSaving(async () => {
+                    await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
+                    afterAction();
+                  });
+                }}
+              >
+                {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Reject
+              </Button>
+            </div>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
