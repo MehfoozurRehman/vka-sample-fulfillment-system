@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { GoogleLoginResponse } from '@/types';
 import { Loader } from 'lucide-react';
 import { RoleType } from '@/constants';
 import { api } from '@/convex/_generated/api';
@@ -36,7 +35,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
             },
           });
 
-          const gInfo = (await userInfoResponse.json()) as GoogleLoginResponse;
+          const gInfo = await userInfoResponse.json();
 
           if (gInfo && gInfo.email && gInfo.sub) {
             let data: { id: string; activeRole: RoleType } | null = null;
