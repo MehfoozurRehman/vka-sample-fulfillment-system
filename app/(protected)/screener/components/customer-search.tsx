@@ -80,7 +80,7 @@ export default function CustomerSearch() {
               {overview && (
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
-                    <Card className="p-0">
+                    <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           {overview.stakeholder.companyName}
@@ -109,7 +109,7 @@ export default function CustomerSearch() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="p-0">
+                    <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm">Frequently Requested</CardTitle>
                         <CardDescription>Top products</CardDescription>
@@ -129,7 +129,7 @@ export default function CustomerSearch() {
                       </CardContent>
                     </Card>
                   </div>
-                  <Card className="p-0">
+                  <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">Recent Requests</CardTitle>
                       <CardDescription>Most recent activity</CardDescription>
