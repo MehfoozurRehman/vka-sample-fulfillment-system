@@ -4,6 +4,18 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
+import { api } from './_generated/api';
+
+function uniqEmails(emails: Array<string | undefined | null>): string[] {
+  return Array.from(
+    new Set(
+      emails
+        .filter(Boolean)
+        .map((e) => String(e).trim().toLowerCase())
+        .filter((e) => /.+@.+\..+/.test(e)),
+    ),
+  );
+}
 
 async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, email: string): Promise<Doc<'users'>> {
   const user = await ctx.db
@@ -86,6 +98,67 @@ export const approve = mutation({
       );
     }
 
+    // Send approval email
+    try {
+      const stakeholder = await ctx.db.get(req.companyId);
+      const packerEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('packer')) || u.activeRole === 'packer')).map((u) => u.email);
+      const adminEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin')).map((u) => u.email);
+
+      const to = uniqEmails([req.email]);
+      const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...packerEmails, ...(stakeholder?.vipFlag ? adminEmails : [])]);
+
+      const subject = `VKA Sample Request [${req.requestId}] Approved`;
+      const text = `Hello,
+
+Your sample request ${req.requestId} has been approved and is moving to packing.
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: reviewer._id,
+        type: 'request.approved.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { requestId: id, stakeholderId: req.companyId },
+      });
+    } catch {}
+
+    // Send order ready email to packers
+    try {
+      const stakeholder = await ctx.db.get(req.companyId);
+      const packerUsers = await ctx.db.query('users').collect();
+      const packerEmails = packerUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('packer')) || u.activeRole === 'packer')).map((u) => u.email);
+      const requesterUser = await ctx.db
+        .query('users')
+        .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+        .unique();
+
+      const to = uniqEmails(packerEmails);
+      const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail]);
+      const subject = `VKA Order [${orderId}] Ready to Pack`;
+      const text = `Hello,
+
+Order ${orderId} from request ${req.requestId} is ready for packing.
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: reviewer._id,
+        type: 'order.ready.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { orderId: newOrderId, requestId: id, stakeholderId: req.companyId },
+      });
+    } catch {}
+
     return { ok: true } as const;
   },
 });
@@ -124,6 +197,35 @@ export const reject = mutation({
       await sendInternalNotifications(ctx, reviewer._id, 'request.rejected', `Request ${req.requestId} rejected: ${reason}`, [requesterUser._id]);
     }
 
+    // Send rejection email
+    try {
+      const stakeholder = await ctx.db.get(req.companyId);
+      const allUsers = await ctx.db.query('users').collect();
+      const adminEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin')).map((u) => u.email);
+
+      const to = uniqEmails([req.email]);
+      const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
+      const subject = `VKA Sample Request [${req.requestId}] Status Update`;
+      const text = `Hello,
+
+We are sorry to inform you that request ${req.requestId} was rejected.
+Reason: ${reason}
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: reviewer._id,
+        type: 'request.rejected.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { requestId: id, stakeholderId: req.companyId },
+      });
+    } catch {}
+
     return { ok: true } as const;
   },
 });
@@ -159,6 +261,43 @@ export const requestInfo = mutation({
     if (requesterUser) {
       await sendInternalNotifications(ctx, reviewer._id, 'request.infoRequested', `Additional info requested for ${req.requestId}: ${message}`, [requesterUser._id]);
     }
+
+    // Email requester for info
+    try {
+      const stakeholder = await ctx.db.get(req.companyId);
+      const allUsers = await ctx.db.query('users').collect();
+      const adminEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin')).map((u) => u.email);
+
+      const requester = await ctx.db
+        .query('users')
+        .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+        .unique();
+
+      const to = uniqEmails([requester?.email]);
+      const cc = uniqEmails([stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
+      const subject = `VKA Sample Request [${req.requestId}] – Additional Information Requested`;
+      const text = `Hello ${requester?.name ?? ''},
+
+Additional information has been requested for ${req.requestId}:
+${message}
+
+Please reply at your earliest convenience.
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: reviewer._id,
+        type: 'request.infoRequested.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { requestId: id, stakeholderId: req.companyId },
+      });
+    } catch {}
+
     return { ok: true } as const;
   },
 });
@@ -203,6 +342,34 @@ export const respondInfo = mutation({
         screeners.map((s) => s._id),
       );
     }
+
+    // Email screeners about info response
+    try {
+      const stakeholder = await ctx.db.get(req.companyId);
+      const screenersEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')).map((u) => u.email);
+      const to = uniqEmails(screenersEmails);
+      const cc = uniqEmails([stakeholder?.salesRepEmail]);
+      const subject = `VKA Sample Request [${req.requestId}] – Information Provided`;
+      const text = `Hello,
+
+The requester has provided additional information for ${req.requestId}:
+${message}
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: owner?._id ?? (screeners[0]?._id as Id<'users'>),
+        type: 'request.infoResponded.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { requestId: id, stakeholderId: req.companyId },
+      });
+    } catch {}
+
     return { ok: true } as const;
   },
 });
