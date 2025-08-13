@@ -88,7 +88,7 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>{r.stage}</TableCell>
                         <TableCell>{r.assignedTo || <span className="text-muted-foreground">Unassigned</span>}</TableCell>
-                        <TableCell className="whitespace-nowrap">{r.createdAt}</TableCell>
+                        <TableCell className="whitespace-nowrap">{new Date(r.createdAt).toLocaleString?.() ?? r.createdAt}</TableCell>
                       </TableRow>
                     ))}
                   {!isPending && (recent || []).length === 0 && (
