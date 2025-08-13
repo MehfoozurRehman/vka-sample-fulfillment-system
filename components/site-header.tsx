@@ -85,7 +85,6 @@ function Notifications() {
     userId: user.id,
   });
 
-  // Load user notification preferences to filter on the client
   const { data: prefs } = useQueryWithStatus(api.notification.getPreferences, {
     userId: user.id,
   });
@@ -94,7 +93,6 @@ function Notifications() {
 
   const [isActing, startTransition] = useTransition();
 
-  // Build a set of disabled types and filter notifications client-side
   const prefList: Doc<'notificationPreferences'>[] = (prefs as Doc<'notificationPreferences'>[] | undefined) ?? [];
   const disabledTypes = new Set(prefList.filter((p) => !p.enabled).map((p) => p.type));
 
