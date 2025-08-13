@@ -13,7 +13,7 @@ interface Stats {
 
 export default function ScreenerStats({ stats, isLoading }: { stats: Stats; isLoading: boolean }) {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
+    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
       <StatCard label="Pending" value={stats.total} loading={isLoading} />
       <StatCard label="VIP Pending" value={stats.vip} loading={isLoading} />
       <StatCard label="Avg Items" value={stats.avgItems} loading={isLoading} />
