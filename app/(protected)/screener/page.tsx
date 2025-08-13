@@ -3,6 +3,7 @@
 import { PendingRow, computeStats } from './components/utils';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseAsString, useQueryState } from 'nuqs';
 
 import CustomerSearch from './components/customer-search';
 import ReportsPanel from './components/reports-panel';
@@ -42,7 +43,7 @@ export default function ScreenerPage() {
 
   const [search, setSearch] = useState('');
 
-  const [tab, setTab] = useState('queue');
+  const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('queue'));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
