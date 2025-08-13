@@ -153,22 +153,6 @@ export const add = mutation({
       timestamp: now,
     });
 
-    const adminUsers = await ctx.db.query('users').collect();
-    for (const u of adminUsers) {
-      if (u.deletedAt || !u.active) continue;
-      const roles: string[] = (u.roles || []).filter(Boolean);
-      if (!roles.includes('admin')) continue;
-      if (u._id === args.userId) continue;
-      await ctx.db.insert('notifications', {
-        userId: u._id,
-        createdBy: args.userId,
-        type: 'productAdded',
-        message: `Product ${productId} created`,
-        read: false,
-        createdAt: now,
-      });
-    }
-
     return id;
   },
 });
@@ -204,22 +188,6 @@ export const update = mutation({
       timestamp: Date.now(),
     });
 
-    const now = Date.now();
-    const adminUsers = await ctx.db.query('users').collect();
-    for (const u of adminUsers) {
-      if (u.deletedAt || !u.active) continue;
-      const roles: string[] = (u.roles || []).filter(Boolean);
-      if (!roles.includes('admin')) continue;
-      if (u._id === userId) continue;
-      await ctx.db.insert('notifications', {
-        userId: u._id,
-        createdBy: userId,
-        type: 'productUpdated',
-        message: `Product ${rest.productId} updated`,
-        read: false,
-        createdAt: now,
-      });
-    }
     return { ok: true };
   },
 });
@@ -239,23 +207,6 @@ export const remove = mutation({
       changes: { deletedAt: Date.now() },
       timestamp: Date.now(),
     });
-
-    const now = Date.now();
-    const adminUsers = await ctx.db.query('users').collect();
-    for (const u of adminUsers) {
-      if (u.deletedAt || !u.active) continue;
-      const roles: string[] = (u.roles || []).filter(Boolean);
-      if (!roles.includes('admin')) continue;
-      if (u._id === userId) continue;
-      await ctx.db.insert('notifications', {
-        userId: u._id,
-        createdBy: userId,
-        type: 'productRemoved',
-        message: `Product ${existing.productId} removed`,
-        read: false,
-        createdAt: now,
-      });
-    }
 
     return { ok: true };
   },
