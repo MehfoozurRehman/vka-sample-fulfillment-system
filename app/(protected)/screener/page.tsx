@@ -152,5 +152,3 @@ function ScreenerTable({
     </Tabs>
   );
 }
-
-// Components split into separate files (stats, chart, drawer, utils).
