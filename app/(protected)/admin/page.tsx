@@ -8,17 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Loader } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function AdminDashboard() {
-  const overview = useQuery(api.analytics.overview, {});
+  const { data: overview } = useQueryWithStatus(api.analytics.overview, {});
 
-  const distributions = useQuery(api.analytics.distributions);
+  const { data: distributions } = useQueryWithStatus(api.analytics.distributions, {});
 
   const { data: recent, isPending } = useQueryWithStatus(api.request.recent, { limit: 8 });
 
-  const auditLogs = useQuery(api.audit.list, {});
+  const { data: auditLogs } = useQueryWithStatus(api.audit.list, {});
 
   const top = (arr?: { label: string; value: number }[], n = 3) =>
     (arr || []).slice(0, n).map((item) => ({
