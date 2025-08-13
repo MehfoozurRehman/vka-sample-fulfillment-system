@@ -221,7 +221,6 @@ export const add = mutation({
       );
     }
 
-    // Send submission email to customer + CC parties
     try {
       const stakeholder = await ctx.db.get(args.companyId);
       const screenerEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')).map((u) => u.email);
@@ -253,9 +252,7 @@ VKA`;
         text,
         related: { requestId: id, stakeholderId: args.companyId },
       });
-    } catch {
-      // swallow email errors to not block request creation
-    }
+    } catch {}
 
     return { id, requestId } as const;
   },
