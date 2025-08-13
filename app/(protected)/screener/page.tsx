@@ -150,48 +150,24 @@ function ScreenerChart({ metrics, range, setRange }: { metrics?: ScreenerMetrics
             <AreaChart data={daily} stackOffset="expand">
               <defs>
                 <linearGradient id="fillApproved" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.85} /> {/* emerald-500 */}
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.85} />
                   <stop offset="95%" stopColor="#22c55e" stopOpacity={0.08} />
                 </linearGradient>
                 <linearGradient id="fillRejected" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} /> {/* red-500 */}
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#ef4444" stopOpacity={0.08} />
                 </linearGradient>
                 <linearGradient id="fillPending" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8} /> {/* amber-500 */}
+                  <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#f59e42" stopOpacity={0.08} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e5e7eb" /> {/* subtle grid */}
+              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} minTickGap={28} />
               <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-              <Area
-                dataKey="approved"
-                type="monotone"
-                stackId="a"
-                fill="url(#fillApproved)"
-                stroke="#16a34a" // emerald-600
-                strokeWidth={2}
-                dot={false}
-              />
-              <Area
-                dataKey="rejected"
-                type="monotone"
-                stackId="a"
-                fill="url(#fillRejected)"
-                stroke="#dc2626" // red-600
-                strokeWidth={2}
-                dot={false}
-              />
-              <Area
-                dataKey="pending"
-                type="monotone"
-                stackId="a"
-                fill="url(#fillPending)"
-                stroke="#d97706" // amber-700
-                strokeWidth={2}
-                dot={false}
-              />
+              <Area dataKey="approved" type="monotone" stackId="a" fill="url(#fillApproved)" stroke="#16a34a" strokeWidth={2} dot={false} />
+              <Area dataKey="rejected" type="monotone" stackId="a" fill="url(#fillRejected)" stroke="#dc2626" strokeWidth={2} dot={false} />
+              <Area dataKey="pending" type="monotone" stackId="a" fill="url(#fillPending)" stroke="#d97706" strokeWidth={2} dot={false} />
             </AreaChart>
           </ChartContainer>
         </div>
