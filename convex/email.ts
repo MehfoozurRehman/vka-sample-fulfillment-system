@@ -343,3 +343,40 @@ export const list = query({
   },
 });
 
+export const stats = query({
+  args: { start: v.optional(v.number()), end: v.optional(v.number()) },
+  handler: async (ctx, { start, end }) => {
+    let emails: Doc<'emails'>[] = [];
+    if (start && end) {
+      emails = await ctx.db
+        .query('emails')
+        .withIndex('by_createdAt', (q) => q.gte('createdAt', start).lte('createdAt', end))
+        .collect();
+    } else if (start) {
+      emails = await ctx.db
+        .query('emails')
+        .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
+        .collect();
+    } else if (end) {
+      const collected = await ctx.db.query('emails').withIndex('by_createdAt').order('desc').collect();
+      emails = collected.filter((e) => e.createdAt <= end);
+    } else {
+      emails = await ctx.db.query('emails').collect();
+    }
+
+    const countBy = (s: string) => emails.filter((e) => e.status === s).length;
+    const total = emails.length;
+
+    return {
+      total,
+      pending: countBy('pending'),
+      retrying: countBy('retrying'),
+      sent: countBy('sent'),
+      delivered: countBy('delivered'),
+      delivery_delayed: countBy('delivery_delayed'),
+      bounced: countBy('bounced'),
+      failed: countBy('failed'),
+      cancelled: countBy('cancelled'),
+    } as const;
+  },
+});
