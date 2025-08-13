@@ -13,33 +13,20 @@ import ScreenerStats from './components/screener-stats';
 import ScreenerTable from './components/screener-table';
 import { api } from '@/convex/_generated/api';
 import { useAuth } from '@/hooks/use-user';
-import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
-
-interface ScreenerMetrics {
-  rangeDays: number;
-  daily: { date: string; approved: number; rejected: number; pending: number }[];
-  approvalRate30d: number;
-  approved30: number;
-  rejected30: number;
-  ageBuckets: { under24: number; between24and48: number; over48: number };
-  totals: { totalPending: number; vipPending: number; avgItemsPending: number };
-  topPending: { company: string; count: number; vip: boolean }[];
-  topVolume30d: { company: string; count: number; vip: boolean }[];
-}
 
 export default function ScreenerPage() {
   const auth = useAuth();
 
   const { data: pendingData, isPending } = useQueryWithStatus(api.screener.pending, { limit: 500 });
 
-  const pending = useMemo(() => (pendingData as PendingRow[] | undefined) ?? [], [pendingData]);
+  const pending = useMemo(() => pendingData ?? [], [pendingData]);
 
   const [selected, setSelected] = useState<PendingRow | null>(null);
 
   const [range, setRange] = useState('90');
 
-  const metrics = useQuery(api.screener.metrics, { days: Number(range) }) as ScreenerMetrics | undefined;
+  const { data: metrics } = useQueryWithStatus(api.screener.metrics, { days: Number(range) });
 
   const [search, setSearch] = useState('');
 
