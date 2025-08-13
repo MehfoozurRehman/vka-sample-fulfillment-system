@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, Legend as RechartsLegend, LabelList } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import React, { useMemo, useState } from 'react';
@@ -11,7 +11,6 @@ import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 const reportOptions = [
@@ -47,6 +46,7 @@ interface AvgProcTimeReport {
 }
 
 type ChartRow = { bucket: string; value: number } | { label: string; count: number };
+type ReportData = PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport;
 
 export default function ReportsPanel() {
   const [report, setReport] = useState('PendingRequestsByAge');
@@ -58,40 +58,45 @@ export default function ReportsPanel() {
   const from = useMemo(() => anchorTo - Number(range) * 24 * 3600 * 1000, [range, anchorTo]);
 
   const { data, isPending } = useQueryWithStatus(api.screener.reports, { report, from, to: anchorTo });
+  const typedData = data as ReportData | undefined;
 
   const [exportOpen, setExportOpen] = useState(false);
 
   const { data: exportData } = useQueryWithStatus(api.screener.exportRequests, exportOpen ? { all: false, from, to: anchorTo } : 'skip');
 
   const chart = useMemo(() => {
-    if (!data) return null;
+    if (!typedData) return null;
 
-    switch (data.type) {
+    switch (typedData.type) {
       case 'PendingRequestsByAge':
         return {
           kind: 'bar',
           rows: [
-            { bucket: '<24h', value: (data as PendingAgeReport).under24 },
-            { bucket: '24-48h', value: (data as PendingAgeReport).between24and48 },
-            { bucket: '>48h', value: (data as PendingAgeReport).over48 },
+            { bucket: '<24h', value: typedData.under24 },
+            { bucket: '24-48h', value: typedData.between24and48 },
+            { bucket: '>48h', value: typedData.over48 },
           ],
         } as const;
       case 'Top10CustomersThisMonth':
       case 'TopCustomers':
-        return { kind: 'bar', rows: (data as TopCustomersReport).top.map((t) => ({ label: t.company, count: t.count })) } as const;
+        return { kind: 'bar', rows: typedData.top.map((t) => ({ label: t.company, count: t.count })) } as const;
       case 'ProductsRequestedThisWeek':
       case 'ProductsRequested':
-        return { kind: 'bar', rows: (data as ProductsReport).products.map((p) => ({ label: p.name, count: p.count })) } as const;
+        return { kind: 'bar', rows: typedData.products.map((p) => ({ label: p.name, count: p.count })) } as const;
       case 'RejectionReasonsSummary':
-        return { kind: 'pie', rows: (data as RejectionReasonsReport).reasons.map((r) => ({ label: r.reason, count: r.count })) } as const;
+        return { kind: 'pie', rows: typedData.reasons.map((r) => ({ label: r.reason, count: r.count })) } as const;
       case 'AverageProcessingTime':
-        return { kind: 'stat', value: (data as AvgProcTimeReport).averageHours } as const;
+        return { kind: 'stat', value: typedData.averageHours } as const;
       default:
         return null;
     }
-  }, [data]);
+  }, [typedData]);
 
   const COLORS = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#f472b6', '#8b5cf6', '#10b981'];
+  const axisTickColor = 'hsl(var(--foreground, 0 0% 100%))';
+
+  // Build gradients ids (stable) for bar charts
+  const barGradientId = 'reportBarGradient';
 
   return (
     <div className="space-y-6">
@@ -181,34 +186,45 @@ export default function ReportsPanel() {
               <Loader className="animate-spin" />
             </div>
           )}
-          {data && chart?.kind === 'bar' && (
+          {typedData && chart?.kind === 'bar' && (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 {(() => {
                   const rows = chart.rows as ChartRow[];
-
                   const first = rows[0] as ChartRow | undefined;
-
                   const hasBucket = !!first && 'bucket' in first;
-
                   const valueKey = hasBucket ? 'value' : 'count';
-
                   return (
                     <BarChart data={rows}>
+                      <defs>
+                        <linearGradient id={barGradientId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey={hasBucket ? 'bucket' : 'label'} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                      <Bar dataKey={valueKey} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <XAxis dataKey={hasBucket ? 'bucket' : 'label'} tick={{ fontSize: 11, fill: axisTickColor }} stroke="hsl(var(--border))" />
+                      <YAxis tick={{ fontSize: 11, fill: axisTickColor }} stroke="hsl(var(--border))" allowDecimals={false} />
+                      <RechartsTooltip cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }} />
+                      <RechartsLegend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey={valueKey} radius={[4, 4, 0, 0]} fill={`url(#${barGradientId})`}>
+                        <LabelList dataKey={valueKey} position="top" fill={axisTickColor} fontSize={10} />
+                        {rows.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   );
                 })()}
               </ResponsiveContainer>
             </div>
           )}
-          {data && chart?.kind === 'pie' && (
+          {typedData && chart?.kind === 'pie' && (
             <div className="h-72 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <RechartsTooltip cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }} />
+                  <RechartsLegend wrapperStyle={{ fontSize: 11 }} />
                   <Pie data={chart.rows as ChartRow[]} dataKey="count" nameKey="label" innerRadius={60} outerRadius={100} paddingAngle={2}>
                     {(chart.rows as ChartRow[]).map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -218,14 +234,85 @@ export default function ReportsPanel() {
               </ResponsiveContainer>
             </div>
           )}
-          {data && chart?.kind === 'stat' && (
-            <div className="text-center py-8 text-4xl font-bold">
-              {chart.value.toLocaleString()} <span className="text-base font-normal">hrs</span>
-              <div className="text-sm text-muted-foreground">average processing time</div>
-            </div>
-          )}
+          {typedData && <ReportSummary data={typedData} />}
         </CardContent>
       </Card>
     </div>
   );
+}
+
+// Textual summary component
+function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport }) {
+  if (!data) return null;
+  const commonCls = 'mt-4 text-xs space-y-1';
+  if (data.type === 'PendingRequestsByAge') {
+    const total = data.under24 + data.between24and48 + data.over48;
+    const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
+    return (
+      <div className={commonCls}>
+        <div className="font-medium">Pending Requests (Total {total})</div>
+        <div>&lt;24h: {data.under24} ({pct(data.under24)}%)</div>
+        <div>24–48h: {data.between24and48} ({pct(data.between24and48)}%)</div>
+        <div>&gt;48h: {data.over48} ({pct(data.over48)}%)</div>
+      </div>
+    );
+  }
+  if (data.type === 'Top10CustomersThisMonth' || data.type === 'TopCustomers') {
+    const total = data.top.reduce((a, b) => a + b.count, 0);
+    return (
+      <div className={commonCls}>
+        <div className="font-medium">Top Customers (Total {total})</div>
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          {data.top.map((t) => (
+            <li key={t.company} className="flex justify-between">
+              <span className="truncate pr-2">{t.company}</span>
+              <span className="tabular-nums font-medium">{t.count}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (data.type === 'ProductsRequestedThisWeek' || data.type === 'ProductsRequested') {
+    const total = data.products.reduce((a, b) => a + b.count, 0);
+    return (
+      <div className={commonCls}>
+        <div className="font-medium">Products Requested (Total {total})</div>
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          {data.products.map((p) => (
+            <li key={p.name} className="flex justify-between">
+              <span className="truncate pr-2">{p.name}</span>
+              <span className="tabular-nums font-medium">{p.count}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (data.type === 'RejectionReasonsSummary') {
+    const total = data.reasons.reduce((a, b) => a + b.count, 0);
+    const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
+    return (
+      <div className={commonCls}>
+        <div className="font-medium">Rejection Reasons (Total {total})</div>
+        <ul className="space-y-1">
+          {data.reasons.map((r) => (
+            <li key={r.reason} className="flex justify-between">
+              <span className="truncate pr-2">{r.reason}</span>
+              <span className="tabular-nums">{r.count} ({pct(r.count)}%)</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (data.type === 'AverageProcessingTime') {
+    return (
+      <div className={commonCls}>
+        <div className="font-medium">Average Processing Time</div>
+        <div>{data.averageHours.toFixed(2)} hours ({(data.averageMs / 1000 / 60).toFixed(1)} mins)</div>
+      </div>
+    );
+  }
+  return null;
 }
