@@ -3,6 +3,18 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 import { v } from 'convex/values';
 import dayjs from 'dayjs';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
+import { api } from './_generated/api';
+
+function uniqEmails(emails: Array<string | undefined | null>): string[] {
+  return Array.from(
+    new Set(
+      emails
+        .filter(Boolean)
+        .map((e) => String(e).trim().toLowerCase())
+        .filter((e) => /.+@.+\..+/.test(e)),
+    ),
+  );
+}
 
 async function assertPacker(ctx: { db: DatabaseReader | DatabaseWriter }, email: string): Promise<Doc<'users'>> {
   const user = await ctx.db
@@ -156,6 +168,40 @@ export const markPacked = mutation({
         shippers.map((s) => s._id),
       );
     }
+
+    // Email shippers + CC requester, sales rep
+    try {
+      const req = await ctx.db.get(order.requestId);
+      if (req) {
+        const stakeholder = await ctx.db.get(req.companyId as Id<'stakeholders'>);
+        const shipperEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('shipper')) || u.activeRole === 'shipper')).map((u) => u.email);
+        const requester = await ctx.db
+          .query('users')
+          .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
+          .unique();
+        const to = uniqEmails(shipperEmails);
+        const cc = uniqEmails([requester?.email, stakeholder?.salesRepEmail]);
+        const subject = `VKA Order [${order.orderId}] Ready for Shipping`;
+        const text = `Hello,
+
+Order ${order.orderId} from request ${req.requestId} has been packed and is ready to ship.
+
+Thank you,
+VKA`;
+
+        await ctx.runMutation(api.email.sendAndRecordEmail, {
+          createdBy: user._id,
+          type: 'order.packed.email',
+          from: 'VKA <no-reply@vkaff.com>',
+          to,
+          cc,
+          subject,
+          text,
+          related: { orderId: id, requestId: order.requestId, stakeholderId: req.companyId },
+        });
+      }
+    } catch {}
+
     return { ok: true } as const;
   },
 });
