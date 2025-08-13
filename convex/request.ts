@@ -315,3 +315,24 @@ export const remove = mutation({
     return { ok: true } as const;
   },
 });
+
+export const orderSummary = query({
+  args: { requestId: v.id('requests') },
+  handler: async (ctx, { requestId }) => {
+    const order = await ctx.db
+      .query('orders')
+      .withIndex('by_requestId', (q) => q.eq('requestId', requestId))
+      .first();
+    if (!order || order.deletedAt) return null;
+    return {
+      id: order._id,
+      orderId: order.orderId,
+      status: order.status,
+      packedDate: order.packedDate,
+      shippedDate: order.shippedDate,
+      carrier: order.carrier,
+      trackingNumber: order.trackingNumber,
+      updatedAt: order.updatedAt,
+    } as const;
+  },
+});
