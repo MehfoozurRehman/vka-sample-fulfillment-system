@@ -19,7 +19,9 @@ interface SearchResult {
 
 export default function CustomerSearch() {
   const [q, setQ] = useState('');
+
   const [selected, setSelected] = useState<string | null>(null);
+
   const [sort, setSort] = useState<'name' | 'requests'>('name');
 
   const { data: all, isPending: isCustomerPending } = useQueryWithStatus(api.screener.listCustomers, {});
@@ -27,6 +29,7 @@ export default function CustomerSearch() {
   const results = useMemo(() => {
     if (!all) return [] as SearchResult[];
     const list = (all as SearchResult[]).slice();
+
     const term = q.trim().toLowerCase();
 
     const filtered = !term ? list : list.filter((r) => r.companyName.toLowerCase().includes(term));
@@ -34,6 +37,7 @@ export default function CustomerSearch() {
     filtered.sort((a, b) => {
       if (sort === 'name') return a.companyName.localeCompare(b.companyName);
       if (sort === 'requests') return b.requestCount - a.requestCount || a.companyName.localeCompare(b.companyName);
+
       return 0;
     });
 
@@ -44,9 +48,12 @@ export default function CustomerSearch() {
 
   function highlight(text: string) {
     const term = q.trim();
+
     if (!term) return text;
+
     try {
       const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
+
       return (
         <>
           {text.split(re).map((part, i) =>
@@ -67,10 +74,12 @@ export default function CustomerSearch() {
 
   function statusVariant(status: string): 'default' | 'destructive' | 'secondary' | 'outline' {
     const s = status.toLowerCase();
+
     if (s.includes('reject')) return 'destructive';
     if (s.includes('ship')) return 'secondary';
     if (s.includes('pend')) return 'outline';
     if (s.includes('approve') || s.includes('complete')) return 'default';
+
     return 'outline';
   }
 
