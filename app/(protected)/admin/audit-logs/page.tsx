@@ -5,6 +5,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight, IconFilter } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useDeferredValue, useMemo, useState } from 'react';
 
 import { AuditRow } from './types';
@@ -20,7 +21,6 @@ import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
-import { useQueryState, parseAsString } from 'nuqs';
 
 export default function AuditLogsPage() {
   const [selectedUser, setSelectedUser] = useQueryState('user', parseAsString.withDefault(''));
