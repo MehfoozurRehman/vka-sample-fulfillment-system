@@ -39,8 +39,8 @@ export default function CustomerSearch() {
   const overview = useQuery(api.screener.customerOverview, selected ? { stakeholderId: selected as unknown as Id<'stakeholders'> } : 'skip') as OverviewType | undefined;
   return (
     <div className="flex flex-col gap-6">
-      <Card className="p-0">
-        <CardHeader className="pb-4">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <CardTitle className="text-sm">Customers</CardTitle>
@@ -52,7 +52,7 @@ export default function CustomerSearch() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2 max-h-[460px] overflow-auto rounded border p-2 text-xs bg-background/40">
               {results.map((r) => (
