@@ -1,3 +1,4 @@
+import type { Doc } from './_generated/dataModel';
 import { Id } from './_generated/dataModel';
 import { mutation } from './_generated/server';
 import { query } from './_generated/server';
@@ -11,30 +12,38 @@ export const list = query({
     start: v.optional(v.number()),
     end: v.optional(v.number()),
     search: v.optional(v.string()),
+    limit: v.optional(v.number()), // optional cap (most recent first)
   },
-  handler: async (ctx, { userId, action, table, start, end, search }) => {
-    let logs;
+  handler: async (ctx, { userId, action, table, start, end, search, limit }) => {
+    const cap = Math.min(Math.max(limit ?? 0, 0), 5000); // safety cap if provided
 
+    let base: Doc<'auditLogs'>[] = [];
     if (userId) {
-      logs = await ctx.db
+      base = await ctx.db
         .query('auditLogs')
         .withIndex('by_user', (q) => q.eq('userId', userId))
+        .order('desc')
         .collect();
     } else {
-      logs = await ctx.db.query('auditLogs').collect();
+      base = await ctx.db.query('auditLogs').withIndex('by_timestamp').order('desc').collect();
     }
 
-    const filtered = logs
+    // Already desc ordered; apply filters
+    let filtered = base
       .filter((l) => (action ? l.action === action : true))
       .filter((l) => (table ? l.table === table : true))
       .filter((l) => (typeof start === 'number' ? l.timestamp >= start : true))
-      .filter((l) => (typeof end === 'number' ? l.timestamp <= end : true))
-      .filter((l) => {
-        if (!search) return true;
+      .filter((l) => (typeof end === 'number' ? l.timestamp <= end : true));
+
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter((l) => {
         const hay = `${l.action}\n${l.table}\n${l.recordId}\n${JSON.stringify(l.changes)}`.toLowerCase();
-        return hay.includes(search.toLowerCase());
-      })
-      .sort((a, b) => b.timestamp - a.timestamp);
+        return hay.includes(s);
+      });
+    }
+
+    if (cap) filtered = filtered.slice(0, cap);
 
     const uniqueUserIds = Array.from(new Set(filtered.map((l) => l.userId as Id<'users'>)));
     const users = await Promise.all(uniqueUserIds.map((id) => ctx.db.get(id)));
