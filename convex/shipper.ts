@@ -3,6 +3,24 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 import { v } from 'convex/values';
 import dayjs from 'dayjs';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
+import { api } from './_generated/api';
+
+function uniqEmails(emails: Array<string | undefined | null>): string[] {
+  return Array.from(
+    new Set(
+      emails
+        .filter(Boolean)
+        .map((e) => String(e).trim().toLowerCase())
+        .filter((e) => /.+@.+\..+/.test(e)),
+    ),
+  );
+}
+
+function isInternational(country?: string | null) {
+  if (!country) return false;
+  const c = country.trim().toLowerCase();
+  return !['us', 'usa', 'u.s.a', 'united states', 'united states of america', 'america'].includes(c);
+}
 
 async function assertShipper(ctx: { db: DatabaseReader | DatabaseWriter }, email: string): Promise<Doc<'users'>> {
   const user = await ctx.db
@@ -158,6 +176,43 @@ export const markShipped = mutation({
       const distinct = Array.from(new Set(recipients));
       if (distinct.length) {
         await sendInternalNotifications(ctx, user._id, 'order.shipped', `Order ${order.orderId} shipped via ${rest.carrier} (${rest.trackingNumber})`, distinct);
+      }
+
+      // Customer-facing shipped email
+      if (notifyCustomer) {
+        try {
+          const allUsers = await ctx.db.query('users').collect();
+          const adminEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin')).map((u) => u.email);
+
+          const to = uniqEmails([req.email]);
+          const cc = uniqEmails([
+            req.requestedBy,
+            stakeholder?.salesRepEmail,
+            stakeholder?.accountManagerEmail,
+            ...(isInternational(req.country) ? [stakeholder?.complianceOfficerEmail] : []),
+            ...(stakeholder?.vipFlag ? adminEmails : []),
+          ]);
+          const subject = `VKA Samples Shipped - Tracking: ${rest.trackingNumber}`;
+          const text = `Hello,
+
+Your samples have shipped for request ${req.requestId}.
+Carrier: ${rest.carrier}
+Tracking: ${rest.trackingNumber}
+
+Thank you,
+VKA`;
+
+          await ctx.runMutation(api.email.sendAndRecordEmail, {
+            createdBy: user._id,
+            type: 'order.shipped.email',
+            from: 'VKA <no-reply@vkaff.com>',
+            to,
+            cc,
+            subject,
+            text,
+            related: { orderId: id, requestId: order.requestId, stakeholderId: req.companyId },
+          });
+        } catch {}
       }
     }
     return { ok: true } as const;
