@@ -1,6 +1,6 @@
 import type { Doc, Id } from './_generated/dataModel';
 import { components, internal } from './_generated/api';
-import { internalMutation, internalQuery, mutation } from './_generated/server';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 
 import { v } from 'convex/values';
 
@@ -252,3 +252,94 @@ export const getEmailStatus = internalQuery({
     return { status: email.status, resendId: email.resendId, errorMessage: email.errorMessage, opened: !!email.opened } as const;
   },
 });
+
+export const list = query({
+  args: {
+    status: v.optional(v.string()),
+    type: v.optional(v.string()),
+    start: v.optional(v.number()),
+    end: v.optional(v.number()),
+    search: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { status, type, start, end, search, limit }) => {
+    const cap = Math.min(Math.max(limit ?? 200, 1), 1000);
+
+    let emails: Doc<'emails'>[] = [];
+
+    if (status) {
+      emails = await ctx.db
+        .query('emails')
+        .withIndex('by_status', (q) => q.eq('status', status))
+        .collect();
+    } else if (start && end) {
+      emails = await ctx.db
+        .query('emails')
+        .withIndex('by_createdAt', (q) => q.gte('createdAt', start).lte('createdAt', end))
+        .collect();
+    } else if (start) {
+      emails = await ctx.db
+        .query('emails')
+        .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
+        .collect();
+    } else if (end) {
+      const collected = await ctx.db.query('emails').withIndex('by_createdAt').order('desc').collect();
+      emails = collected.filter((e) => e.createdAt <= end);
+    } else {
+      emails = await ctx.db.query('emails').withIndex('by_createdAt').order('desc').collect();
+    }
+
+    let filtered = emails.filter((e) => !type || e.type === type);
+
+    if (start && !end) filtered = filtered.filter((e) => e.createdAt >= start);
+    if (end && !start) filtered = filtered.filter((e) => e.createdAt <= end);
+
+    if (search) {
+      const s = search.toLowerCase();
+      const contains = (val?: unknown) => (val ? String(val).toLowerCase().includes(s) : false);
+      filtered = filtered.filter(
+        (e) =>
+          contains(e.subject) ||
+          e.to?.some(contains) ||
+          e.cc?.some(contains) ||
+          e.bcc?.some(contains) ||
+          contains(e.resendId) ||
+          contains(e.errorMessage) ||
+          contains(e.type),
+      );
+    }
+
+    filtered.sort((a, b) => b.createdAt - a.createdAt);
+    const sliced = filtered.slice(0, cap);
+
+    const userIds = Array.from(new Set(sliced.map((e) => e.createdBy))) as Id<'users'>[];
+    const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
+    const userMap = new Map<string, Doc<'users'> | null>();
+    userIds.forEach((id, i) => userMap.set(String(id), users[i] || null));
+
+    return sliced.map((e) => {
+      const u = userMap.get(String(e.createdBy));
+      return {
+        id: e._id,
+        createdAt: e.createdAt,
+        updatedAt: e.updatedAt,
+        type: e.type,
+        status: e.status,
+        subject: e.subject,
+        to: e.to,
+        cc: e.cc ?? [],
+        bcc: e.bcc ?? [],
+        replyTo: e.replyTo ?? [],
+        attemptCount: e.attemptCount,
+        nextAttemptAt: e.nextAttemptAt,
+        resendId: e.resendId,
+        errorMessage: e.errorMessage,
+        sentAt: e.sentAt,
+        finalizedAt: e.finalizedAt,
+        related: e.related,
+        createdBy: { id: e.createdBy, name: u?.name ?? null, email: u?.email ?? null },
+      } as const;
+    });
+  },
+});
+
