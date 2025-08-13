@@ -298,14 +298,7 @@ export const list = query({
       const s = search.toLowerCase();
       const contains = (val?: unknown) => (val ? String(val).toLowerCase().includes(s) : false);
       filtered = filtered.filter(
-        (e) =>
-          contains(e.subject) ||
-          e.to?.some(contains) ||
-          e.cc?.some(contains) ||
-          e.bcc?.some(contains) ||
-          contains(e.resendId) ||
-          contains(e.errorMessage) ||
-          contains(e.type),
+        (e) => contains(e.subject) || e.to?.some(contains) || e.cc?.some(contains) || e.bcc?.some(contains) || contains(e.resendId) || contains(e.errorMessage) || contains(e.type),
       );
     }
 
