@@ -45,9 +45,9 @@ export default function AdminDashboard() {
             </div>
             {isPending && <IconReload className="size-4 animate-spin text-muted-foreground" />}
           </CardHeader>
-          <CardContent className="overflow-x-auto pt-4">
-            <div className="overflow-hidden rounded-lg border">
-              <Table className="h-full">
+          <CardContent className="overflow-x-auto h-full">
+            <div className="overflow-hidden rounded-lg border h-full">
+              <Table containerClassName="h-full min-h-full">
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="min-w-[120px]">ID</TableHead>
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
                     <TableHead className="min-w-[170px]">Created</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="h-full">
+                <TableBody className="min-h-full">
                   {isPending && (
                     <TableRow>
                       <TableCell colSpan={9} className="p-2">
