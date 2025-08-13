@@ -69,6 +69,17 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
   const [editing, setEditing] = useState(false);
 
+  const infoRequestData: InfoRequestData | null = request
+    ? {
+        status: request.status,
+        infoRequestedAt: request.infoRequestedAt,
+        infoRequestedBy: request.infoRequestedBy,
+        infoRequestMessage: request.infoRequestMessage,
+        infoResponseAt: request.infoResponseAt,
+        infoResponseMessage: request.infoResponseMessage,
+      }
+    : null;
+
   const [form, setForm] = useState({
     contactName: '',
     email: '',
@@ -189,9 +200,10 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 <Row label="Created">{row.createdAt}</Row>
               </div>
 
-              {request?.status === 'Pending Info' && (
+              {infoRequestData && (infoRequestData.infoRequestedAt || infoRequestData.infoRequestMessage) && (
                 <InfoRequestPanel
-                  request={request}
+                  request={infoRequestData}
+                  showRespondForm={infoRequestData.status === 'Pending Info' && !infoRequestData.infoResponseAt}
                   onRespond={async (message: string) => {
                     await respondInfo({ id: row.id, requesterEmail: auth.email, message });
                     toast.success('Information sent. Request back in review queue.');
@@ -393,29 +405,36 @@ interface InfoRequestData {
   infoResponseMessage?: string;
 }
 
-function InfoRequestPanel({ request, onRespond }: { request: InfoRequestData; onRespond: (message: string) => Promise<void> }) {
+function InfoRequestPanel({ request, onRespond, showRespondForm }: { request: InfoRequestData; onRespond: (message: string) => Promise<void>; showRespondForm?: boolean }) {
   const [msg, setMsg] = useState('');
 
   const [sending, setSending] = useState(false);
 
   const canSend = msg.trim().length >= 5;
 
+  const statusLabel = request.status === 'Pending Info' && !request.infoResponseAt ? 'Pending Info' : 'Info Provided';
+
   return (
     <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/30 p-4 space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h4 className="text-sm font-semibold tracking-tight flex items-center gap-2">
-          <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" /> Additional Information Requested
+          <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" /> Additional Information Request
         </h4>
         <Badge variant="outline" className="text-[10px] font-normal">
-          Pending Info
+          {statusLabel}
         </Badge>
       </div>
       <div className="space-y-2 text-xs leading-relaxed">
         <div className="text-muted-foreground">Requested at: {request.infoRequestedAt ? dayjs(request.infoRequestedAt).format('MMM D, YYYY HH:mm') : '—'}</div>
         {request.infoRequestMessage && <div className="rounded-md bg-white/60 dark:bg-background/40 border p-3 text-[12px] whitespace-pre-wrap">{request.infoRequestMessage}</div>}
       </div>
-      {request.infoResponseAt && <div className="text-xs text-muted-foreground">You responded at {dayjs(request.infoResponseAt).format('MMM D, YYYY HH:mm')}</div>}
-      {!request.infoResponseAt && (
+      {request.infoResponseAt && (
+        <div className="space-y-2 text-xs leading-relaxed">
+          <div className="text-muted-foreground">Responded at: {dayjs(request.infoResponseAt).format('MMM D, YYYY HH:mm')}</div>
+          {request.infoResponseMessage && <div className="rounded-md bg-background/50 dark:bg-background/40 border p-3 text-[12px] whitespace-pre-wrap">{request.infoResponseMessage}</div>}
+        </div>
+      )}
+      {showRespondForm && !request.infoResponseAt && (
         <div className="space-y-2">
           <Textarea value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Provide the requested details (min 5 characters)" className="resize-none h-28" />
           <div className="flex items-center justify-between gap-2">
