@@ -14,6 +14,7 @@ import { RecentRequestsType } from '../type';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
+import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -61,6 +62,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const update = useMutation(api.request.update);
 
   const remove = useMutation(api.request.remove);
+
+  const respondInfo = useMutation(api.screener.respondInfo);
 
   const isDraft = row && row.status === 'Pending Review' && row.stage === 'Submitted';
 
@@ -185,6 +188,17 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 <Row label="Project Name">{request?.projectName || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Created">{row.createdAt}</Row>
               </div>
+
+              {request?.status === 'Pending Info' && (
+                <InfoRequestPanel
+                  request={request}
+                  onRespond={async (message: string) => {
+                    await respondInfo({ id: row.id, requesterEmail: auth.email, message });
+                    toast.success('Information sent. Request back in review queue.');
+                  }}
+                />
+              )}
+
               <div className="rounded-lg border bg-card p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold tracking-tight">Products Requested</h4>
@@ -367,5 +381,65 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+interface InfoRequestData {
+  status: string;
+  infoRequestedAt?: number;
+  infoRequestedBy?: string;
+  infoRequestMessage?: string;
+  infoResponseAt?: number;
+  infoResponseMessage?: string;
+}
+
+function InfoRequestPanel({ request, onRespond }: { request: InfoRequestData; onRespond: (message: string) => Promise<void> }) {
+  const [msg, setMsg] = useState('');
+
+  const [sending, setSending] = useState(false);
+
+  const canSend = msg.trim().length >= 5;
+
+  return (
+    <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/30 p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h4 className="text-sm font-semibold tracking-tight flex items-center gap-2">
+          <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" /> Additional Information Requested
+        </h4>
+        <Badge variant="outline" className="text-[10px] font-normal">
+          Pending Info
+        </Badge>
+      </div>
+      <div className="space-y-2 text-xs leading-relaxed">
+        <div className="text-muted-foreground">Requested at: {request.infoRequestedAt ? dayjs(request.infoRequestedAt).format('MMM D, YYYY HH:mm') : '—'}</div>
+        {request.infoRequestMessage && <div className="rounded-md bg-white/60 dark:bg-background/40 border p-3 text-[12px] whitespace-pre-wrap">{request.infoRequestMessage}</div>}
+      </div>
+      {request.infoResponseAt && <div className="text-xs text-muted-foreground">You responded at {dayjs(request.infoResponseAt).format('MMM D, YYYY HH:mm')}</div>}
+      {!request.infoResponseAt && (
+        <div className="space-y-2">
+          <Textarea value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Provide the requested details (min 5 characters)" className="resize-none h-28" />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-muted-foreground">{canSend ? 'Ready to send' : 'Enter at least 5 characters'}</span>
+            <Button
+              size="sm"
+              disabled={!canSend || sending}
+              onClick={async () => {
+                if (!canSend) return;
+                setSending(true);
+
+                try {
+                  await onRespond(msg.trim());
+                  setMsg('');
+                } finally {
+                  setSending(false);
+                }
+              }}
+            >
+              {sending ? 'Sending...' : 'Send Info'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
