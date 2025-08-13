@@ -99,14 +99,6 @@ export const setPreference = mutation({
     } else {
       prefId = await ctx.db.insert('notificationPreferences', { userId, type, enabled, updatedAt: now });
     }
-    await ctx.db.insert('auditLogs', {
-      userId,
-      action: 'setNotificationPreference',
-      table: 'notificationPreferences',
-      recordId: prefId,
-      changes: { type, enabled },
-      timestamp: now,
-    });
     return { ok: true } as const;
   },
 });
