@@ -5,6 +5,11 @@ import dayjs from 'dayjs';
 import { v } from 'convex/values';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { api, internal } from './_generated/api';
+import { renderRequestApprovedHtml } from '../emails/RequestApproved';
+import { renderOrderReadyHtml } from '../emails/OrderReady';
+import { renderRequestInfoRequestedHtml } from '../emails/RequestInfoRequested';
+import { renderRequestInfoRespondedHtml } from '../emails/RequestInfoResponded';
+import { renderRequestRejectedHtml } from '../emails/RequestRejected';
 
 function uniqEmails(emails: Array<string | undefined | null>): string[] {
   return Array.from(
@@ -107,12 +112,8 @@ export const approve = mutation({
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...packerEmails, ...(stakeholder?.vipFlag ? adminEmails : [])]);
 
       const subject = `VKA Sample Request [${req.requestId}] Approved`;
-      const text = `Hello,
-
-Your sample request ${req.requestId} has been approved and is moving to packing.
-
-Thank you,
-VKA`;
+      const text = `Hello,\n\nYour sample request ${req.requestId} has been approved and is moving to packing.\n\nThank you,\nVKA`;
+      const html = await renderRequestApprovedHtml({ requestId: req.requestId });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -122,6 +123,7 @@ VKA`;
         cc,
         subject,
         text,
+        html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -138,12 +140,8 @@ VKA`;
       const to = uniqEmails(packerEmails);
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail]);
       const subject = `VKA Order [${orderId}] Ready to Pack`;
-      const text = `Hello,
-
-Order ${orderId} from request ${req.requestId} is ready for packing.
-
-Thank you,
-VKA`;
+      const text = `Hello,\n\nOrder ${orderId} from request ${req.requestId} is ready for packing.\n\nThank you,\nVKA`;
+      const html = await renderOrderReadyHtml({ orderId, requestId: req.requestId });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -153,6 +151,7 @@ VKA`;
         cc,
         subject,
         text,
+        html,
         related: { orderId: newOrderId, requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -203,13 +202,8 @@ export const reject = mutation({
       const to = uniqEmails([req.email]);
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
       const subject = `VKA Sample Request [${req.requestId}] Status Update`;
-      const text = `Hello,
-
-We are sorry to inform you that request ${req.requestId} was rejected.
-Reason: ${reason}
-
-Thank you,
-VKA`;
+      const text = `Hello,\n\nWe are sorry to inform you that request ${req.requestId} was rejected.\nReason: ${reason}\n\nThank you,\nVKA`;
+      const html = await renderRequestRejectedHtml({ requestId: req.requestId, reason });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -219,6 +213,7 @@ VKA`;
         cc,
         subject,
         text,
+        html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -272,15 +267,8 @@ export const requestInfo = mutation({
       const to = uniqEmails([requester?.email]);
       const cc = uniqEmails([stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
       const subject = `VKA Sample Request [${req.requestId}] – Additional Information Requested`;
-      const text = `Hello ${requester?.name ?? ''},
-
-Additional information has been requested for ${req.requestId}:
-${message}
-
-Please reply at your earliest convenience.
-
-Thank you,
-VKA`;
+      const text = `Hello ${requester?.name ?? ''},\n\nAdditional information has been requested for ${req.requestId}:\n${message}\n\nPlease reply at your earliest convenience.\n\nThank you,\nVKA`;
+      const html = await renderRequestInfoRequestedHtml({ requestId: req.requestId, message, requesterName: requester?.name });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -290,6 +278,7 @@ VKA`;
         cc,
         subject,
         text,
+        html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
 
@@ -347,13 +336,8 @@ export const respondInfo = mutation({
       const to = uniqEmails(screenersEmails);
       const cc = uniqEmails([stakeholder?.salesRepEmail]);
       const subject = `VKA Sample Request [${req.requestId}] – Information Provided`;
-      const text = `Hello,
-
-The requester has provided additional information for ${req.requestId}:
-${message}
-
-Thank you,
-VKA`;
+      const text = `Hello,\n\nThe requester has provided additional information for ${req.requestId}:\n${message}\n\nThank you,\nVKA`;
+      const html = await renderRequestInfoRespondedHtml({ requestId: req.requestId, message });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: owner?._id ?? (screeners[0]?._id as Id<'users'>),
@@ -363,6 +347,7 @@ VKA`;
         cc,
         subject,
         text,
+        html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
