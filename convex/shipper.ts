@@ -4,6 +4,7 @@ import { v } from 'convex/values';
 import dayjs from 'dayjs';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { api } from './_generated/api';
+import { renderRequestSubmittedHtml } from '../emails/RequestSubmitted';
 
 function uniqEmails(emails: Array<string | undefined | null>): string[] {
   return Array.from(
@@ -192,14 +193,11 @@ export const markShipped = mutation({
             ...(stakeholder?.vipFlag ? adminEmails : []),
           ]);
           const subject = `VKA Samples Shipped - Tracking: ${rest.trackingNumber}`;
-          const text = `Hello,
-
-Your samples have shipped for request ${req.requestId}.
-Carrier: ${rest.carrier}
-Tracking: ${rest.trackingNumber}
-
-Thank you,
-VKA`;
+          const text = `Hello,\n\nYour samples have shipped for request ${req.requestId}.\nCarrier: ${rest.carrier}\nTracking: ${rest.trackingNumber}\n\nThank you,\nVKA`;
+          const html = await renderRequestSubmittedHtml({
+            requestId: req.requestId,
+            companyName: stakeholder?.companyName,
+          });
 
           await ctx.runMutation(api.email.sendAndRecordEmail, {
             createdBy: user._id,
@@ -209,6 +207,7 @@ VKA`;
             cc,
             subject,
             text,
+            html,
             related: { orderId: id, requestId: order.requestId, stakeholderId: req.companyId },
           });
         } catch {}
