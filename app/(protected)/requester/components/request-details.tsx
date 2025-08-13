@@ -15,9 +15,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+dayjs.extend(relativeTime);
 
 interface ProductListItem {
   id: Id<'products'>;
@@ -52,6 +55,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   const suggestions = useQuery(api.request.suggestions);
 
   const products = useQuery(api.product.list, {});
+  const order = useQuery(api.request.orderSummary, row ? { requestId: row.id } : 'skip');
 
   const productMap = useMemo(() => {
     if (!products) return new Map<Id<'products'>, ProductListItem>();
@@ -197,8 +201,39 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 <Row label="Country">{request?.country || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Application Type">{request?.applicationType || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Project Name">{request?.projectName || <span className="text-muted-foreground">—</span>}</Row>
-                <Row label="Created">{row.createdAt}</Row>
+                <Row label="Submitted">
+                  {request ? <span title={dayjs(request.createdAt).format('MMM D, YYYY HH:mm')}>{dayjs(request.createdAt).fromNow()}</span> : <span className="text-muted-foreground">—</span>}
+                </Row>
+                <Row label="Last Updated">
+                  {request ? (
+                    <span title={dayjs(request.updatedAt).format('MMM D, YYYY HH:mm')}>{request.updatedAt === request.createdAt ? '—' : dayjs(request.updatedAt).fromNow()}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </Row>
               </div>
+
+              {request && (request.reviewedBy || request.reviewDate || request.reviewNotes || request.rejectionReason) && (
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <h4 className="text-sm font-semibold tracking-tight">Review</h4>
+                  <div className="space-y-3">
+                    <Row label="Reviewer">{request.reviewedBy || <span className="text-muted-foreground">—</span>}</Row>
+                    <Row label="Review Date">
+                      {request.reviewDate ? (
+                        <span title={dayjs(request.reviewDate).format('MMM D, YYYY HH:mm')}>{dayjs(request.reviewDate).fromNow()}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </Row>
+                    {request.reviewNotes && <Row label="Review Notes">{request.reviewNotes}</Row>}
+                    {request.rejectionReason && (
+                      <Row label="Rejection Reason">
+                        <span className="text-destructive whitespace-pre-wrap">{request.rejectionReason}</span>
+                      </Row>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {infoRequestData && (infoRequestData.infoRequestedAt || infoRequestData.infoRequestMessage) && (
                 <InfoRequestPanel
@@ -209,6 +244,24 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                     toast.success('Information sent. Request back in review queue.');
                   }}
                 />
+              )}
+
+              {order && (
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold tracking-tight">Order Summary</h4>
+                    <Badge variant="outline" className="text-xs font-normal capitalize">
+                      {order.status}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div>Order ID: {order.orderId}</div>
+                    {order.packedDate && <div>Packed: {dayjs(order.packedDate).format('MMM D, YYYY HH:mm')}</div>}
+                    {order.shippedDate && <div>Shipped: {dayjs(order.shippedDate).format('MMM D, YYYY HH:mm')}</div>}
+                    {order.carrier && <div>Carrier: {order.carrier}</div>}
+                    {order.trackingNumber && <div>Tracking: {order.trackingNumber}</div>}
+                  </div>
+                </div>
               )}
 
               <div className="rounded-lg border bg-card p-4 space-y-4">
@@ -229,6 +282,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{prod ? `${prod.productName} (${prod.productId})` : 'Loading...'}</span>
                             <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">Qty: {p.quantity}</span>
+                            {prod && <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{prod.category}</span>}
+                            {prod && <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{prod.location}</span>}
                           </div>
                           {p.notes && <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{p.notes}</p>}
                         </li>
@@ -426,6 +481,7 @@ function InfoRequestPanel({ request, onRespond, showRespondForm }: { request: In
       </div>
       <div className="space-y-2 text-xs leading-relaxed">
         <div className="text-muted-foreground">Requested at: {request.infoRequestedAt ? dayjs(request.infoRequestedAt).format('MMM D, YYYY HH:mm') : '—'}</div>
+        {request.infoRequestedBy && <div className="text-muted-foreground">Requested by: {request.infoRequestedBy}</div>}
         {request.infoRequestMessage && <div className="rounded-md bg-white/60 dark:bg-background/40 border p-3 text-[12px] whitespace-pre-wrap">{request.infoRequestMessage}</div>}
       </div>
       {request.infoResponseAt && (
