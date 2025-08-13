@@ -163,3 +163,25 @@ export const markShipped = mutation({
     return { ok: true } as const;
   },
 });
+
+export const myHistory = query({
+  args: { email: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, limit }) => {
+    const cap = Math.min(limit ?? 200, 500);
+    const orders = await ctx.db
+      .query('orders')
+      .withIndex('by_shippedBy', (q) => q.eq('shippedBy', email))
+      .order('desc')
+      .collect();
+    const trimmed = orders.filter((o) => !o.deletedAt && o.shippedDate).slice(0, cap);
+    const reqs = await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)));
+    return trimmed.map((o, i) => ({
+      id: o._id,
+      orderId: o.orderId,
+      shippedDate: o.shippedDate,
+      packedDate: o.packedDate,
+      status: o.status,
+      requestId: reqs[i]?.requestId,
+    }));
+  },
+});
