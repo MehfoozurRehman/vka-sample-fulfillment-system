@@ -1,5 +1,7 @@
 import { mutation, query } from './_generated/server';
 
+import { Id } from './_generated/dataModel';
+import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
 export const getStakeholders = query({
@@ -74,6 +76,14 @@ export const addStakeholder = mutation({
       },
     });
 
+    const users = await ctx.db.query('users').collect();
+    const admins = users.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    const relatedEmails = [salesRepEmail, accountManagerEmail, complianceOfficerEmail];
+    const relatedUsers = users.filter((u) => relatedEmails.includes(u.email));
+    const recipientIds = Array.from(new Set([...admins, ...relatedUsers].map((u) => u._id))) as Id<'users'>[];
+    if (recipientIds.length) {
+      await sendInternalNotifications(ctx, args.userId, 'stakeholder.created', `Stakeholder ${companyName} created (VIP: ${vipFlag ? 'Yes' : 'No'})`, recipientIds);
+    }
     return id;
   },
 });
@@ -117,6 +127,17 @@ export const updateStakeholder = mutation({
       timestamp: Date.now(),
     });
 
+    const users = await ctx.db.query('users').collect();
+    const admins = users.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
+    const relatedEmails = [salesRepEmail, accountManagerEmail, complianceOfficerEmail];
+    const relatedUsers = users.filter((u) => relatedEmails.includes(u.email));
+    const recipientIds = Array.from(new Set([...admins, ...relatedUsers].map((u) => u._id))) as Id<'users'>[];
+    if (recipientIds.length) {
+      await sendInternalNotifications(ctx, userId, 'stakeholder.updated', `Stakeholder ${companyName} updated`, recipientIds);
+      if (existing.vipFlag !== vipFlag) {
+        await sendInternalNotifications(ctx, userId, 'stakeholder.vipFlagChanged', `Stakeholder ${companyName} VIP flag changed to ${vipFlag ? 'TRUE' : 'FALSE'}`, recipientIds);
+      }
+    }
     return { ok: true };
   },
 });
