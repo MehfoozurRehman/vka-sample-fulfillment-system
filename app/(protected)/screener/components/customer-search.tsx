@@ -8,7 +8,6 @@ import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
-import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
 interface SearchResult {
