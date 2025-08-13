@@ -29,8 +29,20 @@ export const approve = mutation({
     const now = Date.now();
     await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewDate: now, reviewNotes: notes, updatedAt: now });
 
+    let orderId = 'ORD-00001';
+    const existing = await ctx.db.query('orders').collect();
+    let max = 0;
+    for (const o of existing) {
+      const m = /^ORD-(\d{5})$/.exec(o.orderId || '');
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > max) max = n;
+      }
+    }
+    orderId = `ORD-${String(max + 1).padStart(5, '0')}`;
+
     const newOrderId = await ctx.db.insert('orders', {
-      orderId: 'AUTO',
+      orderId,
       requestId: id,
       status: 'Ready',
       documentsConfirmed: false,
