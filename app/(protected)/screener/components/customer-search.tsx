@@ -6,7 +6,7 @@ import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
-import { Loader } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
@@ -19,79 +19,181 @@ interface SearchResult {
 
 export default function CustomerSearch() {
   const [q, setQ] = useState('');
-
   const [selected, setSelected] = useState<string | null>(null);
+  const [sort, setSort] = useState<'name' | 'requests'>('name');
 
   const { data: all, isPending: isCustomerPending } = useQueryWithStatus(api.screener.listCustomers, {});
 
   const results = useMemo(() => {
     if (!all) return [] as SearchResult[];
-    const list = all as SearchResult[];
-
+    const list = (all as SearchResult[]).slice();
     const term = q.trim().toLowerCase();
 
-    if (!term) return [...list].sort((a, b) => a.companyName.localeCompare(b.companyName));
+    const filtered = !term ? list : list.filter((r) => r.companyName.toLowerCase().includes(term));
 
-    return list.filter((r) => r.companyName.toLowerCase().includes(term)).sort((a, b) => a.companyName.localeCompare(b.companyName));
-  }, [all, q]);
+    filtered.sort((a, b) => {
+      if (sort === 'name') return a.companyName.localeCompare(b.companyName);
+      if (sort === 'requests') return b.requestCount - a.requestCount || a.companyName.localeCompare(b.companyName);
+      return 0;
+    });
+
+    return filtered;
+  }, [all, q, sort]);
 
   const { data: overview, isPending } = useQueryWithStatus(api.screener.customerOverview, selected ? { stakeholderId: selected as unknown as Id<'stakeholders'> } : 'skip');
+
+  function highlight(text: string) {
+    const term = q.trim();
+    if (!term) return text;
+    try {
+      const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
+      return (
+        <>
+          {text.split(re).map((part, i) =>
+            re.test(part) ? (
+              <mark key={i} className="bg-primary/20 text-primary px-0.5 rounded">
+                {part}
+              </mark>
+            ) : (
+              <React.Fragment key={i}>{part}</React.Fragment>
+            ),
+          )}
+        </>
+      );
+    } catch {
+      return text;
+    }
+  }
+
+  function statusVariant(status: string): 'default' | 'destructive' | 'secondary' | 'outline' {
+    const s = status.toLowerCase();
+    if (s.includes('reject')) return 'destructive';
+    if (s.includes('ship')) return 'secondary';
+    if (s.includes('pend')) return 'outline';
+    if (s.includes('approve') || s.includes('complete')) return 'default';
+    return 'outline';
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <Card>
+        {/* Header */}
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <CardTitle className="text-sm">Customers</CardTitle>
               <CardDescription>All stakeholders loaded client-side. Filter instantly.</CardDescription>
             </div>
-            <div className="flex items-center gap-3">
-              <Input placeholder="Filter companies..." value={q} onChange={(e) => setQ(e.target.value)} className="w-60" />
-              <div className="text-[11px] text-muted-foreground tabular-nums">{results.length} shown</div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Input placeholder="Filter companies..." value={q} onChange={(e) => setQ(e.target.value)} className="w-56" aria-label="Filter companies" />
+                <div className="flex rounded-md overflow-hidden border text-[10px] font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setSort('name')}
+                    className={`px-2 py-1 transition-colors ${sort === 'name' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    aria-pressed={sort === 'name'}
+                  >
+                    A-Z
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSort('requests')}
+                    className={`px-2 py-1 transition-colors border-l ${sort === 'requests' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    aria-pressed={sort === 'requests'}
+                  >
+                    Requests
+                  </button>
+                </div>
+              </div>
+              <div className="text-[11px] text-muted-foreground tabular-nums" aria-live="polite">
+                {results.length} shown
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-2 max-h-[460px] overflow-auto rounded border p-2 text-xs bg-background/40">
+            {/* Left list */}
+            <div className="space-y-2 max-h-[500px] overflow-auto rounded-lg border p-2 text-xs bg-background/40 relative">
               {isCustomerPending && (
-                <div className="text-muted-foreground flex items-center justify-center h-24">
-                  <Loader className="animate-spin" />
+                <div className="space-y-2 p-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col gap-2 rounded-md border border-transparent p-2">
+                      <Skeleton className="h-3 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  ))}
                 </div>
               )}
-              {results.map((r) => (
-                <div
-                  key={r.id}
-                  className={`cursor-pointer rounded px-3 py-2 transition-colors border border-transparent hover:border-border/60 ${selected === r.id ? 'bg-primary/10 ring-1 ring-primary/40' : ''}`}
-                  onClick={() => setSelected(r.id)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium truncate" title={r.companyName}>
-                      {r.companyName}
-                    </span>
-                    {r.vipFlag && <Badge variant="destructive">VIP</Badge>}
+              {!isCustomerPending &&
+                results.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`cursor-pointer rounded-md px-3 py-2 transition-colors border flex flex-col gap-1 ${
+                      selected === r.id ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/40 shadow-sm' : 'border-transparent hover:border-border/60'
+                    }`}
+                    onClick={() => setSelected(r.id)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate" title={r.companyName}>
+                        {highlight(r.companyName)}
+                      </span>
+                      {r.vipFlag && <Badge variant="destructive">VIP</Badge>}
+                    </div>
+                    <div className="text-muted-foreground flex items-center justify-between text-[11px]">
+                      <span>{r.requestCount} requests</span>
+                    </div>
                   </div>
-                  <div className="text-muted-foreground flex items-center justify-between">
-                    <span>{r.requestCount} requests</span>
-                  </div>
+                ))}
+              {!isCustomerPending && !results.length && (
+                <div className="text-muted-foreground flex flex-col items-center justify-center h-24 gap-2">
+                  <span>No matches</span>
+                  {q && (
+                    <button type="button" onClick={() => setQ('')} className="text-xs underline underline-offset-2 hover:text-foreground">
+                      Clear filter
+                    </button>
+                  )}
                 </div>
-              ))}
-              {!results.length && <div className="text-muted-foreground flex items-center justify-center h-24">No matches.</div>}
+              )}
             </div>
+            {/* Detail panel */}
             <div className="md:col-span-2 space-y-4">
               {!selected ? (
-                <div className="text-xs text-muted-foreground">Select a customer to view details.</div>
+                <div className="text-xs text-muted-foreground border rounded-md p-6 bg-background/40">Select a customer to view details.</div>
               ) : (
                 isPending && (
-                  <div className="text-muted-foreground flex items-center justify-center h-24">
-                    <Loader className="animate-spin" />
+                  <div className="grid gap-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardContent className="pt-4 space-y-2">
+                          <Skeleton className="h-4 w-48" />
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 space-y-2">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <Card>
+                      <CardContent className="pt-4 space-y-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Skeleton key={i} className="h-3 w-full" />
+                        ))}
+                      </CardContent>
+                    </Card>
                   </div>
                 )
               )}
               {overview && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in-50 duration-300">
                   <div className="grid md:grid-cols-2 gap-4">
+                    {/* Aggregate card */}
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
@@ -108,19 +210,23 @@ export default function CustomerSearch() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-muted-foreground">Total Requests</span>
-                            <span>{overview.totalRequests}</span>
+                            <span className="font-medium tabular-nums">{overview.totalRequests}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-muted-foreground">Total Samples</span>
-                            <span>{overview.totalSamples}</span>
+                            <span className="font-medium tabular-nums">{overview.totalSamples}</span>
                           </div>
-                          <div className="flex flex-col">
+                          <div className="flex flex-col gap-1">
                             <span className="text-muted-foreground">Rejection Rate</span>
-                            <span>{(overview.rejectionRate * 100).toFixed(1)}%</span>
+                            <span className="font-medium tabular-nums">{(overview.rejectionRate * 100).toFixed(1)}%</span>
+                            <div className="h-1.5 w-full bg-border/60 rounded overflow-hidden">
+                              <div className={`h-full bg-destructive transition-all`} style={{ width: `${Math.min(100, overview.rejectionRate * 100)}%` }} />
+                            </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
+                    {/* Frequent products */}
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm">Frequently Requested</CardTitle>
@@ -133,7 +239,7 @@ export default function CustomerSearch() {
                               <span className="truncate" title={p.name}>
                                 {p.name}
                               </span>
-                              <span className="text-muted-foreground">{p.count}</span>
+                              <span className="text-muted-foreground tabular-nums">{p.count}</span>
                             </div>
                           ))}
                           {!overview.frequentProducts.length && <div className="text-muted-foreground">No data</div>}
@@ -141,21 +247,35 @@ export default function CustomerSearch() {
                       </CardContent>
                     </Card>
                   </div>
+                  {/* Recent requests */}
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">Recent Requests</CardTitle>
                       <CardDescription>Most recent activity</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-1">
-                      <div className="max-h-56 overflow-auto text-[11px] space-y-1 pr-1">
-                        {overview.recent.map((r) => (
-                          <div key={r.id} className="grid grid-cols-[auto_1fr_auto_auto] gap-2">
-                            <span className="font-mono">{r.requestId}</span>
-                            <span className="truncate text-muted-foreground">{r.status}</span>
-                            <span className="text-muted-foreground">{r.dateFmt}</span>
-                          </div>
-                        ))}
-                        {!overview.recent.length && <div className="text-muted-foreground">No recent activity</div>}
+                      <div className="max-h-56 overflow-auto text-[11px] pr-1">
+                        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 font-medium sticky top-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/70 py-1 border-b mb-1">
+                          <span className="pl-0">ID</span>
+                          <span>Status</span>
+                          <span>Date</span>
+                          <span className="sr-only">&nbsp;</span>
+                        </div>
+                        <div className="space-y-1">
+                          {overview.recent.map((r) => (
+                            <div key={r.id} className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center rounded px-1 py-1 hover:bg-accent/40 transition-colors">
+                              <span className="font-mono text-[10px]">{r.requestId}</span>
+                              <span className="truncate text-muted-foreground flex items-center gap-1">
+                                <Badge variant={statusVariant(r.status)} className="capitalize">
+                                  {r.status}
+                                </Badge>
+                              </span>
+                              <span className="text-muted-foreground tabular-nums">{r.dateFmt}</span>
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          ))}
+                          {!overview.recent.length && <div className="text-muted-foreground">No recent activity</div>}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
