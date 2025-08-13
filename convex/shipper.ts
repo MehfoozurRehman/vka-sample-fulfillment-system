@@ -178,7 +178,6 @@ export const markShipped = mutation({
         await sendInternalNotifications(ctx, user._id, 'order.shipped', `Order ${order.orderId} shipped via ${rest.carrier} (${rest.trackingNumber})`, distinct);
       }
 
-      // Customer-facing shipped email
       if (notifyCustomer) {
         try {
           const allUsers = await ctx.db.query('users').collect();
