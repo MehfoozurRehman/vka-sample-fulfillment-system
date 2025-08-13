@@ -99,34 +99,3 @@ export const setPreference = mutation({
     return { ok: true } as const;
   },
 });
-
-export const createNotification = mutation({
-  args: { targetUserId: v.id('users'), createdBy: v.id('users'), type: v.string(), message: v.string() },
-  handler: async (ctx, { targetUserId, createdBy, type, message }) => {
-    const pref = await ctx.db
-      .query('notificationPreferences')
-      .withIndex('by_user_type', (q) => q.eq('userId', targetUserId).eq('type', type))
-      .unique();
-    if (pref && !pref.enabled) return { skipped: true } as const;
-
-    const id = await ctx.db.insert('notifications', {
-      userId: targetUserId,
-      createdBy,
-      type,
-      message,
-      read: false,
-      createdAt: Date.now(),
-    });
-
-    await ctx.db.insert('auditLogs', {
-      userId: createdBy,
-      action: 'createNotification',
-      table: 'notifications',
-      recordId: id,
-      changes: { type, message, targetUserId },
-      timestamp: Date.now(),
-    });
-
-    return { ok: true, id } as const;
-  },
-});
