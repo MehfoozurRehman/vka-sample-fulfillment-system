@@ -8,7 +8,7 @@ import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -66,19 +66,23 @@ function ShipDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email:
 
   const isShipped = !!details?.order?.shippedDate || (details?.order?.status || '').toLowerCase() === 'shipped';
 
-  async function submit() {
+  const [isSubmitting, startSubmitting] = useTransition();
+
+  function submit() {
     if (!details) return;
     if (!form.trackingNumber.trim()) {
       toast.error('Tracking number required');
       return;
     }
-    try {
-      await markShipped({ id: orderId, shippedBy: email, ...form });
-      toast.success('Order marked as shipped');
-      onClose();
-    } catch (e) {
-      toast.error((e as Error).message || 'Failed');
-    }
+    startSubmitting(async () => {
+      try {
+        await markShipped({ id: orderId, shippedBy: email, ...form });
+        toast.success('Order marked as shipped');
+        onClose();
+      } catch (e) {
+        toast.error((e as Error).message || 'Failed');
+      }
+    });
   }
 
   if (!details)
@@ -177,8 +181,8 @@ function ShipDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email:
 
       {!isShipped && (
         <div className="flex justify-end">
-          <Button onClick={submit} disabled={!form.trackingNumber.trim() || !form.shippingLabelAttached}>
-            Mark as Shipped
+          <Button onClick={submit} disabled={isSubmitting || !form.trackingNumber.trim() || !form.shippingLabelAttached}>
+            {isSubmitting && <Loader className="mr-2 size-4 animate-spin" />} Mark as Shipped
           </Button>
         </div>
       )}
