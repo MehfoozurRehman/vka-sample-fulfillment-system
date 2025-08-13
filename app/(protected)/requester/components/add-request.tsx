@@ -45,7 +45,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
 
   const [requestId, setRequestId] = useState('');
 
-  const [items, setItems] = useState<{ productId: string; quantity: number; notes: string }[]>([]);
+  const [items, setItems] = useState<{ productId: string; quantity: number | ''; notes: string }[]>([]);
 
   const [companyId, setCompanyId] = useState<string>('');
 
@@ -71,7 +71,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
   const selectedCompany = (stakeholders || []).find((s) => s.companyName === companyId);
 
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { productId: '', quantity: 1, notes: '' }]);
+    setItems((prev) => [...prev, { productId: '', quantity: '', notes: '' }]);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -89,7 +89,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
       return;
     }
 
-    const invalid = items.some((i) => !i.productId || !i.quantity || i.quantity <= 0);
+    const invalid = items.some((i) => !i.productId || i.quantity === '' || i.quantity <= 0);
 
     if (invalid) {
       toast.error('Each line must have product and quantity > 0');
@@ -103,8 +103,9 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
           const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
 
           if (!pid) throw new Error('Invalid product selection');
+          if (i.quantity === '' || i.quantity <= 0) throw new Error('Invalid quantity');
 
-          return { productId: pid, quantity: i.quantity, notes: i.notes || undefined };
+          return { productId: pid, quantity: i.quantity as number, notes: i.notes || undefined };
         });
 
         await addReq({
@@ -215,9 +216,11 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         type="number"
                         min={1}
                         name={`qty-${idx}`}
-                        value={item.quantity}
+                        value={item.quantity === '' ? '' : item.quantity}
                         onChange={(e) => {
-                          const qty = parseInt(e.target.value, 10) || 0;
+                          const raw = e.target.value;
+
+                          const qty = raw === '' ? '' : parseInt(raw, 10);
 
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: qty } : p)));
                         }}
