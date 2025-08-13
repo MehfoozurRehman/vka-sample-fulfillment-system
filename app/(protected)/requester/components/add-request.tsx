@@ -1,11 +1,11 @@
 'use client';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 
 import { Button } from '@/components/ui/button';
-import { IconPlus } from '@tabler/icons-react';
 import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
@@ -71,7 +71,7 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
   const selectedCompany = (stakeholders || []).find((s) => s.companyName === companyId);
 
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { productId: '', quantity: '', notes: '' }]);
+    setItems((prev) => [...prev, { productId: '', quantity: 1, notes: '' }]);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -196,8 +196,8 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                 const filteredProductOptions = productOptions.filter((o) => !selectedOthers.includes(o) || o === item.productId);
 
                 return (
-                  <div key={idx} className="grid gap-2 md:grid-cols-4">
-                    <div className="md:col-span-2">
+                  <div key={idx} className="flex flex-col md:flex-row gap-2 rounded-md border p-2 bg-muted/30">
+                    <div className="w-full md:flex-[2]">
                       <InputWithSuggestions
                         name={`product-${idx}`}
                         value={item.productId}
@@ -205,13 +205,14 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                           const already = selectedOthers.includes(v);
 
                           if (already) return;
+
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, productId: v } : p)));
                         }}
                         options={filteredProductOptions}
                         placeholder="Select product"
                       />
                     </div>
-                    <div>
+                    <div className="w-full md:w-24">
                       <Input
                         type="number"
                         min={1}
@@ -220,13 +221,14 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         onChange={(e) => {
                           const raw = e.target.value;
 
-                          const qty = raw === '' ? '' : parseInt(raw, 10);
+                          const qty = raw === '' ? '' : Math.max(1, parseInt(raw, 10));
 
                           setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: qty } : p)));
                         }}
+                        placeholder="Qty"
                       />
                     </div>
-                    <div>
+                    <div className="w-full md:flex-1">
                       <Textarea
                         name={`notes-${idx}`}
                         value={item.notes}
@@ -234,6 +236,11 @@ export function AddRequest({ requesterEmail }: { requesterEmail: string }) {
                         className="resize-none h-10"
                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, notes: e.target.value } : p)))}
                       />
+                    </div>
+                    <div className="flex md:self-center">
+                      <Button type="button" variant="ghost" size="icon" aria-label="Remove product line" onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}>
+                        <IconTrash className="size-4" />
+                      </Button>
                     </div>
                   </div>
                 );
