@@ -30,13 +30,14 @@ import { ProductType } from '../type';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { useQueryState, parseAsString } from 'nuqs';
 import { useAuth } from '@/hooks/use-user';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -77,9 +78,9 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
 
   const remove = useMutation(api.product.remove);
 
-  const products = useQuery(api.product.list);
+  const { data: products } = useQueryWithStatus(api.product.list);
 
-  const stats = useQuery(api.product.stats, selected ? { productId: selected.id as Id<'products'>, rangeDays: 90 } : 'skip');
+  const { data: stats } = useQueryWithStatus(api.product.stats, selected ? { productId: selected.id as Id<'products'>, rangeDays: 90 } : 'skip');
 
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
