@@ -98,7 +98,6 @@ export const approve = mutation({
       );
     }
 
-    // Send approval email
     try {
       const stakeholder = await ctx.db.get(req.companyId);
       const packerEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('packer')) || u.activeRole === 'packer')).map((u) => u.email);
@@ -127,7 +126,6 @@ VKA`;
       });
     } catch {}
 
-    // Send order ready email to packers
     try {
       const stakeholder = await ctx.db.get(req.companyId);
       const packerUsers = await ctx.db.query('users').collect();
@@ -197,7 +195,6 @@ export const reject = mutation({
       await sendInternalNotifications(ctx, reviewer._id, 'request.rejected', `Request ${req.requestId} rejected: ${reason}`, [requesterUser._id]);
     }
 
-    // Send rejection email
     try {
       const stakeholder = await ctx.db.get(req.companyId);
       const allUsers = await ctx.db.query('users').collect();
@@ -262,7 +259,6 @@ export const requestInfo = mutation({
       await sendInternalNotifications(ctx, reviewer._id, 'request.infoRequested', `Additional info requested for ${req.requestId}: ${message}`, [requesterUser._id]);
     }
 
-    // Email requester for info
     try {
       const stakeholder = await ctx.db.get(req.companyId);
       const allUsers = await ctx.db.query('users').collect();
@@ -343,7 +339,6 @@ export const respondInfo = mutation({
       );
     }
 
-    // Email screeners about info response
     try {
       const stakeholder = await ctx.db.get(req.companyId);
       const screenersEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')).map((u) => u.email);
