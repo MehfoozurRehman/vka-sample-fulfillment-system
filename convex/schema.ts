@@ -91,7 +91,9 @@ export default defineSchema({
     .index('by_requestId', ['requestId'])
     .index('by_createdAt', ['createdAt'])
     .index('by_company_status', ['companyId', 'status'])
-    .index('by_duplicateHash', ['duplicateHash']),
+    .index('by_duplicateHash', ['duplicateHash'])
+    .index('by_requestedBy', ['requestedBy'])
+    .index('by_reviewedBy', ['reviewedBy']),
 
   orders: defineTable({
     orderId: v.string(),
@@ -123,7 +125,9 @@ export default defineSchema({
     .index('by_status', ['status', 'createdAt'])
     .index('by_requestId', ['requestId'])
     .index('by_createdAt', ['createdAt'])
-    .index('by_requestId_status', ['requestId', 'status']),
+    .index('by_requestId_status', ['requestId', 'status'])
+    .index('by_packedBy', ['packedBy'])
+    .index('by_shippedBy', ['shippedBy']),
 
   auditLogs: defineTable({
     userId: v.id('users'),
