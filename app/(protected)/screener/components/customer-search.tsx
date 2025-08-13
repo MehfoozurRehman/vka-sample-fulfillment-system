@@ -6,7 +6,7 @@ import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
@@ -77,7 +77,6 @@ export default function CustomerSearch() {
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        {/* Header */}
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -114,16 +113,10 @@ export default function CustomerSearch() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-3">
-            {/* Left list */}
             <div className="space-y-2 max-h-[500px] overflow-auto rounded-lg border p-2 text-xs bg-background/40 relative">
               {isCustomerPending && (
-                <div className="space-y-2 p-2">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="flex flex-col gap-2 rounded-md border border-transparent p-2">
-                      <Skeleton className="h-3 w-40" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  ))}
+                <div className="flex items-center justify-center h-40 text-muted-foreground">
+                  <Loader className="animate-spin w-5 h-5" />
                 </div>
               )}
               {!isCustomerPending &&
@@ -157,43 +150,19 @@ export default function CustomerSearch() {
                 </div>
               )}
             </div>
-            {/* Detail panel */}
             <div className="md:col-span-2 space-y-4">
               {!selected ? (
                 <div className="text-xs text-muted-foreground border rounded-md p-6 bg-background/40">Select a customer to view details.</div>
               ) : (
                 isPending && (
-                  <div className="grid gap-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Card>
-                        <CardContent className="pt-4 space-y-2">
-                          <Skeleton className="h-4 w-48" />
-                          <Skeleton className="h-3 w-full" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-4 space-y-2">
-                          <Skeleton className="h-4 w-40" />
-                          <Skeleton className="h-3 w-full" />
-                          <Skeleton className="h-3 w-2/3" />
-                        </CardContent>
-                      </Card>
-                    </div>
-                    <Card>
-                      <CardContent className="pt-4 space-y-2">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Skeleton key={i} className="h-3 w-full" />
-                        ))}
-                      </CardContent>
-                    </Card>
+                  <div className="flex items-center justify-center h-60 text-muted-foreground">
+                    <Loader className="animate-spin w-6 h-6" />
                   </div>
                 )
               )}
               {overview && (
                 <div className="space-y-4 animate-in fade-in-50 duration-300">
                   <div className="grid md:grid-cols-2 gap-4">
-                    {/* Aggregate card */}
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
@@ -226,7 +195,6 @@ export default function CustomerSearch() {
                         </div>
                       </CardContent>
                     </Card>
-                    {/* Frequent products */}
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm">Frequently Requested</CardTitle>
@@ -247,7 +215,6 @@ export default function CustomerSearch() {
                       </CardContent>
                     </Card>
                   </div>
-                  {/* Recent requests */}
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">Recent Requests</CardTitle>
