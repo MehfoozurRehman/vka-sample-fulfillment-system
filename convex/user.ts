@@ -198,14 +198,6 @@ export const setActiveRole = mutation({
     const { roles } = normalizeRoles(user);
     if (!roles.includes(role)) throw new Error('User does not have this role');
     await ctx.db.patch(userId, { activeRole: role, updatedAt: Date.now() });
-    await ctx.db.insert('auditLogs', {
-      userId,
-      action: 'setActiveRole',
-      table: 'users',
-      recordId: userId,
-      changes: { activeRole: role },
-      timestamp: Date.now(),
-    });
     return { ok: true } as const;
   },
 });
