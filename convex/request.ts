@@ -374,6 +374,134 @@ export const orderSummary = query({
     } as const;
   },
 });
+
+export const my = query({
+  args: { email: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, limit }) => {
+    const cap = Math.min(limit ?? 200, 500);
+    const items = await ctx.db
+      .query('requests')
+      .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
+      .order('desc')
+      .collect();
+    const trimmed = items.filter((r) => !r.deletedAt).slice(0, cap) as ReqDoc[];
+
+    const orders = await Promise.all(
+      trimmed.map((r) =>
+        ctx.db
+          .query('orders')
+          .withIndex('by_requestId', (q) => q.eq('requestId', r._id))
+          .first(),
+      ),
+    );
+    const orderByRequestId = new Map<Id<'requests'>, OrderDoc>();
+    trimmed.forEach((r, i) => {
+      const o = orders[i] as OrderDoc | null;
+      if (o) orderByRequestId.set(r._id, o);
+    });
+
+    const stakeholderIds = Array.from(new Set(trimmed.map((r) => r.companyId as Id<'stakeholders'>)));
+    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+    const stakeholderMap = new Map(stakeholders.filter(Boolean).map((s) => [s!._id, s! as StakeholderDoc]));
+
+    const users = (await ctx.db.query('users').collect()) as UserDoc[];
+    const userByEmail = new Map(users.map((u) => [u.email, u]));
+
+    function deriveStage(r: ReqDoc, order: OrderDoc | undefined): string {
+      if (order) {
+        const status = (order.status || '').toLowerCase();
+        if (status.includes('ship') || status.includes('complete') || order.shippedDate) return 'Shipped';
+        if (status.includes('pack') || order.packedDate) return 'Packed';
+        return 'Order Processing';
+      }
+      if (r.reviewedBy) return 'Reviewed';
+      return 'Submitted';
+    }
+
+    function assignedTo(r: ReqDoc, order: OrderDoc | undefined): string | null {
+      const email = order?.shippedBy || order?.packedBy || r.reviewedBy || r.requestedBy || null;
+      if (!email) return null;
+      const u = userByEmail.get(email);
+      return u?.name ? `${u.name} (${email})` : email;
+    }
+
+    return trimmed.map((r) => {
+      const order = orderByRequestId.get(r._id);
+      const stage = deriveStage(r, order);
+      const assignee = assignedTo(r, order);
+      const stakeholder = stakeholderMap.get(r.companyId as Id<'stakeholders'>);
+      return {
+        id: r._id,
+        requestId: r.requestId,
+        company: stakeholder?.companyName || 'Unknown',
+        contactName: r.contactName,
+        applicationType: r.applicationType,
+        products: r.productsRequested?.length || 0,
+        status: r.status,
+        stage,
+        assignedTo: assignee,
+        createdAt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+      } as const;
+    });
+  },
+});
+
+export const myHistory = query({
+  args: { email: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, limit }) => {
+    const cap = Math.min(limit ?? 500, 1000);
+    const reqs = await ctx.db
+      .query('requests')
+      .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
+      .order('desc')
+      .collect();
+    const relevant = reqs.filter((r) => !r.deletedAt).slice(0, cap) as ReqDoc[];
+
+    const requestIds = relevant.map((r) => r._id as Id<'requests'>);
+
+    const ordersByReqId: Record<string, OrderDoc> = {};
+    for (const id of requestIds) {
+      const o = (await ctx.db
+        .query('orders')
+        .withIndex('by_requestId', (q) => q.eq('requestId', id))
+        .first()) as OrderDoc | null;
+      if (o && !o.deletedAt) ordersByReqId[String(id)] = o;
+    }
+
+    const stakeholderIds = Array.from(new Set(relevant.map((r) => r.companyId as Id<'stakeholders'>)));
+    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+    const stakeholderMap = new Map(stakeholders.filter(Boolean).map((s) => [s!._id, s! as StakeholderDoc]));
+
+    function deriveStage(r: ReqDoc, order: OrderDoc | undefined): string {
+      if (order) {
+        const status = (order.status || '').toLowerCase();
+        if (status.includes('ship') || status.includes('complete') || order.shippedDate) return 'Shipped';
+        if (status.includes('pack') || order.packedDate) return 'Packed';
+        return 'Order Processing';
+      }
+      if (r.reviewedBy) return 'Reviewed';
+      return 'Submitted';
+    }
+
+    return relevant.map((r) => {
+      const o = ordersByReqId[String(r._id)];
+      const stage = deriveStage(r, o);
+      const stakeholder = stakeholderMap.get(r.companyId as Id<'stakeholders'>);
+      return {
+        requestId: r.requestId,
+        status: r.status,
+        createdAt: r.createdAt,
+        reviewDate: r.reviewDate,
+        packedDate: o?.packedDate,
+        shippedDate: o?.shippedDate,
+        id: r._id,
+        company: stakeholder?.companyName || 'Unknown',
+        stage,
+      } as const;
+    });
+  },
+});
+
 export const timeline = query({
   args: { id: v.id('requests') },
   handler: async (ctx, { id }) => {
