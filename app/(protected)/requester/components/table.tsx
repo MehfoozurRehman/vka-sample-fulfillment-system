@@ -116,7 +116,7 @@ export function DataTable({ data, isPending }: { data: RecentRequestsType; isPen
   });
 
   return (
-    <div className="flex flex-col gap-4 px-4 lg:px-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-2 w-full md:w-auto">
