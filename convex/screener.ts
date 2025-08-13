@@ -390,7 +390,7 @@ export const detail = query({
         const prod = await ctx.db.get(item.productId);
         return {
           id: item.productId,
-          productId: prod?.productId,
+          productId: prod?.productName,
           name: prod?.productName,
           quantity: item.quantity,
           notes: item.notes,
@@ -715,5 +715,25 @@ export const listCustomers = query({
       const count = allRequests.filter((r) => !r.deletedAt && r.companyId === s._id).length;
       return { id: s._id, companyName: s.companyName, vipFlag: s.vipFlag, requestCount: count };
     });
+  },
+});
+
+export const myHistory = query({
+  args: { email: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, limit }) => {
+    const cap = Math.min(limit ?? 300, 800);
+    const reviewed = await ctx.db
+      .query('requests')
+      .withIndex('by_reviewedBy', (q) => q.eq('reviewedBy', email))
+      .order('desc')
+      .collect();
+    const filtered = reviewed.filter((r) => !r.deletedAt && r.reviewDate).slice(0, cap);
+    return filtered.map((r) => ({
+      id: r._id,
+      requestId: r.requestId,
+      status: r.status,
+      reviewDate: r.reviewDate,
+      reviewDateFmt: r.reviewDate ? dayjs(r.reviewDate).format('YYYY-MM-DD HH:mm') : null,
+    }));
   },
 });
