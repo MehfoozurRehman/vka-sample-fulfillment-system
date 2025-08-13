@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { IconBell, IconLoader2, IconUpload } from '@tabler/icons-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,8 @@ import { Separator } from '@/components/ui/separator';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
+import { useMutation } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 export function Profile() {
   const user = useAuth();
@@ -25,9 +26,9 @@ export function Profile() {
 
   const uploadProfilePicture = useMutation(api.user.uploadProfilePicture);
 
-  const notificationTypes = useQuery(api.notification.getNotificationTypes, user ? { userId: user.id as Id<'users'> } : 'skip');
+  const { data: notificationTypes } = useQueryWithStatus(api.notification.getNotificationTypes, user ? { userId: user.id as Id<'users'> } : 'skip');
 
-  const prefs = useQuery(api.notification.getPreferences, user ? { userId: user.id as Id<'users'> } : 'skip');
+  const { data: prefs } = useQueryWithStatus(api.notification.getPreferences, user ? { userId: user.id as Id<'users'> } : 'skip');
 
   const setPref = useMutation(api.notification.setPreference);
 
