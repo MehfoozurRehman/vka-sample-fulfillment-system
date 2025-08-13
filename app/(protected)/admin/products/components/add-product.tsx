@@ -2,7 +2,6 @@
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 
 import { Button } from '@/components/ui/button';
 import { IconPlus } from '@tabler/icons-react';
@@ -14,15 +13,17 @@ import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
+import { useMutation } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 export function AddProduct() {
   const [open, setOpen] = useState(false);
 
   const add = useMutation(api.product.add);
 
-  const nextId = useQuery(api.product.nextId);
+  const { data: nextId } = useQueryWithStatus(api.product.nextId);
 
-  const products = useQuery(api.product.list);
+  const { data: products } = useQueryWithStatus(api.product.list);
 
   const auth = useAuth();
 
