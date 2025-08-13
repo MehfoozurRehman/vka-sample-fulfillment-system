@@ -61,7 +61,7 @@ export default function ScreenerPage() {
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <Tabs value={tab} onValueChange={setTab} className="w-full flex-col gap-4">
+        <Tabs value={tab} onValueChange={setTab} className="w-full flex-col gap-4 px-2">
           <TabsList>
             <TabsTrigger value="queue">Approval Queue ({pending.length})</TabsTrigger>
             <TabsTrigger value="customers">Customer Search</TabsTrigger>
@@ -69,15 +69,13 @@ export default function ScreenerPage() {
           </TabsList>
           <TabsContent value="queue" className="flex flex-col gap-6">
             <ScreenerStats stats={stats} isLoading={isPending} />
-            <div className="px-4 lg:px-6">
-              <ScreenerChart metrics={metrics} range={range} setRange={setRange} />
-            </div>
+            <ScreenerChart metrics={metrics} range={range} setRange={setRange} />
             <ScreenerTable data={filtered} isPending={isPending} onSelect={(r) => setSelected(r)} search={search} setSearch={setSearch} />
           </TabsContent>
-          <TabsContent value="customers" className="px-4 lg:px-6">
+          <TabsContent value="customers">
             <CustomerSearch />
           </TabsContent>
-          <TabsContent value="reports" className="px-4 lg:px-6">
+          <TabsContent value="reports">
             <ReportsPanel />
           </TabsContent>
         </Tabs>
