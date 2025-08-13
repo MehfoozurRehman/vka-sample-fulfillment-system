@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, Legend as RechartsLegend, LabelList } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, Legend as RechartsLegend, Tooltip as RechartsTooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import React, { useMemo, useState } from 'react';
@@ -58,6 +58,7 @@ export default function ReportsPanel() {
   const from = useMemo(() => anchorTo - Number(range) * 24 * 3600 * 1000, [range, anchorTo]);
 
   const { data, isPending } = useQueryWithStatus(api.screener.reports, { report, from, to: anchorTo });
+
   const typedData = data as ReportData | undefined;
 
   const [exportOpen, setExportOpen] = useState(false);
@@ -93,6 +94,7 @@ export default function ReportsPanel() {
   }, [typedData]);
 
   const COLORS = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#f472b6', '#8b5cf6', '#10b981'];
+
   const axisTickColor = 'hsl(var(--foreground, 0 0% 100%))';
 
   // Build gradients ids (stable) for bar charts
@@ -191,9 +193,13 @@ export default function ReportsPanel() {
               <ResponsiveContainer width="100%" height="100%">
                 {(() => {
                   const rows = chart.rows as ChartRow[];
+
                   const first = rows[0] as ChartRow | undefined;
+
                   const hasBucket = !!first && 'bucket' in first;
+
                   const valueKey = hasBucket ? 'value' : 'count';
+
                   return (
                     <BarChart data={rows}>
                       <defs>
@@ -205,7 +211,10 @@ export default function ReportsPanel() {
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey={hasBucket ? 'bucket' : 'label'} tick={{ fontSize: 11, fill: axisTickColor }} stroke="hsl(var(--border))" />
                       <YAxis tick={{ fontSize: 11, fill: axisTickColor }} stroke="hsl(var(--border))" allowDecimals={false} />
-                      <RechartsTooltip cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }} />
+                      <RechartsTooltip
+                        cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }}
+                      />
                       <RechartsLegend wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey={valueKey} radius={[4, 4, 0, 0]} fill={`url(#${barGradientId})`}>
                         <LabelList dataKey={valueKey} position="top" fill={axisTickColor} fontSize={10} />
@@ -223,7 +232,10 @@ export default function ReportsPanel() {
             <div className="h-72 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <RechartsTooltip cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }} />
+                  <RechartsTooltip
+                    cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12, borderRadius: 6 }}
+                  />
                   <RechartsLegend wrapperStyle={{ fontSize: 11 }} />
                   <Pie data={chart.rows as ChartRow[]} dataKey="count" nameKey="label" innerRadius={60} outerRadius={100} paddingAngle={2}>
                     {(chart.rows as ChartRow[]).map((_, i) => (
@@ -245,20 +257,31 @@ export default function ReportsPanel() {
 function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport }) {
   if (!data) return null;
   const commonCls = 'mt-4 text-xs space-y-1';
+
   if (data.type === 'PendingRequestsByAge') {
     const total = data.under24 + data.between24and48 + data.over48;
+
     const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
+
     return (
       <div className={commonCls}>
         <div className="font-medium">Pending Requests (Total {total})</div>
-        <div>&lt;24h: {data.under24} ({pct(data.under24)}%)</div>
-        <div>24–48h: {data.between24and48} ({pct(data.between24and48)}%)</div>
-        <div>&gt;48h: {data.over48} ({pct(data.over48)}%)</div>
+        <div>
+          &lt;24h: {data.under24} ({pct(data.under24)}%)
+        </div>
+        <div>
+          24–48h: {data.between24and48} ({pct(data.between24and48)}%)
+        </div>
+        <div>
+          &gt;48h: {data.over48} ({pct(data.over48)}%)
+        </div>
       </div>
     );
   }
+
   if (data.type === 'Top10CustomersThisMonth' || data.type === 'TopCustomers') {
     const total = data.top.reduce((a, b) => a + b.count, 0);
+
     return (
       <div className={commonCls}>
         <div className="font-medium">Top Customers (Total {total})</div>
@@ -273,8 +296,10 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
       </div>
     );
   }
+
   if (data.type === 'ProductsRequestedThisWeek' || data.type === 'ProductsRequested') {
     const total = data.products.reduce((a, b) => a + b.count, 0);
+
     return (
       <div className={commonCls}>
         <div className="font-medium">Products Requested (Total {total})</div>
@@ -289,9 +314,12 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
       </div>
     );
   }
+
   if (data.type === 'RejectionReasonsSummary') {
     const total = data.reasons.reduce((a, b) => a + b.count, 0);
+
     const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
+
     return (
       <div className={commonCls}>
         <div className="font-medium">Rejection Reasons (Total {total})</div>
@@ -299,20 +327,26 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
           {data.reasons.map((r) => (
             <li key={r.reason} className="flex justify-between">
               <span className="truncate pr-2">{r.reason}</span>
-              <span className="tabular-nums">{r.count} ({pct(r.count)}%)</span>
+              <span className="tabular-nums">
+                {r.count} ({pct(r.count)}%)
+              </span>
             </li>
           ))}
         </ul>
       </div>
     );
   }
+
   if (data.type === 'AverageProcessingTime') {
     return (
       <div className={commonCls}>
         <div className="font-medium">Average Processing Time</div>
-        <div>{data.averageHours.toFixed(2)} hours ({(data.averageMs / 1000 / 60).toFixed(1)} mins)</div>
+        <div>
+          {data.averageHours.toFixed(2)} hours ({(data.averageMs / 1000 / 60).toFixed(1)} mins)
+        </div>
       </div>
     );
   }
+
   return null;
 }
