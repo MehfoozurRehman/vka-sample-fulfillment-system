@@ -1,5 +1,7 @@
 import { mutation, query } from './_generated/server';
 
+import { Id } from './_generated/dataModel';
+import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
 export const list = query({
@@ -153,6 +155,15 @@ export const add = mutation({
       timestamp: now,
     });
 
+    const users = await ctx.db.query('users').collect();
+    const recipients = users.filter(
+      (u) =>
+        !u.deletedAt && u.active && ((u.roles && (u.roles.includes('admin') || u.roles.includes('packer') || u.roles.includes('shipper'))) || ['admin', 'packer', 'shipper'].includes(u.activeRole)),
+    );
+    const ids = Array.from(new Set(recipients.map((u) => u._id))) as Id<'users'>[];
+    if (ids.length) {
+      await sendInternalNotifications(ctx, args.userId, 'product.created', `Product ${productId} (${args.productName}) created`, ids);
+    }
     return id;
   },
 });
@@ -187,7 +198,15 @@ export const update = mutation({
       changes: rest,
       timestamp: Date.now(),
     });
-
+    const users = await ctx.db.query('users').collect();
+    const recipients = users.filter(
+      (u) =>
+        !u.deletedAt && u.active && ((u.roles && (u.roles.includes('admin') || u.roles.includes('packer') || u.roles.includes('shipper'))) || ['admin', 'packer', 'shipper'].includes(u.activeRole)),
+    );
+    const ids = Array.from(new Set(recipients.map((u) => u._id))) as Id<'users'>[];
+    if (ids.length) {
+      await sendInternalNotifications(ctx, userId, 'product.updated', `Product ${rest.productId} updated`, ids);
+    }
     return { ok: true };
   },
 });
@@ -207,7 +226,16 @@ export const remove = mutation({
       changes: { deletedAt: Date.now() },
       timestamp: Date.now(),
     });
-
+    const prod = await ctx.db.get(id);
+    const users = await ctx.db.query('users').collect();
+    const recipients = users.filter(
+      (u) =>
+        !u.deletedAt && u.active && ((u.roles && (u.roles.includes('admin') || u.roles.includes('packer') || u.roles.includes('shipper'))) || ['admin', 'packer', 'shipper'].includes(u.activeRole)),
+    );
+    const ids = Array.from(new Set(recipients.map((u) => u._id))) as Id<'users'>[];
+    if (prod && ids.length) {
+      await sendInternalNotifications(ctx, userId, 'product.deleted', `Product ${prod.productId} deleted`, ids);
+    }
     return { ok: true };
   },
 });
