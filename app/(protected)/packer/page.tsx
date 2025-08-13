@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 
 import { Badge } from '@/components/ui/badge';
@@ -93,6 +93,8 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
     }
   }, [details]);
 
+  const [isSubmitting, startSubmitting] = useTransition();
+
   async function completePacking() {
     if (!details) return;
     const lots = details.request.productsRequested.map((p) => ({ productId: p.productId, lot: lotNumbers[String(p.productId)] || '' }));
@@ -104,13 +106,15 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
       toast.error('Please confirm all checklist items');
       return;
     }
-    try {
-      await markPacked({ id: orderId, packedBy: email, lotNumbers: lots, ...checks });
-      toast.success('Order marked as packed');
-      onClose();
-    } catch (e) {
-      toast.error((e as Error).message || 'Failed to mark packed');
-    }
+    startSubmitting(async () => {
+      try {
+        await markPacked({ id: orderId, packedBy: email, lotNumbers: lots, ...checks });
+        toast.success('Order marked as packed');
+        onClose();
+      } catch (e) {
+        toast.error((e as Error).message || 'Failed to mark packed');
+      }
+    });
   }
 
   if (!details)
@@ -187,8 +191,8 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
 
       {!isPacked && (
         <div className="flex justify-end">
-          <Button onClick={completePacking} disabled={!Object.values(checks).every(Boolean)}>
-            Complete Packing
+          <Button onClick={completePacking} disabled={isSubmitting || !Object.values(checks).every(Boolean)}>
+            {isSubmitting && <Loader className="mr-2 size-4 animate-spin" />} Complete Packing
           </Button>
         </div>
       )}
