@@ -4,7 +4,7 @@ import { mutation, query, type DatabaseReader, type DatabaseWriter } from './_ge
 import dayjs from 'dayjs';
 import { v } from 'convex/values';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
-import { api } from './_generated/api';
+import { api, internal } from './_generated/api';
 
 function uniqEmails(emails: Array<string | undefined | null>): string[] {
   return Array.from(
@@ -292,6 +292,8 @@ VKA`;
         text,
         related: { requestId: id, stakeholderId: req.companyId },
       });
+
+      await ctx.scheduler.runAfter(60_000, internal.email.retryPendingEmails, { limit: 50 });
     } catch {}
 
     return { ok: true } as const;
