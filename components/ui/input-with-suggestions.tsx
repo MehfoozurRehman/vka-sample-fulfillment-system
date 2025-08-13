@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export type InputWithSuggestionsProps = {
+type InputWithSuggestionsProps = {
   id?: string;
   name?: string;
   className?: string;
