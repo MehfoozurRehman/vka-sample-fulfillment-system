@@ -97,7 +97,6 @@ export default function ReportsPanel() {
 
   const axisTickColor = 'hsl(var(--foreground, 0 0% 100%))';
 
-  // Build gradients ids (stable) for bar charts
   const barGradientId = 'reportBarGradient';
 
   return (
@@ -253,7 +252,6 @@ export default function ReportsPanel() {
   );
 }
 
-// Textual summary component
 function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport }) {
   if (!data) return null;
   const commonCls = 'mt-4 text-xs space-y-1';
