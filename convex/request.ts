@@ -374,3 +374,55 @@ export const orderSummary = query({
     } as const;
   },
 });
+export const timeline = query({
+  args: { id: v.id('requests') },
+  handler: async (ctx, { id }) => {
+    const req = await ctx.db.get(id);
+    if (!req) return [];
+    const order = await ctx.db
+      .query('orders')
+      .withIndex('by_requestId', (q) => q.eq('requestId', id))
+      .first();
+
+    const events: Array<{ ts: number; type: string; actor?: string; details?: unknown }> = [];
+
+    events.push({ ts: req.createdAt, type: 'request.created', actor: req.requestedBy, details: { requestId: req.requestId } });
+    if (req.infoRequestedAt) events.push({ ts: req.infoRequestedAt, type: 'request.infoRequested', actor: req.infoRequestedBy, details: { message: req.infoRequestMessage } });
+    if (req.infoResponseAt) events.push({ ts: req.infoResponseAt, type: 'request.infoResponded', actor: req.requestedBy, details: { message: req.infoResponseMessage } });
+    if (req.reviewDate) {
+      const typ = req.status.toLowerCase() === 'approved' ? 'request.approved' : req.status.toLowerCase() === 'rejected' ? 'request.rejected' : 'request.reviewed';
+      events.push({ ts: req.reviewDate, type: typ, actor: req.reviewedBy, details: { rejectionReason: req.rejectionReason } });
+    }
+    if (order) {
+      if (order.packedDate) events.push({ ts: order.packedDate, type: 'order.packed', actor: order.packedBy, details: { orderId: order.orderId } });
+      if (order.shippedDate) events.push({ ts: order.shippedDate, type: 'order.shipped', actor: order.shippedBy, details: { carrier: order.carrier, trackingNumber: order.trackingNumber } });
+    }
+
+    const audits = await ctx.db
+      .query('auditLogs')
+      .withIndex('by_table', (q) => q.eq('table', 'requests'))
+      .collect();
+    const auditsOrders = await ctx.db
+      .query('auditLogs')
+      .withIndex('by_table', (q) => q.eq('table', 'orders'))
+      .collect();
+    const allAudit = [...audits, ...auditsOrders].filter((a) => a.recordId === String(id) || a.changes?.requestId === id);
+
+    const userIds = Array.from(new Set(allAudit.map((a) => a.userId))).filter(Boolean) as Id<'users'>[];
+    const users = await Promise.all(userIds.map((uid) => ctx.db.get(uid)));
+    const userDisplayById = new Map<string, string>();
+    users.forEach((u, i) => {
+      if (!u) return;
+      const key = String(userIds[i]);
+      userDisplayById.set(key, u.email);
+    });
+
+    for (const a of allAudit) {
+      const actorReadable = userDisplayById.get(String(a.userId)) || String(a.userId);
+      events.push({ ts: a.timestamp, type: `audit.${a.action}`, actor: actorReadable, details: a.changes });
+    }
+
+    events.sort((a, b) => a.ts - b.ts);
+    return events;
+  },
+});
