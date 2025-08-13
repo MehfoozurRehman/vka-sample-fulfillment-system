@@ -169,7 +169,6 @@ export const markPacked = mutation({
       );
     }
 
-    // Email shippers + CC requester, sales rep
     try {
       const req = await ctx.db.get(order.requestId);
       if (req) {
