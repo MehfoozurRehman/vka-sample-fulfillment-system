@@ -1,9 +1,21 @@
 import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
+import { api } from './_generated/api';
 import dayjs from 'dayjs';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
+
+function uniqEmails(emails: Array<string | undefined | null>): string[] {
+  return Array.from(
+    new Set(
+      emails
+        .filter(Boolean)
+        .map((e) => String(e).trim().toLowerCase())
+        .filter((e) => /.+@.+\..+/.test(e)),
+    ),
+  );
+}
 
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -207,6 +219,42 @@ export const add = mutation({
         `New request ${requestId} submitted by ${user.name || user.email}`,
         screenerUsers.map((u) => u._id),
       );
+    }
+
+    // Send submission email to customer + CC parties
+    try {
+      const stakeholder = await ctx.db.get(args.companyId);
+      const screenerEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('screener')) || u.activeRole === 'screener')).map((u) => u.email);
+      const adminEmails = allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin')).map((u) => u.email);
+
+      const to = uniqEmails([args.email]);
+      const cc = uniqEmails([user.email, stakeholder?.salesRepEmail, ...screenerEmails, ...(stakeholder?.vipFlag ? adminEmails : [])]);
+
+      const subject = `VKA Sample Request [${requestId}] Received`;
+      const text = `Hello,
+
+We have received your sample request ${requestId} for ${stakeholder?.companyName ?? 'your company'}.
+
+Products:
+${args.productsRequested.map((p) => `- ${String(p.productId)} x ${p.quantity}${p.notes ? ` (${p.notes})` : ''}`).join('\n')}
+
+We will notify you once it is reviewed.
+
+Thank you,
+VKA`;
+
+      await ctx.runMutation(api.email.sendAndRecordEmail, {
+        createdBy: user._id,
+        type: 'request.submitted.email',
+        from: 'VKA <no-reply@vkaff.com>',
+        to,
+        cc,
+        subject,
+        text,
+        related: { requestId: id, stakeholderId: args.companyId },
+      });
+    } catch {
+      // swallow email errors to not block request creation
     }
 
     return { id, requestId } as const;
