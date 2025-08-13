@@ -11,6 +11,7 @@
 import type * as analytics from "../analytics.js";
 import type * as audit from "../audit.js";
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
 import type * as email from "../email.js";
 import type * as http from "../http.js";
 import type * as notification from "../notification.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   audit: typeof audit;
   auth: typeof auth;
+  crons: typeof crons;
   email: typeof email;
   http: typeof http;
   notification: typeof notification;
