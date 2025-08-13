@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { IconBell, IconLoader2, IconUpload } from '@tabler/icons-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,9 @@ export function Profile() {
 
   const [designation, setDesignation] = useState(user?.designation || '');
 
-  const [saving, setSaving] = useState(false);
+  const [isSaving, startSaving] = useTransition();
+
+  const [isPrefUpdating, startPrefUpdate] = useTransition();
 
   const [uploading, setUploading] = useState(false);
 
@@ -70,18 +72,15 @@ export function Profile() {
 
   const onSave = useCallback(async () => {
     if (!user || !dirty) return;
-    setSaving(true);
-
-    try {
-      await updateProfile({ userId: user.id as Id<'users'>, name, designation });
-      toast.success('Profile updated');
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to update profile';
-
-      toast.error(msg);
-    } finally {
-      setSaving(false);
-    }
+    startSaving(async () => {
+      try {
+        await updateProfile({ userId: user.id as Id<'users'>, name, designation });
+        toast.success('Profile updated');
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Failed to update profile';
+        toast.error(msg);
+      }
+    });
   }, [user, dirty, updateProfile, name, designation]);
 
   const handleFile = async (file: File) => {
@@ -182,8 +181,8 @@ export function Profile() {
           </CardContent>
           <CardFooter className="flex items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground">Changes are logged for audit.</div>
-            <Button onClick={onSave} disabled={!dirty || saving} className="gap-2 min-w-32">
-              {saving && <IconLoader2 className="size-4 animate-spin" />}
+            <Button onClick={onSave} disabled={!dirty || isSaving} className="gap-2 min-w-32">
+              {isSaving && <IconLoader2 className="size-4 animate-spin" />}
               Save Changes
             </Button>
           </CardFooter>
@@ -231,26 +230,30 @@ export function Profile() {
             <Button
               size="sm"
               variant="outline"
-              onClick={async () => {
+              onClick={() => {
                 if (!user) return;
-                await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: true })));
-                toast.success('All enabled');
+                startPrefUpdate(async () => {
+                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: true })));
+                  toast.success('All enabled');
+                });
               }}
-              disabled={!notificationTypes || notificationTypes.length === 0}
+              disabled={isPrefUpdating || !notificationTypes || notificationTypes.length === 0}
             >
-              Enable All
+              {isPrefUpdating && <IconLoader2 className="mr-2 size-4 animate-spin" />} Enable All
             </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={async () => {
+              onClick={() => {
                 if (!user) return;
-                await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: false })));
-                toast.success('All disabled');
+                startPrefUpdate(async () => {
+                  await Promise.all((notificationTypes || []).map((t) => setPref({ userId: user.id as Id<'users'>, type: t, enabled: false })));
+                  toast.success('All disabled');
+                });
               }}
-              disabled={!notificationTypes || notificationTypes.length === 0}
+              disabled={isPrefUpdating || !notificationTypes || notificationTypes.length === 0}
             >
-              Disable All
+              {isPrefUpdating && <IconLoader2 className="mr-2 size-4 animate-spin" />} Disable All
             </Button>
           </div>
         </CardContent>
