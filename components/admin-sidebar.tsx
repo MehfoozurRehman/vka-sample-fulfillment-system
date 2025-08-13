@@ -35,7 +35,7 @@ const data = {
     },
     {
       title: 'Analytics',
-      url: '/admin/anaytics',
+      url: '/admin/analytics',
       icon: IconChartBar,
     },
     {
