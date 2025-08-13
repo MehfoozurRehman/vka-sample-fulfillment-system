@@ -41,7 +41,39 @@ export const pending = query({
         projectName: r.projectName,
         createdAt: r.createdAt,
         createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
+        status: r.status,
       };
+    });
+  },
+});
+
+export const recentDecisions = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const max = Math.min(limit ?? 200, 500);
+    const recent = await ctx.db.query('requests').withIndex('by_createdAt').order('desc').collect();
+    const decided = recent.filter((r) => !r.deletedAt && ['approved', 'rejected'].includes(r.status.toLowerCase())).slice(0, max);
+    const stakeholderIds = Array.from(new Set(decided.map((r) => r.companyId)));
+    const stakeholders = await Promise.all(stakeholderIds.map((id) => ctx.db.get(id)));
+    const stakeholderMap = new Map<Id<'stakeholders'>, Doc<'stakeholders'>>(stakeholders.filter(Boolean).map((s) => [s!._id, s!]));
+    return decided.map((r) => {
+      const st = stakeholderMap.get(r.companyId);
+      return {
+        id: r._id,
+        requestId: r.requestId,
+        company: st?.companyName || 'Unknown',
+        vip: !!st?.vipFlag,
+        products: r.productsRequested.length,
+        applicationType: r.applicationType,
+        projectName: r.projectName,
+        createdAt: r.createdAt,
+        createdAtFmt: dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
+        status: r.status,
+        reviewedBy: r.reviewedBy,
+        reviewDate: r.reviewDate,
+        reviewDateFmt: r.reviewDate ? dayjs(r.reviewDate).format('YYYY-MM-DD HH:mm') : null,
+        rejectionReason: r.rejectionReason,
+      } as const;
     });
   },
 });
@@ -156,6 +188,65 @@ export const reject = mutation({
       timestamp: now,
     });
 
+    return { ok: true } as const;
+  },
+});
+
+export const requestInfo = mutation({
+  args: { id: v.id('requests'), screenerEmail: v.string(), message: v.string() },
+  handler: async (ctx, { id, screenerEmail, message }) => {
+    const reviewer = await assertScreener(ctx, screenerEmail);
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending')) throw new Error('Cannot request info after decision');
+    const now = Date.now();
+    await ctx.db.patch(id, {
+      status: 'Pending Info',
+      infoRequestedBy: screenerEmail,
+      infoRequestedAt: now,
+      infoRequestMessage: message,
+      updatedAt: now,
+    });
+    await ctx.db.insert('auditLogs', {
+      userId: reviewer._id,
+      action: 'requestInfo',
+      table: 'requests',
+      recordId: id,
+      changes: { status: 'Pending Info', message },
+      timestamp: now,
+    });
+    return { ok: true } as const;
+  },
+});
+
+export const respondInfo = mutation({
+  args: { id: v.id('requests'), requesterEmail: v.string(), message: v.string() },
+  handler: async (ctx, { id, requesterEmail, message }) => {
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending info')) throw new Error('Not awaiting info');
+    if (req.requestedBy !== requesterEmail) throw new Error('Not request owner');
+    const now = Date.now();
+    await ctx.db.patch(id, {
+      status: 'Pending Review',
+      infoResponseAt: now,
+      infoResponseMessage: message,
+      updatedAt: now,
+    });
+    const owner = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', requesterEmail))
+      .unique();
+    if (owner) {
+      await ctx.db.insert('auditLogs', {
+        userId: owner._id,
+        action: 'respondInfo',
+        table: 'requests',
+        recordId: id,
+        changes: { status: 'Pending Review' },
+        timestamp: now,
+      });
+    }
     return { ok: true } as const;
   },
 });
