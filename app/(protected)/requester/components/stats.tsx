@@ -18,7 +18,7 @@ export function Stats({ data }: { data: RecentRequestsType }) {
   const shipped = data.filter((r) => r.stage === 'Shipped').length;
 
   return (
-    <div className="grid gap-4 px-4 lg:px-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:shadow-xs">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:shadow-xs">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Requests</CardDescription>
