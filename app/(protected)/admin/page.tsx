@@ -5,6 +5,7 @@ import { IconClipboardText, IconPackage, IconReload, IconTruck, IconUser } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 import { Loader } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
@@ -73,7 +74,11 @@ export default function AdminDashboard() {
                   {!isPending &&
                     (recent || []).map((r) => (
                       <TableRow key={r.id} className="text-sm">
-                        <TableCell className="font-mono text-xs">{r.requestId}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          <Link href={`/admin/requests/${r.id}`} className="underline-offset-4 hover:underline">
+                            {r.requestId}
+                          </Link>
+                        </TableCell>
                         <TableCell>{r.company}</TableCell>
                         <TableCell>{r.contactName}</TableCell>
                         <TableCell>{r.applicationType}</TableCell>
