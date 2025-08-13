@@ -3,7 +3,6 @@
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 
 import { Button } from '@/components/ui/button';
 import { Id } from '@/convex/_generated/dataModel';
@@ -17,29 +16,19 @@ import { countries } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
-
-interface ProductRow {
-  id: Id<'products'>;
-  productId: string;
-  productName: string;
-  category: string;
-  location: string;
-}
-interface StakeholderRow {
-  id: Id<'stakeholders'>;
-  companyName: string;
-}
+import { useMutation } from 'convex/react';
+import { useQueryWithStatus } from '@/hooks/use-query';
 
 export function AddRequest() {
   const [open, setOpen] = useState(false);
 
-  const nextId = useQuery(api.request.nextId);
+  const { data: nextId } = useQueryWithStatus(api.request.nextId);
 
-  const stakeholders = useQuery(api.stakeholder.getStakeholders) as StakeholderRow[] | undefined;
+  const { data: stakeholders } = useQueryWithStatus(api.stakeholder.getStakeholders);
 
-  const products = useQuery(api.product.list) as ProductRow[] | undefined;
+  const { data: products } = useQueryWithStatus(api.product.list);
 
-  const suggestions = useQuery(api.request.suggestions);
+  const { data: suggestions } = useQueryWithStatus(api.request.suggestions);
 
   const addReq = useMutation(api.request.add);
 
