@@ -375,13 +375,7 @@ export const metrics = query({
     const now = Date.now();
     const dayKey = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
-    interface Daily {
-      date: string;
-      approved: number;
-      rejected: number;
-      pending: number;
-    }
-    const dailyMap: Record<string, Daily> = {};
+    const dailyMap: Record<string, { date: string; approved: number; rejected: number; pending: number }> = {};
 
     let approved30 = 0;
     let rejected30 = 0;
