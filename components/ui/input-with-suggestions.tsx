@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -21,17 +21,17 @@ type InputWithSuggestionsProps = {
 export function InputWithSuggestions({ id, name, className, placeholder, disabled, options, value, onValueChange, maxItems = 8, inputProps }: InputWithSuggestionsProps) {
   const isControlled = typeof value === 'string';
 
-  const [internalValue, setInternalValue] = React.useState<string>(value ?? '');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const [open, setOpen] = React.useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const [highlighted, setHighlighted] = React.useState<number>(-1);
+  const [internalValue, setInternalValue] = useState<string>(value ?? '');
 
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
 
-  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [highlighted, setHighlighted] = useState<number>(-1);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isControlled) setInternalValue(value ?? '');
   }, [isControlled, value]);
 
@@ -48,7 +48,7 @@ export function InputWithSuggestions({ id, name, className, placeholder, disable
 
   const normalized = query.trim().toLowerCase();
 
-  const filtered = React.useMemo(() => {
+  const filtered = useMemo(() => {
     const seen = new Set<string>();
 
     const out: string[] = [];
@@ -125,7 +125,7 @@ export function InputWithSuggestions({ id, name, className, placeholder, disable
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
 
