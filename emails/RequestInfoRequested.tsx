@@ -1,7 +1,7 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export type RequestInfoRequestedProps = {
+type RequestInfoRequestedProps = {
   requestId: string;
   message: string;
   requesterName?: string | null;
