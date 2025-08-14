@@ -4,7 +4,7 @@ import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,27 +23,14 @@ import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 import { useQuery } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import type { useQuery as useQueryType } from 'convex/react';
 
 const chartConfig: ChartConfig = {
   shipped: { label: 'Orders Shipped', color: 'var(--primary)' },
 };
 
-interface QueueRow {
-  id: Id<'orders'>;
-  orderId: string;
-  requestId: string;
-  company: string;
-  contactName: string;
-  country: string;
-  products: number;
-  packedAt: string;
-}
-
-interface DetailsData {
-  order: Doc<'orders'>;
-  request: Doc<'requests'>;
-  stakeholder: Doc<'stakeholders'> | null | undefined;
-}
+type QueueRow = NonNullable<ReturnType<typeof useQueryType<typeof api.shipper.queue>>>[number];
+type DetailsData = NonNullable<ReturnType<typeof useQueryType<typeof api.shipper.details>>>;
 
 function ShipDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email: string; onClose: () => void }) {
   const details = useQuery(api.shipper.details, { id: orderId }) as DetailsData | undefined;
@@ -204,7 +191,7 @@ function Info({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function ShipperPage() {
-  const { email } = useAuth();
+  const { email } = useAuth()!;
 
   const { data: stats } = useQueryWithStatus(api.shipper.stats, {});
 
