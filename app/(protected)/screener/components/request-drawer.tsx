@@ -14,24 +14,13 @@ import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import type { useQuery } from 'convex/react';
 
-interface PendingRowLite {
-  id: Id<'requests'>;
-  requestId: string;
-}
+export type ScreenerDetail = NonNullable<ReturnType<typeof useQuery<typeof api.screener.detail>>>;
 
-interface PriorNote {
-  requestId: string;
-  status: string;
-  reviewDate?: number;
-  reviewDateFmt?: string | null;
-  reviewNotes?: string;
-  rejectionReason?: string;
-}
-interface FrequentProduct {
-  name: string;
-  count: number;
-}
+export type PriorNote = NonNullable<ScreenerDetail['priorNotes']>[number];
+
+export type FrequentProduct = NonNullable<ScreenerDetail['frequentProductsTop']>[number];
 
 export default function RequestDrawer({
   open,
@@ -42,7 +31,7 @@ export default function RequestDrawer({
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  row: PendingRowLite | null;
+  row: { id: Id<'requests'>; requestId: string } | null;
   reviewerEmail: string;
   afterAction: (processedId: Id<'requests'>, action: 'approve' | 'reject') => void;
 }) {
@@ -130,7 +119,7 @@ export default function RequestDrawer({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {detailData.productsDetailed.map((p: { id: string; productId?: string; name?: string; quantity: number; notes?: string }) => (
+                          {detailData.productsDetailed.map((p) => (
                             <TableRow key={p.id}>
                               <TableCell className="font-mono text-xs">{p.productId || '—'}</TableCell>
                               <TableCell className="truncate" title={p.name}>
