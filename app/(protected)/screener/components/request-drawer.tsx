@@ -16,11 +16,11 @@ import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 import type { useQuery } from 'convex/react';
 
-export type ScreenerDetail = NonNullable<ReturnType<typeof useQuery<typeof api.screener.detail>>>;
+type ScreenerDetail = NonNullable<ReturnType<typeof useQuery<typeof api.screener.detail>>>;
 
-export type PriorNote = NonNullable<ScreenerDetail['priorNotes']>[number];
+type PriorNote = NonNullable<ScreenerDetail['priorNotes']>[number];
 
-export type FrequentProduct = NonNullable<ScreenerDetail['frequentProductsTop']>[number];
+type FrequentProduct = NonNullable<ScreenerDetail['frequentProductsTop']>[number];
 
 export default function RequestDrawer({
   open,
