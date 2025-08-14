@@ -275,11 +275,11 @@ function HeaderStats({ stats }: { stats: EmailStats | undefined }) {
   );
 }
 
-interface DetailsDrawerProps {
+type DetailsDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   row: EmailRow | null;
-}
+};
 
 function DetailsDrawer({ open, onOpenChange, row }: DetailsDrawerProps) {
   const isMobile = useIsMobile();
