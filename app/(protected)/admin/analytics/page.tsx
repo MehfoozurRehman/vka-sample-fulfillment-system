@@ -11,18 +11,18 @@ import { useState } from 'react';
 
 const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
-interface TooltipPayloadItem {
+type TooltipPayloadItem = {
   name: string;
   value: number;
   color: string;
   [key: string]: unknown;
-}
+};
 
-interface CustomTooltipProps {
+type CustomTooltipProps = {
   active?: boolean;
   payload?: TooltipPayloadItem[];
   label?: string;
-}
+};
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
@@ -133,10 +133,10 @@ function StatCard({ title, value, subtitle }: { title: string; value: number | u
   );
 }
 
-interface DistDatum {
+type DistDatum = {
   label: string;
   value: number;
-}
+};
 
 function DistributionCard({ title, data, type }: { title: string; data: DistDatum[] | undefined; type: 'bar' | 'pie' }) {
   const items: DistDatum[] = (data || []).filter((d) => d && typeof d.value === 'number');
