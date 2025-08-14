@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { IconLoader } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { PendingRow } from '../components/utils';
-import React from 'react';
 
 interface Props {
   data: PendingRow[];
