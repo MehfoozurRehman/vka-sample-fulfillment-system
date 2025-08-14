@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
