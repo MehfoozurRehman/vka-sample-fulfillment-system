@@ -456,7 +456,9 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                     <div className="space-y-2">
                       {roles.map((r) => {
                         const assigned = (selectedUser.roles && selectedUser.roles.includes(r)) || selectedUser.activeRole === r;
+
                         const isActive = selectedUser.activeRole === r;
+
                         return (
                           <div key={r} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
                             <Checkbox
@@ -464,15 +466,18 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                               disabled={isActing}
                               onCheckedChange={(value) => {
                                 const checked = !!value;
+
                                 if (checked) {
                                   startActing(async () => {
                                     try {
                                       await addRole({ userId: selectedUser.id as Id<'users'>, role: r });
-                                      // If this is the first role being added, also set as active
+
                                       const hadAny = !!(selectedUser.roles && selectedUser.roles.length);
+
                                       if (!hadAny) {
                                         await setActiveRole({ userId: selectedUser.id as Id<'users'>, role: r });
                                       }
+
                                       setSelectedUser((prev) =>
                                         prev
                                           ? {
@@ -489,19 +494,26 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                                   });
                                 } else {
                                   const currentRoles = selectedUser.roles ? [...selectedUser.roles] : selectedUser.activeRole ? [selectedUser.activeRole] : [];
+
                                   const remaining = currentRoles.filter((rr) => rr !== r);
+
                                   if (remaining.length === 0) {
                                     toast.error('User must have at least one role');
+
                                     return;
                                   }
+
                                   startActing(async () => {
                                     try {
                                       await removeRole({ userId: selectedUser.id as Id<'users'>, role: r });
                                       const removedActive = selectedUser.activeRole === r;
+
                                       const nextActive = removedActive ? remaining[0] : selectedUser.activeRole;
+
                                       if (removedActive) {
                                         await setActiveRole({ userId: selectedUser.id as Id<'users'>, role: nextActive });
                                       }
+
                                       setSelectedUser((prev) => (prev ? { ...prev, roles: remaining, activeRole: nextActive } : prev));
                                       toast.success('Role removed');
                                     } catch (err) {
