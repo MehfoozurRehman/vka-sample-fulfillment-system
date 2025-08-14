@@ -7,15 +7,19 @@ import { IconLoader } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { PendingRow } from '../components/utils';
 
-interface Props {
+export default function ScreenerTable({
+  data,
+  isPending,
+  onSelect,
+  search,
+  setSearch,
+}: {
   data: PendingRow[];
   isPending: boolean;
   onSelect: (r: PendingRow) => void;
   search: string;
   setSearch: (v: string) => void;
-}
-
-export default function ScreenerTable({ data, isPending, onSelect, search, setSearch }: Props) {
+}) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-2">
