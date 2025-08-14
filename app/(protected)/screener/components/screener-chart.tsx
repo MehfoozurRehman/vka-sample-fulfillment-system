@@ -2,18 +2,10 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'rec
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
-interface ScreenerMetrics {
-  rangeDays: number;
-  daily: { date: string; approved: number; rejected: number; pending: number }[];
-  approvalRate30d: number;
-  approved30: number;
-  rejected30: number;
-  ageBuckets: { under24: number; between24and48: number; over48: number };
-  totals: { totalPending: number; vipPending: number; avgItemsPending: number };
-  topPending: { company: string; count: number; vip: boolean }[];
-  topVolume30d: { company: string; count: number; vip: boolean }[];
-}
+type ScreenerMetrics = NonNullable<ReturnType<typeof useQuery<typeof api.screener.metrics>>>;
 
 const flowChartConfig: ChartConfig = {
   approved: { label: 'Approved', color: 'var(--success)' },
