@@ -1,6 +1,6 @@
 import { mutation, query } from './_generated/server';
 
-import { Id } from './_generated/dataModel';
+import { Doc, Id } from './_generated/dataModel';
 import { RoleType } from '@/constants';
 import { v } from 'convex/values';
 
@@ -8,22 +8,7 @@ function now() {
   return Date.now();
 }
 
-interface MinimalUser {
-  _id: Id<'users'>;
-  email: string;
-  name?: string;
-  designation?: string;
-  profilePicture?: string;
-  googleId?: string;
-  active: boolean;
-  deletedAt?: number;
-  lastLogin?: number;
-  roles?: string[];
-  activeRole?: string;
-  invitedByUser?: Id<'users'>;
-}
-
-function extractRoles(u: MinimalUser) {
+function extractRoles(u: Doc<'users'>) {
   const roles = u.roles && u.roles.length > 0 ? u.roles : [];
   const activeRole = u.activeRole || (roles.length ? roles[0] : undefined);
   return { roles, activeRole };
@@ -34,7 +19,7 @@ export const getUser = query({
   handler: async (ctx, args) => {
     const { userId } = args;
     if (!userId) throw new Error('User ID is required');
-    const user = (await ctx.db.get(userId as Id<'users'>)) as MinimalUser | null;
+    const user = await ctx.db.get(userId as Id<'users'>);
     if (!user) throw new Error('User not found');
 
     let picture = '';
@@ -67,7 +52,7 @@ export const checkUserRole = query({
 
     if (!userId) throw new Error('User ID is required');
 
-    const user = (await ctx.db.get(userId as Id<'users'>)) as MinimalUser | null;
+    const user = await ctx.db.get(userId as Id<'users'>);
 
     if (!user) throw new Error('User not found');
 
@@ -82,10 +67,10 @@ export const login = mutation({
   handler: async (ctx, args) => {
     const { googleId } = args;
     if (!googleId) throw new Error('Google ID is required');
-    const user = (await ctx.db
+    const user = await ctx.db
       .query('users')
       .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
-      .first()) as MinimalUser | null;
+      .first();
     if (!user) throw new Error('User not found');
     if (!user.active) throw new Error('User is inactive');
     if (user.deletedAt) throw new Error('User is deleted');
@@ -112,13 +97,13 @@ export const acceptInvite = mutation({
     const { picture, googleId, inviteId } = args;
     if (!googleId || !inviteId) throw new Error('Google ID and invite ID are required');
 
-    const inviteDoc = (await ctx.db.get(inviteId as Id<'users'>)) as MinimalUser | null;
+    const inviteDoc = await ctx.db.get(inviteId as Id<'users'>);
     if (!inviteDoc || inviteDoc.deletedAt || inviteDoc.googleId) throw new Error('Invalid invite');
 
-    const googleOwner = (await ctx.db
+    const googleOwner = await ctx.db
       .query('users')
       .withIndex('by_googleId', (q) => q.eq('googleId', googleId))
-      .first()) as MinimalUser | null;
+      .first();
 
     if (googleOwner && googleOwner._id !== inviteDoc._id) throw new Error('Google account already linked');
 
