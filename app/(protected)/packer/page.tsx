@@ -4,13 +4,12 @@ import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader } from 'lucide-react';
@@ -20,24 +19,11 @@ import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import type { useQuery as useQueryType } from 'convex/react';
 
-interface QueueRow {
-  id: Id<'orders'>;
-  orderId: string;
-  requestId: string;
-  company: string;
-  contactName: string;
-  products: number;
-  priority: string;
-  createdAt: string;
-}
+type QueueRow = NonNullable<ReturnType<typeof useQueryType<typeof api.packer.queue>>>[number];
 
-interface DetailsData {
-  order: Doc<'orders'>;
-  request: Doc<'requests'>;
-  stakeholder: Doc<'stakeholders'> | null | undefined;
-  products: (Doc<'products'> | null)[];
-}
+type DetailsData = NonNullable<ReturnType<typeof useQueryType<typeof api.packer.details>>>;
 
 type Checklist = {
   pickedCorrect: boolean;
@@ -71,7 +57,7 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
   const productMap = useMemo(() => {
     const m = new Map<Id<'products'>, Doc<'products'>>();
 
-    details?.products.filter(Boolean).forEach((p) => m.set((p as Doc<'products'>)._id, p as Doc<'products'>));
+    details?.products?.filter((p): p is Doc<'products'> => Boolean(p)).forEach((p) => m.set(p._id, p));
 
     return m;
   }, [details]);
@@ -226,7 +212,7 @@ function Info({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function PackerPage() {
-  const { email } = useAuth();
+  const { email } = useAuth()!;
 
   const { data: stats } = useQueryWithStatus(api.packer.stats, {});
 
@@ -247,8 +233,6 @@ export default function PackerPage() {
   }, [stats]);
 
   const trendData = useMemo(() => trend || [], [trend]);
-
-  const queueRows = (queue as QueueRow[] | undefined) || [];
 
   const [from, setFrom] = useState('');
 
@@ -279,7 +263,7 @@ export default function PackerPage() {
         </TabsList>
         <TabsContent value="dashboard" className="flex flex-col gap-6">
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Ready Queue" value={queueRows.length} />
+            <StatCard label="Ready to Pack" value={(queue as QueueRow[] | undefined)?.length || 0} />
             <StatCard label="Packed (Total)" value={stats?.totalPacked || 0} />
             <StatCard label="Packed Today" value={stats?.packedToday || 0} />
             <StatCard label="Packed Today %" value={`${packedTodayPct}%`} />
@@ -314,8 +298,8 @@ export default function PackerPage() {
                   <TableHead>Request ID</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Application</TableHead>
                   <TableHead>Products</TableHead>
-                  <TableHead>Priority</TableHead>
                   <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
@@ -326,19 +310,15 @@ export default function PackerPage() {
                       <Loader className="mx-auto animate-spin" />
                     </TableCell>
                   </TableRow>
-                ) : queueRows.length ? (
-                  queueRows.map((o) => (
+                ) : ((queue as QueueRow[] | undefined) || []).length ? (
+                  ((queue as QueueRow[] | undefined) || []).map((o) => (
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setActive(o.id)}>
                       <TableCell>{o.orderId}</TableCell>
                       <TableCell>{o.requestId}</TableCell>
                       <TableCell>{o.company}</TableCell>
                       <TableCell>{o.contactName}</TableCell>
+                      <TableCell>{o.applicationType}</TableCell>
                       <TableCell>{o.products}</TableCell>
-                      <TableCell>
-                        <Badge variant={o.priority === 'High' ? 'destructive' : o.priority === 'Medium' ? 'secondary' : 'outline'} className="capitalize">
-                          {o.priority}
-                        </Badge>
-                      </TableCell>
                       <TableCell>{o.createdAt}</TableCell>
                     </TableRow>
                   ))
