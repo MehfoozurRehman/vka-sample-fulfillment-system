@@ -4,13 +4,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 import { Badge } from '@/components/ui/badge';
 import { Id } from '@/convex/_generated/dataModel';
-import React from 'react';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useQuery } from 'convex/react';
 
 export default function Timeline({ requestId }: { requestId: string }) {
   const id = requestId as unknown as Id<'requests'>;
+
   const events = useQuery(api.request.timeline, { id }) as { ts: number; type: string; actor?: string; details?: unknown }[] | undefined;
 
   if (!events) return <div className="text-sm text-muted-foreground">Loading…</div>;
