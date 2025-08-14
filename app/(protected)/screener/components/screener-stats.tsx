@@ -1,13 +1,7 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { computeStats } from './utils';
 
-interface Stats {
-  total: number;
-  vip: number;
-  avgItems: number;
-  under24: number;
-  over24: number;
-  over48: number;
-}
+type Stats = ReturnType<typeof computeStats>;
 
 export default function ScreenerStats({ stats, isLoading }: { stats: Stats; isLoading: boolean }) {
   return (
