@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 import type { Id } from '@/convex/_generated/dataModel';
-import React from 'react';
 
 export function LabelVal({ label, value }: { label: string; value?: string }) {
   return (
