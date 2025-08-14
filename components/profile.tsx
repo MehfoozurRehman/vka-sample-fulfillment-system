@@ -78,6 +78,7 @@ export function Profile() {
         toast.success('Profile updated');
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : 'Failed to update profile';
+
         toast.error(msg);
       }
     });
