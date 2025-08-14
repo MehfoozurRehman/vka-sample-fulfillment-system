@@ -4,15 +4,15 @@ import { Preloaded, usePreloadedQuery } from 'convex/react';
 import { createContext, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { User } from '@/types';
+import { AuthUser } from '@/types';
 import { api } from '@/convex/_generated/api';
 
-export const AuthContext = createContext<User | null>(null);
+export const AuthContext = createContext<AuthUser | null>(null);
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: React.ReactNode;
   userQuery: Preloaded<typeof api.auth.getUser>;
-}
+};
 
 export function AuthProvider({ children, userQuery }: AuthProviderProps) {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
   const redirectingRef = useRef(false);
   const root = (pathname.split('/')[1] || '').toLowerCase();
 
-  const user = usePreloadedQuery(userQuery) as (User & { activeRole?: string; roles?: string[] }) | null;
+  const user = usePreloadedQuery(userQuery);
 
   const contextValue = useMemo(() => user, [user]);
 
@@ -44,7 +44,7 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
   const showOverlay = !!user && root !== user.activeRole;
 
   return (
-    <AuthContext value={contextValue}>
+    <AuthContext.Provider value={contextValue}>
       {showOverlay && (
         <div suppressHydrationWarning className="pointer-events-none fixed inset-0 z-50 flex h-screen flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm">
           <svg className="size-6 animate-spin text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -54,6 +54,6 @@ export function AuthProvider({ children, userQuery }: AuthProviderProps) {
         </div>
       )}
       {children}
-    </AuthContext>
+    </AuthContext.Provider>
   );
 }
