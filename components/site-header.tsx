@@ -94,9 +94,11 @@ function Notifications() {
   const [isActing, startTransition] = useTransition();
 
   const prefList: Doc<'notificationPreferences'>[] = (prefs as Doc<'notificationPreferences'>[] | undefined) ?? [];
+
   const disabledTypes = new Set(prefList.filter((p) => !p.enabled).map((p) => p.type));
 
   const notifications: Doc<'notifications'>[] = (data as Doc<'notifications'>[] | undefined) ?? [];
+
   const visibleData: Doc<'notifications'>[] = notifications.filter((n) => !disabledTypes.has(n.type));
 
   const unreadCount = visibleData.length;
