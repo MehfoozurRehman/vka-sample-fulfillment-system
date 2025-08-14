@@ -12,6 +12,7 @@ import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import type { useQuery } from 'convex/react';
 
 const reportOptions = [
   { value: 'PendingRequestsByAge', label: 'Pending Requests by Age' },
@@ -21,32 +22,9 @@ const reportOptions = [
   { value: 'AverageProcessingTime', label: 'Average Processing Time' },
 ];
 
-interface PendingAgeReport {
-  type: 'PendingRequestsByAge';
-  under24: number;
-  between24and48: number;
-  over48: number;
-}
-interface TopCustomersReport {
-  type: 'Top10CustomersThisMonth' | 'TopCustomers';
-  top: { company: string; count: number }[];
-}
-interface ProductsReport {
-  type: 'ProductsRequestedThisWeek' | 'ProductsRequested';
-  products: { name: string; count: number }[];
-}
-interface RejectionReasonsReport {
-  type: 'RejectionReasonsSummary';
-  reasons: { reason: string; count: number }[];
-}
-interface AvgProcTimeReport {
-  type: 'AverageProcessingTime';
-  averageMs: number;
-  averageHours: number;
-}
+type ReportsResult = NonNullable<ReturnType<typeof useQuery<typeof api.screener.reports>>>;
 
 type ChartRow = { bucket: string; value: number } | { label: string; count: number };
-type ReportData = PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport;
 
 export default function ReportsPanel() {
   const [report, setReport] = useState('PendingRequestsByAge');
@@ -59,7 +37,7 @@ export default function ReportsPanel() {
 
   const { data, isPending } = useQueryWithStatus(api.screener.reports, { report, from, to: anchorTo });
 
-  const typedData = data as ReportData | undefined;
+  const typedData = data as ReportsResult | undefined;
 
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -73,21 +51,21 @@ export default function ReportsPanel() {
         return {
           kind: 'bar',
           rows: [
-            { bucket: '<24h', value: typedData.under24 },
-            { bucket: '24-48h', value: typedData.between24and48 },
-            { bucket: '>48h', value: typedData.over48 },
+            { bucket: '<24h', value: typedData.under24 ?? 0 },
+            { bucket: '24-48h', value: typedData.between24and48 ?? 0 },
+            { bucket: '>48h', value: typedData.over48 ?? 0 },
           ],
         } as const;
       case 'Top10CustomersThisMonth':
       case 'TopCustomers':
-        return { kind: 'bar', rows: typedData.top.map((t) => ({ label: t.company, count: t.count })) } as const;
+        return { kind: 'bar', rows: (typedData.top ?? []).map((t: { company: string; count: number }) => ({ label: t.company, count: t.count })) } as const;
       case 'ProductsRequestedThisWeek':
       case 'ProductsRequested':
-        return { kind: 'bar', rows: typedData.products.map((p) => ({ label: p.name, count: p.count })) } as const;
+        return { kind: 'bar', rows: (typedData.products ?? []).map((p: { name: string; count: number }) => ({ label: p.name, count: p.count })) } as const;
       case 'RejectionReasonsSummary':
-        return { kind: 'pie', rows: typedData.reasons.map((r) => ({ label: r.reason, count: r.count })) } as const;
+        return { kind: 'pie', rows: (typedData.reasons ?? []).map((r: { reason: string; count: number }) => ({ label: r.reason, count: r.count })) } as const;
       case 'AverageProcessingTime':
-        return { kind: 'stat', value: typedData.averageHours } as const;
+        return { kind: 'stat', value: typedData.averageHours ?? 0 } as const;
       default:
         return null;
     }
@@ -252,12 +230,18 @@ export default function ReportsPanel() {
   );
 }
 
-function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport | ProductsReport | RejectionReasonsReport | AvgProcTimeReport }) {
+function ReportSummary({ data }: { data: ReportsResult }) {
   if (!data) return null;
   const commonCls = 'mt-4 text-xs space-y-1';
 
   if (data.type === 'PendingRequestsByAge') {
-    const total = data.under24 + data.between24and48 + data.over48;
+    const under24 = data.under24 ?? 0;
+
+    const between24and48 = data.between24and48 ?? 0;
+
+    const over48 = data.over48 ?? 0;
+
+    const total = under24 + between24and48 + over48;
 
     const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
 
@@ -265,26 +249,26 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
       <div className={commonCls}>
         <div className="font-medium">Pending Requests (Total {total})</div>
         <div>
-          &lt;24h: {data.under24} ({pct(data.under24)}%)
+          &lt;24h: {under24} ({pct(under24)}%)
         </div>
         <div>
-          24–48h: {data.between24and48} ({pct(data.between24and48)}%)
+          24–48h: {between24and48} ({pct(between24and48)}%)
         </div>
         <div>
-          &gt;48h: {data.over48} ({pct(data.over48)}%)
+          &gt;48h: {over48} ({pct(over48)}%)
         </div>
       </div>
     );
   }
 
   if (data.type === 'Top10CustomersThisMonth' || data.type === 'TopCustomers') {
-    const total = data.top.reduce((a, b) => a + b.count, 0);
+    const total = (data.top ?? []).reduce((a: number, b: { count: number }) => a + b.count, 0);
 
     return (
       <div className={commonCls}>
         <div className="font-medium">Top Customers (Total {total})</div>
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-          {data.top.map((t) => (
+          {(data.top ?? []).map((t: { company: string; count: number }) => (
             <li key={t.company} className="flex justify-between">
               <span className="truncate pr-2">{t.company}</span>
               <span className="tabular-nums font-medium">{t.count}</span>
@@ -296,13 +280,13 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
   }
 
   if (data.type === 'ProductsRequestedThisWeek' || data.type === 'ProductsRequested') {
-    const total = data.products.reduce((a, b) => a + b.count, 0);
+    const total = (data.products ?? []).reduce((a: number, b: { count: number }) => a + b.count, 0);
 
     return (
       <div className={commonCls}>
         <div className="font-medium">Products Requested (Total {total})</div>
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-          {data.products.map((p) => (
+          {(data.products ?? []).map((p: { name: string; count: number }) => (
             <li key={p.name} className="flex justify-between">
               <span className="truncate pr-2">{p.name}</span>
               <span className="tabular-nums font-medium">{p.count}</span>
@@ -314,7 +298,7 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
   }
 
   if (data.type === 'RejectionReasonsSummary') {
-    const total = data.reasons.reduce((a, b) => a + b.count, 0);
+    const total = (data.reasons ?? []).reduce((a: number, b: { count: number }) => a + b.count, 0);
 
     const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
 
@@ -322,7 +306,7 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
       <div className={commonCls}>
         <div className="font-medium">Rejection Reasons (Total {total})</div>
         <ul className="space-y-1">
-          {data.reasons.map((r) => (
+          {(data.reasons ?? []).map((r: { reason: string; count: number }) => (
             <li key={r.reason} className="flex justify-between">
               <span className="truncate pr-2">{r.reason}</span>
               <span className="tabular-nums">
@@ -336,11 +320,15 @@ function ReportSummary({ data }: { data: PendingAgeReport | TopCustomersReport |
   }
 
   if (data.type === 'AverageProcessingTime') {
+    const hours = data.averageHours ?? 0;
+
+    const ms = data.averageMs ?? 0;
+
     return (
       <div className={commonCls}>
         <div className="font-medium">Average Processing Time</div>
         <div>
-          {data.averageHours.toFixed(2)} hours ({(data.averageMs / 1000 / 60).toFixed(1)} mins)
+          {hours.toFixed(2)} hours ({(ms / 1000 / 60).toFixed(1)} mins)
         </div>
       </div>
     );
