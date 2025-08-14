@@ -54,9 +54,11 @@ const chartConfig: ChartConfig = {
 
 function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email: string; onClose: () => void }) {
   const details = useQuery(api.packer.details, { id: orderId }) as DetailsData | undefined;
+
   const markPacked = useMutation(api.packer.markPacked);
 
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
+
   const [checks, setChecks] = useState<Checklist>({
     pickedCorrect: false,
     coaIncluded: false,
@@ -68,25 +70,32 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
 
   const productMap = useMemo(() => {
     const m = new Map<Id<'products'>, Doc<'products'>>();
+
     details?.products.filter(Boolean).forEach((p) => m.set((p as Doc<'products'>)._id, p as Doc<'products'>));
+
     return m;
   }, [details]);
 
   const isPacked = useMemo(() => {
     const status = (details?.order?.status || '').toLowerCase();
+
     return !!details?.order?.packedDate || status === 'packed' || status === 'shipped' || status === 'completed';
   }, [details]);
 
   const existingLots = useMemo(() => {
     try {
       const raw = details?.order?.lotNumbers;
+
       const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
       const map: Record<string, string> = {};
+
       if (Array.isArray(arr)) {
         for (const it of arr) {
           if (it && it.productId && typeof it.lot !== 'undefined') map[String(it.productId)] = String(it.lot);
         }
       }
+
       return map;
     } catch {
       return {} as Record<string, string>;
@@ -98,14 +107,19 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
   async function completePacking() {
     if (!details) return;
     const lots = details.request.productsRequested.map((p) => ({ productId: p.productId, lot: lotNumbers[String(p.productId)] || '' }));
+
     if (lots.some((l) => !l.lot.trim())) {
       toast.error('Enter lot numbers for all products');
+
       return;
     }
+
     if (!Object.values(checks).every(Boolean)) {
       toast.error('Please confirm all checklist items');
+
       return;
     }
+
     startSubmitting(async () => {
       try {
         await markPacked({ id: orderId, packedBy: email, lotNumbers: lots, ...checks });
@@ -138,7 +152,9 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
         <div className="rounded-md border divide-y">
           {details.request.productsRequested.map((p, i) => {
             const prod = productMap.get(p.productId);
+
             const lotDisplay = existingLots[String(p.productId)];
+
             return (
               <div key={i} className="p-3 flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -211,9 +227,13 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 export default function PackerPage() {
   const { email } = useAuth();
+
   const { data: stats } = useQueryWithStatus(api.packer.stats, {});
+
   const { data: queue, isPending } = useQueryWithStatus(api.packer.queue, {});
+
   const trend = useQuery(api.packer.trend, { days: 90 }) as { date: string; packed: number }[] | undefined;
+
   const myHistory = useQuery(api.packer.myHistory, { email, limit: 200 }) as
     | { id: Id<'orders'>; orderId: string; packedDate?: number; shippedDate?: number; status: string; requestId?: string }[]
     | undefined;
@@ -222,23 +242,30 @@ export default function PackerPage() {
 
   const packedTodayPct = useMemo(() => {
     if (!stats || !stats.totalPacked) return '0';
+
     return ((stats.packedToday / stats.totalPacked) * 100).toFixed(0);
   }, [stats]);
 
   const trendData = useMemo(() => trend || [], [trend]);
+
   const queueRows = (queue as QueueRow[] | undefined) || [];
 
   const [from, setFrom] = useState('');
+
   const [to, setTo] = useState('');
 
   const filteredHistory = useMemo(() => {
     if (!myHistory) return [] as NonNullable<typeof myHistory>;
     const fromTs = from ? Date.parse(from) : undefined;
+
     const toTs = to ? Date.parse(to) : undefined;
+
     return myHistory.filter((r) => {
       const t = r.packedDate || 0;
+
       if (fromTs && t < fromTs) return false;
       if (toTs && t > toTs + 24 * 3600 * 1000 - 1) return false;
+
       return true;
     });
   }, [myHistory, from, to]);
