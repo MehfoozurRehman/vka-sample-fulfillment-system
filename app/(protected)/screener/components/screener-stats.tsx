@@ -1,7 +1,5 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-import React from 'react';
-
 interface Stats {
   total: number;
   vip: number;
