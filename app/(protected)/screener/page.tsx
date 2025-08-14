@@ -42,16 +42,21 @@ export default function ScreenerPage() {
     | undefined;
 
   const [from, setFrom] = useState('');
+
   const [to, setTo] = useState('');
 
   const filteredHistory = useMemo(() => {
     if (!myHistory) return [] as NonNullable<typeof myHistory>;
     const fromTs = from ? Date.parse(from) : undefined;
+
     const toTs = to ? Date.parse(to) : undefined;
+
     return myHistory.filter((r) => {
       const t = r.reviewDate || 0;
+
       if (fromTs && t < fromTs) return false;
       if (toTs && t > toTs + 24 * 3600 * 1000 - 1) return false;
+
       return true;
     });
   }, [myHistory, from, to]);
@@ -69,8 +74,11 @@ export default function ScreenerPage() {
   const handleAfterAction = useCallback(
     (id: string) => {
       const ordered = [...filtered].sort((a, b) => a.createdAt - b.createdAt);
+
       const idx = ordered.findIndex((r) => r.id === id);
+
       const next = ordered[idx + 1] || null;
+
       if (next) setSelected({ id: next.id, requestId: next.requestId });
       else setSelected(null);
     },
