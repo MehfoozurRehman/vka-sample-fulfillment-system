@@ -1,11 +1,11 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export interface RequestSubmittedProps {
+export type RequestSubmittedProps = {
   requestId: string;
   companyName?: string | null;
   products?: Array<{ name: string; quantity: number; notes?: string | null }>;
-}
+};
 
 export function RequestSubmitted({ requestId, companyName, products }: RequestSubmittedProps) {
   const title = `VKA Sample Request [${requestId}] Received`;
