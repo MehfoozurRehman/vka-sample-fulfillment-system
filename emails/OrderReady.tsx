@@ -1,7 +1,7 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export type OrderReadyProps = {
+type OrderReadyProps = {
   requestId: string;
   orderId: string;
 };
