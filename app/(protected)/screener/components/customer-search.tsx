@@ -9,13 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import type { useQuery } from 'convex/react';
 
-interface SearchResult {
-  id: string;
-  companyName: string;
-  vipFlag: boolean;
-  requestCount: number;
-}
+type CustomerRow = NonNullable<ReturnType<typeof useQuery<typeof api.screener.listCustomers>>>[number];
 
 export default function CustomerSearch() {
   const [q, setQ] = useState('');
@@ -27,8 +23,8 @@ export default function CustomerSearch() {
   const { data: all, isPending: isCustomerPending } = useQueryWithStatus(api.screener.listCustomers, {});
 
   const results = useMemo(() => {
-    if (!all) return [] as SearchResult[];
-    const list = (all as SearchResult[]).slice();
+    if (!all) return [] as CustomerRow[];
+    const list = (all as CustomerRow[]).slice();
 
     const term = q.trim().toLowerCase();
 
