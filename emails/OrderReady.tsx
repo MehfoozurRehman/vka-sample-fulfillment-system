@@ -1,10 +1,10 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export interface OrderReadyProps {
+export type OrderReadyProps = {
   requestId: string;
   orderId: string;
-}
+};
 
 export function OrderReady({ requestId, orderId }: OrderReadyProps) {
   const title = `VKA Order [${orderId}] Ready to Pack`;
