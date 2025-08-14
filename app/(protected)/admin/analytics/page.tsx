@@ -1,7 +1,5 @@
 'use client';
 
-import * as React from 'react';
-
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -9,6 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import { useState } from 'react';
 
 const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
@@ -47,7 +46,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export default function AnalyticsPage() {
-  const [range, setRange] = React.useState('90');
+  const [range, setRange] = useState('90');
 
   const { data: overview } = useQueryWithStatus(api.analytics.overview, {});
 
