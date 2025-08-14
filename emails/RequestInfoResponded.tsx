@@ -1,10 +1,10 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export interface RequestInfoRespondedProps {
+export type RequestInfoRespondedProps = {
   requestId: string;
   message: string;
-}
+};
 
 export function RequestInfoResponded({ requestId, message }: RequestInfoRespondedProps) {
   const title = `VKA Sample Request [${requestId}] – Information Provided`;
