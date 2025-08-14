@@ -151,6 +151,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (!form.projectName.trim()) return toast.error('Project name required');
     if (!productLines.length) return toast.error('Add at least one product');
     const invalid = productLines.some((l) => !l.productId || l.quantity === '' || l.quantity <= 0);
+
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
     startSaving(async () => {
