@@ -47,6 +47,7 @@ interface DetailsData {
 
 function ShipDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email: string; onClose: () => void }) {
   const details = useQuery(api.shipper.details, { id: orderId }) as DetailsData | undefined;
+
   const markShipped = useMutation(api.shipper.markShipped);
 
   const [form, setForm] = useState({
@@ -70,10 +71,13 @@ function ShipDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; email:
 
   function submit() {
     if (!details) return;
+
     if (!form.trackingNumber.trim()) {
       toast.error('Tracking number required');
+
       return;
     }
+
     startSubmitting(async () => {
       try {
         await markShipped({ id: orderId, shippedBy: email, ...form });
@@ -201,31 +205,45 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 export default function ShipperPage() {
   const { email } = useAuth();
+
   const { data: stats } = useQueryWithStatus(api.shipper.stats, {});
+
   const { data: queue, isPending } = useQueryWithStatus(api.shipper.queue, {});
+
   const trend = useQuery(api.shipper.trend, { days: 90 }) as { date: string; shipped: number }[] | undefined;
+
   const myHistory = useQuery(api.shipper.myHistory, { email, limit: 200 }) as
     | { id: Id<'orders'>; orderId: string; shippedDate?: number; packedDate?: number; status: string; requestId?: string }[]
     | undefined;
+
   const [active, setActive] = useState<Id<'orders'> | null>(null);
+
   const [from, setFrom] = useState('');
+
   const [to, setTo] = useState('');
 
   const shippedTodayPct = useMemo(() => {
     if (!stats || !stats.totalShipped) return '0';
+
     return ((stats.shippedToday / stats.totalShipped) * 100).toFixed(0);
   }, [stats]);
 
   const queueRows = (queue as QueueRow[] | undefined) || [];
+
   const trendData = trend || [];
+
   const filteredHistory = useMemo(() => {
     if (!myHistory) return [] as NonNullable<typeof myHistory>;
     const fromTs = from ? Date.parse(from) : undefined;
+
     const toTs = to ? Date.parse(to) : undefined;
+
     return myHistory.filter((r) => {
       const t = r.shippedDate || 0;
+
       if (fromTs && t < fromTs) return false;
       if (toTs && t > toTs + 24 * 3600 * 1000 - 1) return false;
+
       return true;
     });
   }, [myHistory, from, to]);
