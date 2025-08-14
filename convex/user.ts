@@ -1,27 +1,13 @@
 import { appUrl, roles } from '@/constants';
 import { mutation, query } from './_generated/server';
 
-import { Id } from './_generated/dataModel';
+import { Doc, Id } from './_generated/dataModel';
 import dayjs from 'dayjs';
 import { resend } from './resend';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
-interface UserDocLike {
-  _id: Id<'users'>;
-  email: string;
-  name?: string;
-  designation?: string;
-  profilePicture?: string;
-  googleId?: string;
-  active: boolean;
-  deletedAt?: number;
-  lastLogin?: number;
-  roles?: string[];
-  activeRole?: string;
-}
-
-function normalizeRoles(user: UserDocLike) {
+function normalizeRoles(user: Doc<'users'>) {
   const roles: string[] = user.roles && Array.isArray(user.roles) ? user.roles : [];
   const activeRole: string | undefined = user.activeRole || roles[0];
   return { roles, activeRole };
@@ -46,13 +32,13 @@ export const getUsers = query({
           const url = await ctx.storage.getUrl(user.profilePicture as Id<'_storage'>);
           picture = url ?? '';
         }
-        const { roles, activeRole } = normalizeRoles(user);
+        const { roles } = normalizeRoles(user);
         return {
           picture,
           id: user._id,
           name: user.name,
           roles,
-          activeRole,
+          activeRole: user.activeRole || roles[0],
           email: user.email,
           designation: user.designation,
           lastLogin: user.lastLogin ? dayjs(user.lastLogin).format('YYYY-MM-DD HH:mm:ss') : null,
@@ -263,7 +249,7 @@ export const resendInvite = mutation({
     if (!user) throw new Error('User not found');
     if (user.googleId) throw new Error('User already accepted invite');
     if (user.deletedAt) throw new Error('User deleted');
-    const { activeRole } = normalizeRoles(user as unknown as UserDocLike);
+    const { activeRole } = normalizeRoles(user as Doc<'users'>);
     await resend.sendEmail(ctx, {
       from: 'VKA <onboarding@resend.dev>',
       to: user.email,
