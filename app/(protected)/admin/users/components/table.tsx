@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-table';
 import { Copy, Loader, Mail } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { IconCircleCheckFilled, IconLoader } from '@tabler/icons-react';
+import { IconCircleCheckFilled, IconLoader, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -449,111 +449,94 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                   </div>
                 )}
                 {selectedUser && (
-                  <div className="flex flex-col gap-2 rounded-lg border p-3">
-                    <span className="text-xs text-muted-foreground">Active Role</span>
-                    <Select
-                      value={selectedUser.activeRole}
-                      onValueChange={(role) => {
-                        startActing(async () => {
-                          try {
-                            await setActiveRole({ userId: selectedUser.id as Id<'users'>, role });
-                            setSelectedUser((prev) => (prev ? { ...prev, role, activeRole: role } : prev));
-                            toast.success('Active role switched');
-                          } catch (err) {
-                            toastError(err);
-                          }
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="w-full" disabled={isActing}>
-                        <SelectValue placeholder="Select active role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedUser.roles && selectedUser.roles.length > 0
-                          ? selectedUser.roles.map((r) => (
-                              <SelectItem key={r} value={r} className="capitalize">
-                                {r}
-                              </SelectItem>
-                            ))
-                          : roles.map((r) => (
-                              <SelectItem key={r} value={r} className="capitalize">
-                                {r}
-                              </SelectItem>
-                            ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedUser.roles &&
-                        selectedUser.roles.length > 0 &&
-                        selectedUser.roles.map((r) => (
-                          <Badge key={r} variant={selectedUser.activeRole === r ? 'default' : 'outline'} className="flex items-center gap-1 capitalize">
-                            {r}
-                            {selectedUser.roles.length > 1 && (
-                              <button
-                                type="button"
-                                className="text-xs hover:opacity-70"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-
-                                  if (confirm(`Remove role ${r}?`)) {
-                                    startActing(async () => {
-                                      try {
-                                        await removeRole({ userId: selectedUser.id as Id<'users'>, role: r });
-                                        setSelectedUser((prev) =>
-                                          prev
-                                            ? {
-                                                ...prev,
-                                                roles: prev.roles?.filter((rr) => rr !== r),
-                                                activeRole: prev.activeRole === r ? prev.roles?.filter((rr) => rr !== r)[0] : prev.activeRole,
-                                              }
-                                            : prev,
-                                        );
-                                        toast.success('Role removed');
-                                      } catch (err) {
-                                        toastError(err);
+                  <div className="flex flex-col gap-3 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Roles & Active Role</span>
+                    </div>
+                    <div className="space-y-2">
+                      {roles.map((r) => {
+                        const assigned = (selectedUser.roles && selectedUser.roles.includes(r)) || selectedUser.activeRole === r;
+                        const isActive = selectedUser.activeRole === r;
+                        return (
+                          <div key={r} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
+                            <Checkbox
+                              checked={assigned}
+                              disabled={isActing}
+                              onCheckedChange={(value) => {
+                                const checked = !!value;
+                                if (checked) {
+                                  startActing(async () => {
+                                    try {
+                                      await addRole({ userId: selectedUser.id as Id<'users'>, role: r });
+                                      // If this is the first role being added, also set as active
+                                      const hadAny = !!(selectedUser.roles && selectedUser.roles.length);
+                                      if (!hadAny) {
+                                        await setActiveRole({ userId: selectedUser.id as Id<'users'>, role: r });
                                       }
-                                    });
-                                  }
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </Badge>
-                        ))}
-                      <Select
-                        onValueChange={(role) => {
-                          startActing(async () => {
-                            try {
-                              await addRole({ userId: selectedUser.id as Id<'users'>, role });
-                              setSelectedUser((prev) =>
-                                prev
-                                  ? {
-                                      ...prev,
-                                      roles: prev.roles ? Array.from(new Set([...prev.roles, role])) : ([role].filter(Boolean) as string[]),
+                                      setSelectedUser((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              roles: prev.roles ? Array.from(new Set([...prev.roles, r])) : [r],
+                                              activeRole: prev.roles && prev.roles.length > 0 ? prev.activeRole : r,
+                                            }
+                                          : prev,
+                                      );
+                                      toast.success('Role added');
+                                    } catch (err) {
+                                      toastError(err);
                                     }
-                                  : prev,
-                              );
-                              toast.success('Role added');
-                            } catch (err) {
-                              toastError(err);
-                            }
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="w-fit" disabled={isActing}>
-                          <SelectValue placeholder="Add role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles
-                            .filter((r) => !(selectedUser.roles ? selectedUser.roles.includes(r) : selectedUser.activeRole === r))
-                            .map((r) => (
-                              <SelectItem key={r} value={r} className="capitalize">
-                                {r}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                                  });
+                                } else {
+                                  const currentRoles = selectedUser.roles ? [...selectedUser.roles] : selectedUser.activeRole ? [selectedUser.activeRole] : [];
+                                  const remaining = currentRoles.filter((rr) => rr !== r);
+                                  if (remaining.length === 0) {
+                                    toast.error('User must have at least one role');
+                                    return;
+                                  }
+                                  startActing(async () => {
+                                    try {
+                                      await removeRole({ userId: selectedUser.id as Id<'users'>, role: r });
+                                      const removedActive = selectedUser.activeRole === r;
+                                      const nextActive = removedActive ? remaining[0] : selectedUser.activeRole;
+                                      if (removedActive) {
+                                        await setActiveRole({ userId: selectedUser.id as Id<'users'>, role: nextActive });
+                                      }
+                                      setSelectedUser((prev) => (prev ? { ...prev, roles: remaining, activeRole: nextActive } : prev));
+                                      toast.success('Role removed');
+                                    } catch (err) {
+                                      toastError(err);
+                                    }
+                                  });
+                                }
+                              }}
+                            />
+                            <span className="capitalize flex-1">{r}</span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className={isActive ? 'text-yellow-500' : 'text-muted-foreground hover:text-foreground'}
+                              title={isActive ? 'Active role' : 'Set as active'}
+                              disabled={!assigned || isActive || isActing}
+                              onClick={() => {
+                                if (isActive || !assigned) return;
+                                startActing(async () => {
+                                  try {
+                                    await setActiveRole({ userId: selectedUser.id as Id<'users'>, role: r });
+                                    setSelectedUser((prev) => (prev ? { ...prev, activeRole: r } : prev));
+                                    toast.success('Active role switched');
+                                  } catch (err) {
+                                    toastError(err);
+                                  }
+                                });
+                              }}
+                            >
+                              {isActive ? <IconStarFilled className="size-4" /> : <IconStar className="size-4" />}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
