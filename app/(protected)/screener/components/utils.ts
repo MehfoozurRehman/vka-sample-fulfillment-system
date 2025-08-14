@@ -1,16 +1,7 @@
-import type { Id } from '@/convex/_generated/dataModel';
+import type { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
-export interface PendingRow {
-  id: Id<'requests'>;
-  requestId: string;
-  company: string;
-  vip: boolean;
-  products: number;
-  applicationType: string;
-  projectName: string;
-  createdAt: number;
-  createdAtFmt: string;
-}
+export type PendingRow = NonNullable<ReturnType<typeof useQuery<typeof api.screener.pending>>>[number];
 
 export function computeStats(rows: PendingRow[]) {
   const total = rows.length;
