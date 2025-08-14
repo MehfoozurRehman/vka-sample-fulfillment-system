@@ -1,7 +1,7 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export type RequestSubmittedProps = {
+type RequestSubmittedProps = {
   requestId: string;
   companyName?: string | null;
   products?: Array<{ name: string; quantity: number; notes?: string | null }>;
