@@ -1,9 +1,9 @@
 import VkaLayout from './VkaLayout';
 import { render } from '@react-email/render';
 
-export interface RequestApprovedProps {
+export type RequestApprovedProps = {
   requestId: string;
-}
+};
 
 export function RequestApproved({ requestId }: RequestApprovedProps) {
   const title = `VKA Sample Request [${requestId}] Approved`;
