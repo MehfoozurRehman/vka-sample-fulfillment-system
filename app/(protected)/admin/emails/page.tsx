@@ -22,16 +22,24 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function EmailsPage() {
   const [status, setStatus] = useQueryState('status', parseAsString.withDefault(''));
+
   const [type, setType] = useQueryState('type', parseAsString.withDefault(''));
+
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
+
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [start, setStart] = useQueryState('start', parseAsString.withDefault(''));
+
   const [end, setEnd] = useQueryState('end', parseAsString.withDefault(''));
+
   const [drawerOpen, setDrawerOpen] = useState(false);
+
   const [selectedEmail, setSelectedEmail] = useState<EmailRow | null>(null);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(search), 300);
+
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -254,6 +262,7 @@ function HeaderStats({ stats }: { stats: EmailStats | undefined }) {
     { label: 'Failed', value: stats?.failed ?? 0 },
     { label: 'Cancelled', value: stats?.cancelled ?? 0 },
   ];
+
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-9">
       {items.map((it) => (
