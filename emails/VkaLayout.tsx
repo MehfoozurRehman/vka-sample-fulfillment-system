@@ -1,6 +1,6 @@
 import { Container, Head, Heading, Hr, Html, Preview, Section, Text } from '@react-email/components';
 
-export type VkaLayoutProps = {
+type VkaLayoutProps = {
   title: string;
   body: string;
   footerNote?: string;
