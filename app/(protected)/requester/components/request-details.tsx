@@ -23,7 +23,7 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 dayjs.extend(relativeTime);
 
-interface ProductListItem {
+type ProductListItem = {
   id: Id<'products'>;
   productId: string;
   productName: string;
@@ -31,13 +31,13 @@ interface ProductListItem {
   location: string;
   createdAt: number;
   updatedAt: number;
-}
+};
 
-interface Props {
+type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   row: { id: Id<'requests'>; requestId: string; status: string; stage: string; company: string } | null;
-}
+};
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -453,14 +453,14 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
   );
 }
 
-interface InfoRequestData {
+type InfoRequestData = {
   status: string;
   infoRequestedAt?: number;
   infoRequestedBy?: string;
   infoRequestMessage?: string;
   infoResponseAt?: number;
   infoResponseMessage?: string;
-}
+};
 
 function InfoRequestPanel({ request, onRespond, showRespondForm }: { request: InfoRequestData; onRespond: (message: string) => Promise<void>; showRespondForm?: boolean }) {
   const [msg, setMsg] = useState('');
