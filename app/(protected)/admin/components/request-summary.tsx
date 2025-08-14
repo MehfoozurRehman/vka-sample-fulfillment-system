@@ -13,7 +13,9 @@ type DetailShape = { request?: { requestId: string; status: string; applicationT
 
 export default function RequestSummary({ requestId }: { requestId: string }) {
   const id = requestId as unknown as Id<'requests'>;
+
   const detail = useQuery(api.screener.detail, { id }) as DetailShape | undefined;
+
   const order = useQuery(api.request.orderSummary, { requestId: id }) as
     | { id: Id<'orders'>; orderId: string; status: string; packedDate?: number; shippedDate?: number; carrier?: string; trackingNumber?: string }
     | null
@@ -21,10 +23,13 @@ export default function RequestSummary({ requestId }: { requestId: string }) {
 
   const statusBadge = useMemo(() => {
     const status = detail?.request?.status?.toLowerCase?.() || '';
+
     let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'secondary';
+
     if (status.includes('pending')) variant = 'outline';
     else if (['approved', 'open'].some((s) => status.includes(s))) variant = 'default';
     else if (['rejected', 'cancel', 'error'].some((s) => status.includes(s))) variant = 'destructive';
+
     return <Badge variant={variant}>{detail?.request?.status || '—'}</Badge>;
   }, [detail]);
 
