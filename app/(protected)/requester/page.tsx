@@ -17,23 +17,32 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 
 export default function RequesterPage() {
   const auth = useAuth();
+
   const { data, isPending } = useQueryWithStatus(api.request.my, { email: auth.email, limit: 200 });
+
   type HistoryRow = { id: Id<'requests'>; requestId: string; status: string; createdAt: number; reviewDate?: number; packedDate?: number; shippedDate?: number; company: string; stage: string };
   const history = useQueryWithStatus(api.request.myHistory, { email: auth.email, limit: 200 }).data as HistoryRow[] | undefined;
 
   const [from, setFrom] = useState('');
+
   const [to, setTo] = useState('');
+
   const [open, setOpen] = useState(false);
+
   const [activeRow, setActiveRow] = useState<HistoryRow | null>(null);
 
   const filteredHistory = useMemo(() => {
     if (!history) return [] as NonNullable<typeof history>;
     const fromTs = from ? Date.parse(from) : undefined;
+
     const toTs = to ? Date.parse(to) : undefined;
+
     return history.filter((r) => {
       const t = r.createdAt || 0;
+
       if (fromTs && t < fromTs) return false;
       if (toTs && t > toTs + 24 * 3600 * 1000 - 1) return false;
+
       return true;
     });
   }, [history, from, to]);
