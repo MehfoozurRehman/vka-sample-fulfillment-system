@@ -1,10 +1,10 @@
 import { Container, Head, Heading, Hr, Html, Preview, Section, Text } from '@react-email/components';
 
-export interface VkaLayoutProps {
+export type VkaLayoutProps = {
   title: string;
   body: string;
   footerNote?: string;
-}
+};
 
 export function VkaLayout({ title, body, footerNote }: VkaLayoutProps) {
   return (
