@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import StatusPill from '@/components/status-pill';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-user';
@@ -56,19 +57,6 @@ export function Profile() {
   );
 
   const dirty = useMemo(() => name !== (user?.name || '') || designation !== (user?.designation || ''), [name, designation, user?.name, user?.designation]);
-
-  const statusVariant: 'secondary' | 'default' | 'destructive' | 'outline' = useMemo(() => {
-    switch (user?.status) {
-      case 'active':
-        return 'default';
-      case 'invited':
-        return 'outline';
-      case 'inactive':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  }, [user?.status]);
 
   const onSave = useCallback(async () => {
     if (!user || !dirty) return;
@@ -140,11 +128,7 @@ export function Profile() {
             <div className="flex flex-col items-center gap-1 text-center">
               <div className="text-sm font-medium flex items-center gap-2">
                 {user?.name || '—'}
-                {user?.status && (
-                  <Badge variant={statusVariant} className="capitalize">
-                    {user.status}
-                  </Badge>
-                )}
+                {user?.status && <StatusPill value={user.status} kind="user" className="capitalize" />}
               </div>
               <div className="text-xs text-muted-foreground break-all">{user?.email}</div>
               <div className="text-[11px] text-muted-foreground capitalize">Role: {user?.activeRole}</div>
