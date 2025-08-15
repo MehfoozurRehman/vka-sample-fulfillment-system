@@ -15,6 +15,8 @@ import dayjs from 'dayjs';
 import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
 import type { useQuery } from 'convex/react';
+import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 
 type ScreenerDetail = NonNullable<ReturnType<typeof useQuery<typeof api.screener.detail>>>;
 
@@ -254,9 +256,14 @@ export default function RequestDrawer({
                           onClick={() => {
                             if (!currentId || !infoMsg.trim()) return;
                             startRequesting(async () => {
-                              await requestInfoMut({ id: currentId, screenerEmail: reviewerEmail, message: infoMsg.trim() });
-                              setShowInfoForm(false);
-                              setInfoMsg('');
+                              try {
+                                await requestInfoMut({ id: currentId, screenerEmail: reviewerEmail, message: infoMsg.trim() });
+                                setShowInfoForm(false);
+                                setInfoMsg('');
+                                toast.success('Info request sent');
+                              } catch (e) {
+                                toastError(e);
+                              }
                             });
                           }}
                           disabled={isRequesting || !infoMsg.trim()}
@@ -279,8 +286,13 @@ export default function RequestDrawer({
                 onClick={() => {
                   if (!currentId || awaitingInfo) return;
                   startSaving(async () => {
-                    await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
-                    afterAction(currentId, 'approve');
+                    try {
+                      await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
+                      afterAction(currentId, 'approve');
+                      toast.success('Request approved');
+                    } catch (e) {
+                      toastError(e);
+                    }
                   });
                 }}
               >
@@ -292,8 +304,13 @@ export default function RequestDrawer({
                 onClick={() => {
                   if (!currentId || !canReject || awaitingInfo) return;
                   startSaving(async () => {
-                    await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
-                    afterAction(currentId, 'reject');
+                    try {
+                      await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
+                      afterAction(currentId, 'reject');
+                      toast.success('Request rejected');
+                    } catch (e) {
+                      toastError(e);
+                    }
                   });
                 }}
               >
