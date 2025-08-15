@@ -1,6 +1,6 @@
+import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
-import { Doc, Id } from './_generated/dataModel';
 import { RoleType } from '@/constants';
 import { v } from 'convex/values';
 
@@ -98,7 +98,8 @@ export const acceptInvite = mutation({
     if (!googleId || !inviteId) throw new Error('Google ID and invite ID are required');
 
     const inviteDoc = await ctx.db.get(inviteId as Id<'users'>);
-    if (!inviteDoc || inviteDoc.deletedAt || inviteDoc.googleId) throw new Error('Invalid invite');
+
+    if (!inviteDoc || inviteDoc.googleId) throw new Error('Invalid invite');
 
     const googleOwner = await ctx.db
       .query('users')
