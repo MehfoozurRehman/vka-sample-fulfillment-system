@@ -17,6 +17,8 @@ import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { motion } from 'motion/react';
 import { removeToken } from '@/actions/remove-token';
+import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 import { useQueryWithStatus } from '@/hooks/use-query';
@@ -129,7 +131,12 @@ function Notifications() {
                 disabled={unreadCount === 0 || isPending || isActing}
                 onClick={() =>
                   startTransition(async () => {
-                    await Promise.all(visibleData.map((n) => markAsRead({ notificationId: n._id })));
+                    try {
+                      await Promise.all(visibleData.map((n) => markAsRead({ notificationId: n._id })));
+                      toast.success('All notifications marked as read');
+                    } catch (e) {
+                      toastError(e);
+                    }
                   })
                 }
                 className="text-xs"
@@ -159,7 +166,12 @@ function Notifications() {
                         disabled={isActing}
                         onClick={() =>
                           startTransition(async () => {
-                            await markAsRead({ notificationId: n._id });
+                            try {
+                              await markAsRead({ notificationId: n._id });
+                              toast.success('Marked as read');
+                            } catch (e) {
+                              toastError(e);
+                            }
                           })
                         }
                         className="text-xs"
@@ -247,8 +259,9 @@ function UserMenu() {
                       try {
                         await setActiveRole({ userId: user.id, role: r });
                         router.push(`/${r}`);
+                        toast.success(`Switched to ${r}`);
                       } catch {
-                        /* noop */
+                        toast.error('Failed to switch role');
                       }
                     });
                   }}
