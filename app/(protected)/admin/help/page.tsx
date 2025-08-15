@@ -150,7 +150,7 @@ export default function HelpPage() {
       content: (
         <>
           <p className="mb-3 text-sm">
-            Badges visually encode progress or risk. Color mapping (from <code className="font-mono">StatusBadge</code> component) is heuristic:
+            Badges visually encode progress or risk. Color mapping (via <code className="font-mono">StatusPill</code>) is centralized and heuristic:
           </p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
