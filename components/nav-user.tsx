@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { Loader } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { removeToken } from '@/actions/remove-token';
+import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
 import { useMutation } from 'convex/react';
 import { usePathname } from 'next/navigation';
@@ -89,8 +91,9 @@ export function NavUser() {
                         try {
                           await setActiveRole({ userId: user.id, role: r });
                           router.push(`/${r}`);
-                        } catch {
-                          /* noop */
+                          toast.success(`Switched to ${r}`);
+                        } catch (e) {
+                          toastError(e);
                         }
                       }}
                     >
