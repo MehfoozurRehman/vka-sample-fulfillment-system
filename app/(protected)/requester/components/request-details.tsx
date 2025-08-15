@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
+import StatusPill from '@/components/status-pill';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { countries } from '@/constants';
@@ -194,12 +195,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
         <DrawerHeader>
           <DrawerTitle>{row.requestId}</DrawerTitle>
           <DrawerDescription className="flex flex-wrap gap-2 items-center">
-            <Badge variant="secondary" className="capitalize">
-              {row.status}
-            </Badge>
-            <Badge variant="outline" className="capitalize">
-              {row.stage}
-            </Badge>
+            <StatusPill value={row.status} kind="status" className="capitalize" />
+            <StatusPill value={row.stage} kind="stage" className="capitalize" />
           </DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-4 overflow-y-auto space-y-4">
@@ -266,9 +263,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 <div className="rounded-lg border bg-card p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold tracking-tight">Order Summary</h4>
-                    <Badge variant="outline" className="text-xs font-normal capitalize">
-                      {order.status}
-                    </Badge>
+                    <StatusPill value={order.status} kind="status" className="text-[10px] font-normal capitalize" />
                   </div>
                   <div className="space-y-2 text-xs">
                     <div>Order ID: {order.orderId}</div>
