@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Loader } from 'lucide-react';
 import { RecentRequestsType } from '../type';
 import { RequestDetailsDrawer } from './request-details';
+import StatusPill from '@/components/status-pill';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const columns: ColumnDef<RecentRequestsType[number]>[] = [
@@ -26,20 +27,12 @@ const columns: ColumnDef<RecentRequestsType[number]>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5 capitalize">
-        {row.original.status}
-      </Badge>
-    ),
+    cell: ({ row }) => <StatusPill value={row.original.status} kind="status" className="capitalize" />,
   },
   {
     accessorKey: 'stage',
     header: 'Stage',
-    cell: ({ row }) => (
-      <Badge variant="secondary" className="capitalize">
-        {row.original.stage}
-      </Badge>
-    ),
+    cell: ({ row }) => <StatusPill value={row.original.stage} kind="stage" className="capitalize" />,
   },
   { accessorKey: 'createdAt', header: 'Created At' },
 ];
