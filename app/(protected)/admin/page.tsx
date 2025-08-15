@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Loader } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import StatusPill from '@/components/status-pill';
 import { api } from '@/convex/_generated/api';
 import { useQueryWithStatus } from '@/hooks/use-query';
 
@@ -84,9 +85,11 @@ export default function AdminDashboard() {
                         <TableCell>{r.applicationType}</TableCell>
                         <TableCell className="text-center">{r.products}</TableCell>
                         <TableCell>
-                          <StatusBadge status={r.status} />
+                          <StatusPill value={r.status} kind="status" />
                         </TableCell>
-                        <TableCell>{r.stage}</TableCell>
+                        <TableCell>
+                          <StatusPill value={r.stage} kind="stage" />
+                        </TableCell>
                         <TableCell>{r.assignedTo || <span className="text-muted-foreground">Unassigned</span>}</TableCell>
                         <TableCell className="whitespace-nowrap">{new Date(r.createdAt).toLocaleString?.() ?? r.createdAt}</TableCell>
                       </TableRow>
@@ -162,18 +165,6 @@ function StatCard({ title, value, sub, icon, loading }: { title: string; value?:
       </CardHeader>
     </Card>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const normalized = status.toLowerCase();
-
-  let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'secondary';
-
-  if (normalized.includes('pending')) variant = 'outline';
-  else if (['approved', 'open'].some((s) => normalized.includes(s))) variant = 'default';
-  else if (['rejected', 'cancel', 'error'].some((s) => normalized.includes(s))) variant = 'destructive';
-
-  return <Badge variant={variant}>{status}</Badge>;
 }
 
 function DistributionListCard({ title, items, emptyText }: { title: string; items: { label: string; value: number }[]; emptyText: string }) {
