@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import React, { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import StatusPill from '@/components/status-pill';
 import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { Loader } from 'lucide-react';
@@ -66,17 +67,6 @@ export default function CustomerSearch() {
     } catch {
       return text;
     }
-  }
-
-  function statusVariant(status: string): 'default' | 'destructive' | 'secondary' | 'outline' {
-    const s = status.toLowerCase();
-
-    if (s.includes('reject')) return 'destructive';
-    if (s.includes('ship')) return 'secondary';
-    if (s.includes('pend')) return 'outline';
-    if (s.includes('approve') || s.includes('complete')) return 'default';
-
-    return 'outline';
   }
 
   return (
@@ -238,9 +228,7 @@ export default function CustomerSearch() {
                             <div key={r.id} className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center rounded px-1 py-1 hover:bg-accent/40 transition-colors">
                               <span className="font-mono text-[10px]">{r.requestId}</span>
                               <span className="truncate text-muted-foreground flex items-center gap-1">
-                                <Badge variant={statusVariant(r.status)} className="capitalize">
-                                  {r.status}
-                                </Badge>
+                                <StatusPill value={r.status} kind="status" className="capitalize" />
                               </span>
                               <span className="text-muted-foreground tabular-nums">{r.dateFmt}</span>
                               <span className="opacity-0 group-hover:opacity-100 transition-opacity" />
