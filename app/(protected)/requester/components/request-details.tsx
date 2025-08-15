@@ -16,6 +16,7 @@ import { countries } from '@/constants';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMutation } from 'convex/react';
@@ -155,9 +156,13 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
     startSaving(async () => {
-      await update({ userId: auth.id, id: row.id, ...form });
-      setEditing(false);
-      toast.success('Request updated');
+      try {
+        await update({ userId: auth.id, id: row.id, ...form });
+        setEditing(false);
+        toast.success('Request updated');
+      } catch (error) {
+        toastError(error);
+      }
     });
   }
 
@@ -165,8 +170,13 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (!row) return;
     if (!confirm('Delete this draft request?')) return;
     startDeleting(async () => {
-      await remove({ userId: auth.id, id: row.id });
-      onOpenChange(false);
+      try {
+        await remove({ userId: auth.id, id: row.id });
+        onOpenChange(false);
+        toast.success('Request deleted');
+      } catch (error) {
+        toastError(error);
+      }
     });
   }
 
@@ -242,8 +252,12 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   request={infoRequestData}
                   showRespondForm={infoRequestData.status === 'Pending Info' && !infoRequestData.infoResponseAt}
                   onRespond={async (message: string) => {
-                    await respondInfo({ id: row.id, requesterEmail: auth.email, message });
-                    toast.success('Information sent. Request back in review queue.');
+                    try {
+                      await respondInfo({ id: row.id, requesterEmail: auth.email, message });
+                      toast.success('Information sent. Request back in review queue.');
+                    } catch (error) {
+                      toastError(error);
+                    }
                   }}
                 />
               )}
