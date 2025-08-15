@@ -75,7 +75,7 @@ export default function AdminDashboard() {
                     (recent || []).map((r) => (
                       <TableRow key={r.id} className="text-sm">
                         <TableCell className="font-mono text-xs">
-                          <Link href={`/admin/requests/${r.id}`} className="underline-offset-4 hover:underline">
+                          <Link href={`/admin/${r.id}`} className="underline-offset-4 hover:underline">
                             {r.requestId}
                           </Link>
                         </TableCell>
