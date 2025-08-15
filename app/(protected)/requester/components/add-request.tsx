@@ -172,7 +172,7 @@ export function AddRequest() {
             <div className="flex items-center justify-between">
               <Label className="font-medium">Products Requested</Label>
               <Button type="button" size="sm" variant="outline" onClick={handleAddItem}>
-                Add Line
+                Add Product
               </Button>
             </div>
             <div className="flex flex-col gap-4">
