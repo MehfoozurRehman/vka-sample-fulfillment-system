@@ -32,6 +32,8 @@ import { Loader } from 'lucide-react';
 import { StakeholderType } from '../type';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
+import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMutation } from 'convex/react';
@@ -277,9 +279,14 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                     };
 
                     startSaving(async () => {
-                      await updateStakeholder({ userId: auth.id, ...payload });
-                      setSelected({ ...selected, ...payload });
-                      setEdit(null);
+                      try {
+                        await updateStakeholder({ userId: auth.id, ...payload });
+                        setSelected({ ...selected, ...payload });
+                        setEdit(null);
+                        toast.success('Stakeholder updated');
+                      } catch (e) {
+                        toastError(e);
+                      }
                     });
                   }}
                 >
