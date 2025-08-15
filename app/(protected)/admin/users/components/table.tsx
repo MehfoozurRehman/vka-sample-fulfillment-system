@@ -15,9 +15,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Copy, Loader, Mail } from 'lucide-react';
+import { Copy, Loader as IconLoader, Loader, Mail } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { IconCircleCheckFilled, IconLoader, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { IconStar, IconStarFilled } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +32,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InviteUser } from './invite-user';
 import { Label } from '@/components/ui/label';
+import StatusPill from '@/components/status-pill';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { roles } from '@/constants';
@@ -104,12 +105,7 @@ const columns: ColumnDef<DataType>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === 'active' ? <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" /> : <IconLoader />}
-        {row.original.status}
-      </Badge>
-    ),
+    cell: ({ row }) => <StatusPill value={row.original.status} kind="user" className="capitalize" />,
   },
 ];
 
@@ -373,14 +369,7 @@ export function DataTable({ data: initialData, isPending }: { data: DataType[]; 
                     <Badge variant="outline" className="capitalize">
                       {selectedUser.activeRole}
                     </Badge>
-                    <Badge variant="outline" className="text-muted-foreground px-1.5 capitalize">
-                      {selectedUser.status === 'active' ? (
-                        <IconCircleCheckFilled className="mr-1 size-4 shrink-0 fill-green-500 dark:fill-green-400" />
-                      ) : (
-                        <IconLoader className="mr-1 size-4 shrink-0" />
-                      )}
-                      {selectedUser.status}
-                    </Badge>
+                    <StatusPill value={selectedUser.status} kind="user" className="capitalize" />
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 rounded-lg border p-3">
