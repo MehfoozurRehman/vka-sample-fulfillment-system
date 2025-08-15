@@ -38,6 +38,8 @@ import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
 import { useQueryState, parseAsString } from 'nuqs';
 import { useAuth } from '@/hooks/use-user';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import { toast } from 'sonner';
+import toastError from '@/utils/toastError';
 
 const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
@@ -276,8 +278,13 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                 onClick={() => {
                   if (!selected) return;
                   startSaving(async () => {
-                    await remove({ userId: auth.id, id: selected.id as Id<'products'> });
-                    setSelected(null);
+                    try {
+                      await remove({ userId: auth.id, id: selected.id as Id<'products'> });
+                      setSelected(null);
+                      toast.success('Product deleted');
+                    } catch (error) {
+                      toastError(error);
+                    }
                   });
                 }}
               >
@@ -307,9 +314,14 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                     };
 
                     startSaving(async () => {
-                      await update({ userId: auth.id, ...payload });
-                      setSelected({ ...selected, ...payload });
-                      setEdit(null);
+                      try {
+                        await update({ userId: auth.id, ...payload });
+                        setSelected({ ...selected, ...payload });
+                        setEdit(null);
+                        toast.success('Product updated');
+                      } catch (error) {
+                        toastError(error);
+                      }
                     });
                   }}
                 >
