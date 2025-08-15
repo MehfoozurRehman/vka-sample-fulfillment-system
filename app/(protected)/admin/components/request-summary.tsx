@@ -3,8 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import React, { useMemo } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Id } from '@/convex/_generated/dataModel';
+import StatusPill from '@/components/status-pill';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
 import { useQuery } from 'convex/react';
@@ -22,15 +22,7 @@ export default function RequestSummary({ requestId }: { requestId: string }) {
     | undefined;
 
   const statusBadge = useMemo(() => {
-    const status = detail?.request?.status?.toLowerCase?.() || '';
-
-    let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'secondary';
-
-    if (status.includes('pending')) variant = 'outline';
-    else if (['approved', 'open'].some((s) => status.includes(s))) variant = 'default';
-    else if (['rejected', 'cancel', 'error'].some((s) => status.includes(s))) variant = 'destructive';
-
-    return <Badge variant={variant}>{detail?.request?.status || '—'}</Badge>;
+    return <StatusPill value={detail?.request?.status} kind="status" />;
   }, [detail]);
 
   return (
