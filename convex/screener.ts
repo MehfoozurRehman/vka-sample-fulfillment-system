@@ -600,7 +600,17 @@ export const detail = query({
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    return { request: r, stakeholder, productsDetailed, lastFive, totalSamples12mo, decisionCounts: { approved, rejected, pending }, priorNotes, frequentProductsTop } as const;
+    return {
+      request: r,
+      requester: r.requestedBy,
+      stakeholder,
+      productsDetailed,
+      lastFive,
+      totalSamples12mo,
+      decisionCounts: { approved, rejected, pending },
+      priorNotes,
+      frequentProductsTop,
+    } as const;
   },
 });
 
