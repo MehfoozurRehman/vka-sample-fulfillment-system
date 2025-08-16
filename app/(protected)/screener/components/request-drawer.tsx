@@ -100,6 +100,7 @@ export default function RequestDrawer({
                   <LabelVal label="Company" value={detailData.stakeholder?.companyName} />
                   <LabelVal label="Application" value={detailData.request.applicationType} />
                   <LabelVal label="Project" value={detailData.request.projectName} />
+                  <LabelVal label="Request By" value={detailData.requester} />
                   <LabelVal label="Submitted" value={dayjs(detailData.request.createdAt).format('MMM D, YYYY h:mm A')} />
                 </div>
               </div>
