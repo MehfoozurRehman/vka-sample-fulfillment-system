@@ -11,7 +11,7 @@
     "format": "npx prettier --write ."
   },
   "dependencies": {
-    "@convex-dev/resend": "^0.1.9",
+    "@convex-dev/resend": "^0.1.10",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -32,7 +32,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.25.4",
-    "convex-helpers": "^0.1.103",
+    "convex-helpers": "^0.1.104",
     "dayjs": "^1.11.13",
     "lucide-react": "^0.539.0",
     "motion": "^12.23.12",
