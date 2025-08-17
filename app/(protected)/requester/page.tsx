@@ -18,10 +18,10 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 export default function RequesterPage() {
   const auth = useAuth();
 
-  const { data, isPending } = useQueryWithStatus(api.request.my, { email: auth.email, limit: 200 });
+  const { data, isPending } = useQueryWithStatus(api.request.my, { userId: auth.id, limit: 200 });
 
   type HistoryRow = { id: Id<'requests'>; requestId: string; status: string; createdAt: number; reviewDate?: number; packedDate?: number; shippedDate?: number; company: string; stage: string };
-  const history = useQueryWithStatus(api.request.myHistory, { email: auth.email, limit: 200 }).data as HistoryRow[] | undefined;
+  const history = useQueryWithStatus(api.request.myHistory, { userId: auth.id, limit: 200 }).data as HistoryRow[] | undefined;
 
   const [from, setFrom] = useState('');
 
