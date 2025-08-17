@@ -394,8 +394,14 @@ export default function ScreenerRequestPage() {
             </Button>
             <Button
               onClick={() => {
-                if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim())) {
+                if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0)) {
                   toast.error('Select product, qty > 0, and reason');
+
+                  return;
+                }
+
+                if (!addForm.reason.trim()) {
+                  toast.error('Reason for adding is required');
 
                   return;
                 }
