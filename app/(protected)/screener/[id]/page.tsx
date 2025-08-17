@@ -1,5 +1,6 @@
 'use client';
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -44,7 +45,15 @@ export default function ScreenerRequestPage() {
   const [showInfoForm, setShowInfoForm] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [isRequesting, startRequesting] = useTransition();
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  // Dialog-based product change state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeIndex, setRemoveIndex] = useState<number | null>(null);
+  const [removeReason, setRemoveReason] = useState('');
 
   const status = detail?.request?.status || '';
 
@@ -58,12 +67,14 @@ export default function ScreenerRequestPage() {
 
   const productLabelById = useMemo(() => new Map(productOptions.map((p) => [p.id, p.label])), [productOptions]);
 
-  const [newLine, setNewLine] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
-
-  const [editForm, setEditForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
-
   useEffect(() => {
-    setEditingIndex(null);
+    // Reset any open dialogs when navigating
+    setAddOpen(false);
+    setEditOpen(false);
+    setRemoveOpen(false);
+    setEditIndex(null);
+    setRemoveIndex(null);
+    setRemoveReason('');
   }, [requestId]);
 
   if (!detail)
@@ -227,182 +238,251 @@ export default function ScreenerRequestPage() {
         </div>
       </div>
       <div className="rounded-lg border bg-card p-4 space-y-3">
-        <div className="text-sm font-semibold">Requested Products</div>
-        <div className="overflow-x-auto rounded-md border">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold">Requested Products</div>
+          {isClaimedByMe && status.toLowerCase().includes('pending') && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setAddForm({ productId: null, quantity: 1, notes: '', reason: '' });
+                setAddOpen(true);
+              }}
+            >
+              Add Product
+            </Button>
+          )}
+        </div>
+        <div className="rounded-md border">
           <Table>
             <TableHeader className="bg-muted">
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead className="w-24">Qty</TableHead>
                 <TableHead className="min-w-56">Notes</TableHead>
-                <TableHead className="min-w-64">Reason</TableHead>
-                {isClaimedByMe && status.toLowerCase().includes('pending') && <TableHead className="w-44">Actions</TableHead>}
+                {isClaimedByMe && status.toLowerCase().includes('pending') && <TableHead className="w-40">Actions</TableHead>}
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {r.productsRequested.map((line, idx) => {
-                const selectedOtherIds = new Set(r.productsRequested.map((l, i) => (i === idx ? null : (l.productId as Id<'products'>))).filter(Boolean) as Id<'products'>[]);
-                const filteredEditOptions = productOptions.filter((o) => !selectedOtherIds.has(o.id)).map((o) => o.label);
-                return (
-                  <TableRow key={idx}>
+            <TableBody className="overflow-visible">
+              {r.productsRequested.map((line, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>
+                    <span title={productLabelById.get(line.productId as Id<'products'>) || ''}>{productLabelById.get(line.productId as Id<'products'>) || String(line.productId)}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span>{line.quantity}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">{line.notes || ''}</span>
+                  </TableCell>
+                  {isClaimedByMe && status.toLowerCase().includes('pending') && (
                     <TableCell>
-                      {editingIndex === idx ? (
-                        <InputWithSuggestions
-                          className="h-9"
-                          value={editForm.productId ? productLabelById.get(editForm.productId) || '' : ''}
-                          onValueChange={(v) => {
-                            const match = productOptions.find((o) => o.label === v);
-                            setEditForm((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditIndex(idx);
+                            setEditForm({ productId: line.productId as Id<'products'>, quantity: line.quantity, notes: line.notes, reason: '' });
+                            setEditOpen(true);
                           }}
-                          options={filteredEditOptions}
-                          placeholder="Select product"
-                        />
-                      ) : (
-                        <span title={productLabelById.get(line.productId as Id<'products'>) || ''}>{productLabelById.get(line.productId as Id<'products'>) || String(line.productId)}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingIndex === idx ? (
-                        <Input
-                          className="h-9"
-                          type="number"
-                          min={1}
-                          value={editForm.quantity === '' ? '' : editForm.quantity}
-                          onChange={(e) => setEditForm((f) => ({ ...f, quantity: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10)) }))}
-                        />
-                      ) : (
-                        <span>{line.quantity}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingIndex === idx ? (
-                        <Input className="h-9" value={editForm.notes || ''} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{line.notes || ''}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingIndex === idx ? (
-                        <Textarea value={editForm.reason} onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))} placeholder="Why this change?" className="h-9 resize-none text-xs" />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    {isClaimedByMe && status.toLowerCase().includes('pending') && (
-                      <TableCell>
-                        {editingIndex === idx ? (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                if (editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim()) {
-                                  const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
-                                  editLineMut({ id: requestId, screenerEmail: auth.email, index: idx, to, reason: editForm.reason.trim() })
-                                    .then(() => {
-                                      toast.success('Line updated');
-                                      setEditingIndex(null);
-                                    })
-                                    .catch(toastError);
-                                } else toast.error('Select product, qty > 0, and reason');
-                              }}
-                            >
-                              Save
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingIndex(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingIndex(idx);
-                                setEditForm({ productId: line.productId as Id<'products'>, quantity: line.quantity, notes: line.notes, reason: '' });
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => {
-                                const reason = window.prompt('Reason for removal?');
-                                if (!reason || !reason.trim()) return;
-                                removeLineMut({ id: requestId, screenerEmail: auth.email, index: idx, reason: reason.trim() })
-                                  .then(() => toast.success('Line removed'))
-                                  .catch(toastError);
-                              }}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-              {isClaimedByMe && status.toLowerCase().includes('pending') && (
-                <TableRow>
-                  <TableCell>
-                    {(() => {
-                      const selectedIds = new Set(r.productsRequested.map((l) => l.productId as Id<'products'>));
-                      const filteredAddOptions = productOptions.filter((o) => !selectedIds.has(o.id)).map((o) => o.label);
-                      return (
-                        <InputWithSuggestions
-                          className="h-9"
-                          value={newLine.productId ? productLabelById.get(newLine.productId) || '' : ''}
-                          onValueChange={(v) => {
-                            const match = productOptions.find((o) => o.label === v);
-                            setNewLine((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            setRemoveIndex(idx);
+                            setRemoveReason('');
+                            setRemoveOpen(true);
                           }}
-                          options={filteredAddOptions}
-                          placeholder="Select product"
-                        />
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      className="h-9"
-                      type="number"
-                      min={1}
-                      value={newLine.quantity === '' ? '' : newLine.quantity}
-                      onChange={(e) => setNewLine((f) => ({ ...f, quantity: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10)) }))}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input className="h-9" value={newLine.notes || ''} onChange={(e) => setNewLine((f) => ({ ...f, notes: e.target.value }))} placeholder="Notes" />
-                  </TableCell>
-                  <TableCell>
-                    <Textarea value={newLine.reason} onChange={(e) => setNewLine((f) => ({ ...f, reason: e.target.value }))} placeholder="Reason for adding" className="h-9 resize-none text-xs" />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (newLine.productId && newLine.quantity !== '' && (newLine.quantity as number) > 0 && newLine.reason.trim()) {
-                          const line = { productId: newLine.productId as Id<'products'>, quantity: newLine.quantity as number, notes: newLine.notes || undefined };
-                          addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: newLine.reason.trim() })
-                            .then(() => {
-                              toast.success('Line added');
-                              setNewLine({ productId: null, quantity: 1, notes: '', reason: '' });
-                            })
-                            .catch(toastError);
-                        } else toast.error('Select product, qty > 0, and reason');
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </TableCell>
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>
       </div>
+
+      {/* Add Product Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Product</DialogTitle>
+            <DialogDescription>Select a product to add to this request</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(() => {
+              const selectedIds = new Set(r.productsRequested.map((l) => l.productId as Id<'products'>));
+              const filteredAddOptions = productOptions.filter((o) => !selectedIds.has(o.id)).map((o) => o.label);
+              return (
+                <InputWithSuggestions
+                  className="h-9"
+                  value={addForm.productId ? productLabelById.get(addForm.productId) || '' : ''}
+                  onValueChange={(v) => {
+                    const match = productOptions.find((o) => o.label === v);
+                    setAddForm((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
+                  }}
+                  options={filteredAddOptions}
+                  placeholder="Select product"
+                />
+              );
+            })()}
+            <Input
+              className="h-9"
+              type="number"
+              min={1}
+              value={addForm.quantity === '' ? '' : addForm.quantity}
+              onChange={(e) => setAddForm((f) => ({ ...f, quantity: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10)) }))}
+              placeholder="Quantity"
+            />
+            <Input className="h-9" value={addForm.notes || ''} onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Notes (optional)" />
+            <Textarea value={addForm.reason} onChange={(e) => setAddForm((f) => ({ ...f, reason: e.target.value }))} placeholder="Reason for adding (required)" className="h-24 resize-none text-xs" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim()) {
+                  const line = { productId: addForm.productId as Id<'products'>, quantity: addForm.quantity as number, notes: addForm.notes || undefined };
+                  addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: addForm.reason.trim() })
+                    .then(() => {
+                      toast.success('Line added');
+                      setAddOpen(false);
+                      setAddForm({ productId: null, quantity: 1, notes: '', reason: '' });
+                    })
+                    .catch(toastError);
+                } else toast.error('Select product, qty > 0, and reason');
+              }}
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Product Line</DialogTitle>
+            <DialogDescription>Change product, quantity, or notes</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(() => {
+              const idx = editIndex ?? -1;
+              const selectedOtherIds = new Set(r.productsRequested.map((l, i) => (i === idx ? null : (l.productId as Id<'products'>))).filter(Boolean) as Id<'products'>[]);
+              const filteredEditOptions = productOptions.filter((o) => !selectedOtherIds.has(o.id)).map((o) => o.label);
+              return (
+                <InputWithSuggestions
+                  className="h-9"
+                  value={editForm.productId ? productLabelById.get(editForm.productId) || '' : ''}
+                  onValueChange={(v) => {
+                    const match = productOptions.find((o) => o.label === v);
+                    setEditForm((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
+                  }}
+                  options={filteredEditOptions}
+                  placeholder="Select product"
+                />
+              );
+            })()}
+            <Input
+              className="h-9"
+              type="number"
+              min={1}
+              value={editForm.quantity === '' ? '' : editForm.quantity}
+              onChange={(e) => setEditForm((f) => ({ ...f, quantity: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10)) }))}
+              placeholder="Quantity"
+            />
+            <Input className="h-9" value={editForm.notes || ''} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Notes (optional)" />
+            <Textarea
+              value={editForm.reason}
+              onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))}
+              placeholder="Reason for change (required)"
+              className="h-24 resize-none text-xs"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (editIndex === null) return;
+                if (editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim()) {
+                  const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
+                  editLineMut({ id: requestId, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() })
+                    .then(() => {
+                      toast.success('Line updated');
+                      setEditOpen(false);
+                      setEditIndex(null);
+                      setEditForm({ productId: null, quantity: 1, notes: '', reason: '' });
+                    })
+                    .catch(toastError);
+                } else toast.error('Select product, qty > 0, and reason');
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Product Dialog */}
+      <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Product</DialogTitle>
+            <DialogDescription>This will remove the product line from the request</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-muted-foreground text-xs">Product</div>
+              <div className="font-medium">
+                {(() => {
+                  const idx = removeIndex ?? -1;
+                  if (idx < 0) return '—';
+                  const pid = r.productsRequested[idx]?.productId as Id<'products'> | undefined;
+                  return (pid && productLabelById.get(pid)) || String(pid ?? '—');
+                })()}
+              </div>
+            </div>
+            <Textarea value={removeReason} onChange={(e) => setRemoveReason(e.target.value)} placeholder="Reason for removal (required)" className="h-24 resize-none text-xs" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (removeIndex === null) return;
+                if (!removeReason.trim()) {
+                  toast.error('Reason required');
+                  return;
+                }
+                removeLineMut({ id: requestId, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() })
+                  .then(() => {
+                    toast.success('Line removed');
+                    setRemoveOpen(false);
+                    setRemoveIndex(null);
+                    setRemoveReason('');
+                  })
+                  .catch(toastError);
+              }}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="rounded-lg border bg-card p-4 space-y-3">
         <div className="text-sm font-semibold">Decision & Change History</div>
         <div className="space-y-2 text-xs">
