@@ -1,7 +1,6 @@
 'use client';
 
-import { Loader, Loader2 } from 'lucide-react';
-import React, { use, useEffect, useMemo, useState, useTransition } from 'react';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { Id } from '@/convex/_generated/dataModel';
 import { Input } from '@/components/ui/input';
 import { InputWithSuggestions } from '@/components/ui/input-with-suggestions';
+import { Loader } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import dayjs from 'dayjs';
@@ -44,20 +44,22 @@ export default function ScreenerRequestPage() {
   const [showInfoForm, setShowInfoForm] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [isRequesting, startRequesting] = useTransition();
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const status = detail?.request?.status || '';
+
   const awaitingInfo = status === 'Pending Info';
+
   const claimedBy = (detail?.request as { claimedBy?: string } | undefined)?.claimedBy;
+
   const isClaimedByMe = !!claimedBy && claimedBy === auth.email;
 
   const productOptions = useMemo(() => (products || []).map((p) => ({ id: p.id as Id<'products'>, label: `${p.productId} - ${p.productName}` })), [products]);
+
   const productLabelById = useMemo(() => new Map(productOptions.map((p) => [p.id, p.label])), [productOptions]);
 
-  // Add line form state
   const [newLine, setNewLine] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
 
-  // Inline edit state per index
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
 
   useEffect(() => {
@@ -87,8 +89,6 @@ export default function ScreenerRequestPage() {
           {detail.stakeholder?.vipFlag && <Badge variant="destructive">VIP</Badge>}
         </div>
       </div>
-
-      {/* Claim banner */}
       {status.toLowerCase().includes('pending') && (
         <div className="flex items-center justify-between rounded-md border p-2 bg-card/40">
           <div className="text-[11px]">
@@ -109,7 +109,6 @@ export default function ScreenerRequestPage() {
           )}
         </div>
       )}
-
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-4 space-y-2">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] leading-relaxed">
@@ -135,7 +134,6 @@ export default function ScreenerRequestPage() {
             <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">{r.businessBrief}</div>
           </div>
         </div>
-
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <div className="text-sm font-semibold">Actions</div>
           {!isClaimedByMe || r.status.toLowerCase() === 'approved' || r.status.toLowerCase() === 'rejected' ? (
@@ -228,8 +226,6 @@ export default function ScreenerRequestPage() {
           )}
         </div>
       </div>
-
-      {/* Requested Products with inline editing */}
       <div className="rounded-lg border bg-card p-4 space-y-3">
         <div className="text-sm font-semibold">Requested Products</div>
         <div className="overflow-x-auto rounded-md border">
@@ -407,8 +403,6 @@ export default function ScreenerRequestPage() {
           </Table>
         </div>
       </div>
-
-      {/* Decision & Change History */}
       <div className="rounded-lg border bg-card p-4 space-y-3">
         <div className="text-sm font-semibold">Decision & Change History</div>
         <div className="space-y-2 text-xs">
