@@ -53,7 +53,25 @@ function ChartContainer({
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
+          // Sizing/layout
+          'relative w-full h-full text-xs min-w-0',
+          // Axis labels/ticks
+          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground",
+          // Grid lines and reference lines (no brittle stroke attribute filters)
+          "[&_.recharts-cartesian-grid_line]:stroke-border/50",
+          "[&_.recharts-reference-line_line]:stroke-border/70",
+          // Tooltip cursor (line or rectangle)
+          "[&_.recharts-curve.recharts-tooltip-cursor]:stroke-border/60",
+          "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/50",
+          // Dots and sectors outlines
+          "[&_.recharts-dot]:stroke-transparent",
+          "[&_.recharts-sector]:outline-hidden",
+          // Surfaces/layers outlines
+          "[&_.recharts-layer]:outline-hidden",
+          "[&_.recharts-surface]:outline-hidden",
+          // Radial backgrounds and polar grids
+          "[&_.recharts-radial-bar-background-sector]:fill-muted",
+          "[&_.recharts-polar-grid_line]:stroke-border/50",
           className,
         )}
         {...props}
