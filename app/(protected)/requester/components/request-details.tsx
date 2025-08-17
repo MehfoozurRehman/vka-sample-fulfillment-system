@@ -98,6 +98,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     country: '',
     applicationType: '',
     projectName: '',
+    businessBrief: '',
     productsRequested: [] as { productId: Id<'products'>; quantity: number; notes?: string }[],
   });
 
@@ -115,6 +116,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
         country: request.country || '',
         applicationType: request.applicationType || '',
         projectName: request.projectName || '',
+        businessBrief: (request as unknown as { businessBrief?: string })?.businessBrief || '',
         productsRequested: pr,
       });
       setProductLines(
@@ -150,8 +152,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (!form.country.trim()) return toast.error('Country required');
     if (!form.applicationType.trim()) return toast.error('Application type required');
     if (!form.projectName.trim()) return toast.error('Project name required');
-    if (!productLines.length) return toast.error('Add at least one product');
-    const invalid = productLines.some((l) => !l.productId || l.quantity === '' || l.quantity <= 0);
+    if (!form.businessBrief.trim()) return toast.error('Business brief required');
+    const invalid = productLines.some((l) => !l.productId || l.quantity === '' || (l.quantity as number) <= 0);
 
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
 
@@ -209,6 +211,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 <Row label="Country">{request?.country || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Application Type">{request?.applicationType || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Project Name">{request?.projectName || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Business Brief">{(request as unknown as { businessBrief?: string })?.businessBrief || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Submitted">
                   {request ? <span title={dayjs(request.createdAt).format('MMM D, YYYY HH:mm')}>{dayjs(request.createdAt).fromNow()}</span> : <span className="text-muted-foreground">—</span>}
                 </Row>
@@ -336,6 +339,15 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   <Label className="text-sm font-medium">Project Name</Label>
                   <InputWithSuggestions value={form.projectName} onValueChange={(v) => updateField('projectName', v)} options={suggestions?.projectNames || []} placeholder="Select or type" />
                 </div>
+                <div className="md:col-span-2 grid gap-2">
+                  <Label className="text-sm font-medium">Business Brief</Label>
+                  <Textarea
+                    value={form.businessBrief}
+                    onChange={(e) => updateField('businessBrief', e.target.value)}
+                    placeholder="Describe the business problem/use-case and desired outcome"
+                    className="h-28 resize-none"
+                  />
+                </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -409,7 +421,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                       </div>
                     );
                   })}
-                  {!productLines.length && <div className="text-xs text-muted-foreground">No products.</div>}
+                  {!productLines.length && <div className="text-xs text-muted-foreground">No products. You can save with only a brief.</div>}
                 </div>
               </div>
             </div>
