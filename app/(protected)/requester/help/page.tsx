@@ -1,3 +1,5 @@
+export const dynamic = 'force-static';
+
 const sections = [
   {
     id: 'overview',
@@ -211,6 +213,7 @@ export default function HelpPage() {
             </section>
           ))}
         </div>
+        <footer className="mt-16 pt-8 border-t text-xs text-muted-foreground">Last updated: {new Date().toISOString().slice(0, 10)} · Support: support@your-org.example</footer>
       </main>
       <aside className="lg:w-64 lg:sticky lg:top-20 h-fit border rounded-md p-4 bg-card/50 backdrop-blur order-first lg:order-none">
         <h2 className="text-sm font-semibold mb-2 tracking-wide">Contents</h2>
