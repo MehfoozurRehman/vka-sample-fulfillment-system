@@ -82,6 +82,8 @@ export default defineSchema({
     infoRequestMessage: v.optional(v.string()),
     infoResponseAt: v.optional(v.number()),
     infoResponseMessage: v.optional(v.string()),
+    claimedBy: v.optional(v.string()),
+    claimedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
