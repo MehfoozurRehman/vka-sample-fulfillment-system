@@ -62,7 +62,7 @@ export default function ScreenerRequestPage() {
 
   const awaitingInfo = status === 'Pending Info';
 
-  const claimedBy = (detail?.request as { claimedBy?: string } | undefined)?.claimedBy;
+  const claimedBy = detail?.request?.claimedBy;
 
   const isClaimedByMe = !!claimedBy && claimedBy === auth.email;
 
