@@ -128,7 +128,7 @@ export const add = mutation({
     country: v.string(),
     applicationType: v.string(),
     projectName: v.string(),
-    businessBrief: v.optional(v.string()),
+    businessBrief: v.string(),
     productsRequested: v.array(
       v.object({
         productId: v.id('products'),
@@ -188,7 +188,7 @@ export const add = mutation({
       country: args.country,
       applicationType: args.applicationType,
       projectName: args.projectName,
-      businessBrief: (args.businessBrief || '').trim() ? (args.businessBrief as string).trim() : undefined,
+      businessBrief: (args.businessBrief || '').trim(),
       productsRequested: args.productsRequested,
       status: 'Pending Review',
       requestedBy: args.requestedBy,
@@ -300,7 +300,7 @@ export const update = mutation({
     country: v.string(),
     applicationType: v.string(),
     projectName: v.string(),
-    businessBrief: v.optional(v.string()),
+    businessBrief: v.string(),
     productsRequested: v.array(
       v.object({
         productId: v.id('products'),
@@ -323,10 +323,7 @@ export const update = mutation({
 
     if (existingOrder) throw new Error('Cannot edit once order exists');
 
-    const patch: Record<string, unknown> = { ...rest, updatedAt: Date.now() };
-    if (typeof rest.businessBrief !== 'undefined') {
-      patch.businessBrief = (rest.businessBrief || '').trim() ? rest.businessBrief?.trim() : undefined;
-    }
+    const patch: Record<string, unknown> = { ...rest, businessBrief: rest.businessBrief.trim(), updatedAt: Date.now() };
     await ctx.db.patch(id, patch);
 
     const actorUser = await ctx.db
@@ -357,6 +354,120 @@ export const update = mutation({
           screeners.map((s) => s._id),
         );
       }
+    }
+    return { ok: true } as const;
+  },
+});
+
+// Screener-only product line edits with reason tracking
+export const addProductLine = mutation({
+  args: {
+    id: v.id('requests'),
+    screenerEmail: v.string(),
+    line: v.object({ productId: v.id('products'), quantity: v.number(), notes: v.optional(v.string()) }),
+    reason: v.string(),
+  },
+  handler: async (ctx, { id, screenerEmail, line, reason }) => {
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending')) throw new Error('Only pending requests can be edited');
+    if (!req.claimedBy || req.claimedBy !== screenerEmail) throw new Error('Only the claiming screener can edit products');
+    const now = Date.now();
+    const products = [...(req.productsRequested || [])];
+    products.push(line);
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, type: 'add', lineIndex: products.length - 1, to: line, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
+    const actor = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', screenerEmail))
+      .unique();
+    if (actor) {
+      await ctx.db.insert('auditLogs', {
+        userId: actor._id,
+        action: 'request.products.add',
+        table: 'requests',
+        recordId: id,
+        changes: { to: line, reason },
+        timestamp: now,
+      });
+    }
+    return { ok: true } as const;
+  },
+});
+
+export const editProductLine = mutation({
+  args: {
+    id: v.id('requests'),
+    screenerEmail: v.string(),
+    index: v.number(),
+    to: v.object({ productId: v.id('products'), quantity: v.number(), notes: v.optional(v.string()) }),
+    reason: v.string(),
+  },
+  handler: async (ctx, { id, screenerEmail, index, to, reason }) => {
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending')) throw new Error('Only pending requests can be edited');
+    if (!req.claimedBy || req.claimedBy !== screenerEmail) throw new Error('Only the claiming screener can edit products');
+    if (index < 0 || index >= (req.productsRequested || []).length) throw new Error('Invalid product line');
+    const now = Date.now();
+    const products = [...(req.productsRequested || [])];
+    const from = products[index];
+    products[index] = to;
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, type: 'edit', lineIndex: index, from, to, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
+    const actor = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', screenerEmail))
+      .unique();
+    if (actor) {
+      await ctx.db.insert('auditLogs', {
+        userId: actor._id,
+        action: 'request.products.edit',
+        table: 'requests',
+        recordId: id,
+        changes: { index, from, to, reason },
+        timestamp: now,
+      });
+    }
+    return { ok: true } as const;
+  },
+});
+
+export const removeProductLine = mutation({
+  args: {
+    id: v.id('requests'),
+    screenerEmail: v.string(),
+    index: v.number(),
+    reason: v.string(),
+  },
+  handler: async (ctx, { id, screenerEmail, index, reason }) => {
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending')) throw new Error('Only pending requests can be edited');
+    if (!req.claimedBy || req.claimedBy !== screenerEmail) throw new Error('Only the claiming screener can edit products');
+    if (index < 0 || index >= (req.productsRequested || []).length) throw new Error('Invalid product line');
+    const now = Date.now();
+    const products = [...(req.productsRequested || [])];
+    const from = products[index];
+    products.splice(index, 1);
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, type: 'remove', lineIndex: index, from, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
+    const actor = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', screenerEmail))
+      .unique();
+    if (actor) {
+      await ctx.db.insert('auditLogs', {
+        userId: actor._id,
+        action: 'request.products.remove',
+        table: 'requests',
+        recordId: id,
+        changes: { index, from, reason },
+        timestamp: now,
+      });
     }
     return { ok: true } as const;
   },
