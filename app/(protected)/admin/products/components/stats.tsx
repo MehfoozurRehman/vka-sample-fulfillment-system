@@ -23,7 +23,6 @@ export function Stats(props: { data: ProductType[] } & React.HTMLAttributes<HTML
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{categories.toLocaleString()}</CardTitle>
         </CardHeader>
       </Card>
-      {/* Locations removed */}
     </div>
   );
 }
