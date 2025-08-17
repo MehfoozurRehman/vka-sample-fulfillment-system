@@ -39,7 +39,10 @@ async function getUsersByRole(ctx: { db: DatabaseReader | DatabaseWriter }, role
   // Prefer an index on `activeRole` for efficient queries. If no matches, fall back to scanning
   // users to find roles that may be stored in the array field.
   try {
-    const fromActive = await ctx.db.query('users').withIndex('by_activeRole', (q) => q.eq('activeRole', role)).collect();
+    const fromActive = await ctx.db
+      .query('users')
+      .withIndex('by_activeRole', (q) => q.eq('activeRole', role))
+      .collect();
     if (fromActive && fromActive.length) return fromActive.filter((u) => !u.deletedAt && u.active);
   } catch {
     // ignore
@@ -126,7 +129,7 @@ export const approve = mutation({
     if (requesterUser) {
       await sendInternalNotifications(ctx, reviewer._id, 'request.approved', `Request ${req.requestId} approved.`, [requesterUser._id]);
     }
-  const packers = await getUsersByRole(ctx, 'packer');
+    const packers = await getUsersByRole(ctx, 'packer');
     if (packers.length) {
       await sendInternalNotifications(
         ctx,
@@ -138,9 +141,9 @@ export const approve = mutation({
     }
 
     try {
-  const stakeholder = await ctx.db.get(req.companyId);
-  const packerEmails = (await getUsersByRole(ctx, 'packer')).map((u) => u.email);
-  const adminEmails = (await getUsersByRole(ctx, 'admin')).map((u) => u.email);
+      const stakeholder = await ctx.db.get(req.companyId);
+      const packerEmails = (await getUsersByRole(ctx, 'packer')).map((u) => u.email);
+      const adminEmails = (await getUsersByRole(ctx, 'admin')).map((u) => u.email);
 
       const to = uniqEmails([req.email]);
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...packerEmails, ...(stakeholder?.vipFlag ? adminEmails : [])]);
@@ -163,8 +166,8 @@ export const approve = mutation({
     } catch {}
 
     try {
-  const stakeholder = await ctx.db.get(req.companyId);
-  const packerEmails = (await getUsersByRole(ctx, 'packer')).map((u) => u.email);
+      const stakeholder = await ctx.db.get(req.companyId);
+      const packerEmails = (await getUsersByRole(ctx, 'packer')).map((u) => u.email);
       const requesterUser = await ctx.db
         .query('users')
         .withIndex('by_email', (q) => q.eq('email', req.requestedBy))
@@ -230,8 +233,8 @@ export const reject = mutation({
     }
 
     try {
-  const stakeholder = await ctx.db.get(req.companyId);
-  const adminEmails = (await getUsersByRole(ctx, 'admin')).map((u) => u.email);
+      const stakeholder = await ctx.db.get(req.companyId);
+      const adminEmails = (await getUsersByRole(ctx, 'admin')).map((u) => u.email);
 
       const to = uniqEmails([req.email]);
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
@@ -354,7 +357,7 @@ export const respondInfo = mutation({
       });
     }
 
-  const screeners = await getUsersByRole(ctx, 'screener');
+    const screeners = await getUsersByRole(ctx, 'screener');
     if (owner && screeners.length) {
       await sendInternalNotifications(
         ctx,
@@ -366,8 +369,8 @@ export const respondInfo = mutation({
     }
 
     try {
-  const stakeholder = await ctx.db.get(req.companyId);
-  const screenersEmails = (await getUsersByRole(ctx, 'screener')).map((u) => u.email);
+      const stakeholder = await ctx.db.get(req.companyId);
+      const screenersEmails = (await getUsersByRole(ctx, 'screener')).map((u) => u.email);
       const to = uniqEmails(screenersEmails);
       const cc = uniqEmails([stakeholder?.salesRepEmail]);
       const subject = `VKA Sample Request [${req.requestId}] – Information Provided`;
