@@ -35,6 +35,7 @@ export function AddRequest() {
   const [requestId, setRequestId] = useState('');
 
   const [items, setItems] = useState<{ productId: string; quantity: number | ''; notes: string }[]>([]);
+  const [businessBrief, setBusinessBrief] = useState('');
 
   const [companyId, setCompanyId] = useState<string>('');
 
@@ -46,6 +47,7 @@ export function AddRequest() {
     if (open) {
       setRequestId(nextId || '');
       setItems([]);
+      setBusinessBrief('');
     }
   }, [open, nextId]);
 
@@ -72,13 +74,12 @@ export function AddRequest() {
       return;
     }
 
-    if (!items.length) {
-      toast.error('Add at least one product');
-
+    if (!businessBrief.trim()) {
+      toast.error('Please add a brief');
       return;
     }
 
-    const invalid = items.some((i) => !i.productId || i.quantity === '' || i.quantity <= 0);
+    const invalid = items.some((i) => !i.productId || i.quantity === '' || (i.quantity as number) <= 0);
 
     if (invalid) {
       toast.error('Each line must have product and quantity > 0');
@@ -88,14 +89,13 @@ export function AddRequest() {
 
     startTransition(async () => {
       try {
-        const productsRequested = items.map((i) => {
-          const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
-
-          if (!pid) throw new Error('Invalid product selection');
-          if (i.quantity === '' || i.quantity <= 0) throw new Error('Invalid quantity');
-
-          return { productId: pid, quantity: i.quantity as number, notes: i.notes || undefined };
-        });
+        const productsRequested = items
+          .filter((i) => i.productId && i.quantity !== '' && (i.quantity as number) > 0)
+          .map((i) => {
+            const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
+            if (!pid) throw new Error('Invalid product selection');
+            return { productId: pid, quantity: i.quantity as number, notes: i.notes || undefined };
+          });
 
         await addReq({
           userId: auth.id,
@@ -107,6 +107,7 @@ export function AddRequest() {
           country: (event.currentTarget.elements.namedItem('country') as HTMLInputElement).value.trim(),
           applicationType: (event.currentTarget.elements.namedItem('applicationType') as HTMLInputElement).value.trim(),
           projectName: (event.currentTarget.elements.namedItem('projectName') as HTMLInputElement).value.trim(),
+          businessBrief: businessBrief.trim(),
           productsRequested,
           requestedBy: auth.email,
         });
@@ -167,6 +168,18 @@ export function AddRequest() {
               <Label htmlFor="projectName">Project Name</Label>
               <InputWithSuggestions id="projectName" name="projectName" options={projectNameOptions} placeholder="Select or type" />
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="businessBrief">Business Brief</Label>
+            <Textarea
+              id="businessBrief"
+              name="businessBrief"
+              value={businessBrief}
+              onChange={(e) => setBusinessBrief(e.target.value)}
+              placeholder="Describe the business problem/use-case and desired outcome"
+              className="min-h-24 resize-y"
+            />
+            <span className="text-xs text-muted-foreground">Required. Products are optional and can be suggested later.</span>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -234,7 +247,7 @@ export function AddRequest() {
                   </div>
                 );
               })}
-              {!items.length && <div className="text-sm text-muted-foreground">No products added yet.</div>}
+              {!items.length && <div className="text-sm text-muted-foreground">No products added yet. You can submit with only a brief.</div>}
             </div>
           </div>
           <DialogFooter>
