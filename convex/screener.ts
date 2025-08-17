@@ -70,7 +70,6 @@ export const approve = mutation({
     await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewedByUserId: reviewer._id, reviewDate: now, reviewNotes: notes, updatedAt: now });
 
     const width = 5;
-    // Find latest order by orderId index to compute next sequence number
     const latestOrder = await ctx.db.query('orders').withIndex('by_orderId').order('desc').first();
     let max = 0;
     if (latestOrder && latestOrder.orderId) {
