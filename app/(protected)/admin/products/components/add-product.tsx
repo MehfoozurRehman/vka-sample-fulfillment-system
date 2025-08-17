@@ -59,8 +59,6 @@ export function AddProduct() {
 
       const category = (formData.get('category') as string)?.trim();
 
-      const location = (formData.get('location') as string)?.trim();
-
       if (!productName) {
         toast.error('Product name is required');
 
@@ -73,14 +71,8 @@ export function AddProduct() {
         return;
       }
 
-      if (!location) {
-        toast.error('Location is required');
-
-        return;
-      }
-
       try {
-        await add({ userId: auth.id, productId: productId?.trim() || '', productName, category, location });
+        await add({ userId: auth.id, productId: productId?.trim() || '', productName, category });
         setOpen(false);
         toast.success('Product added successfully');
       } catch (error) {
@@ -116,10 +108,6 @@ export function AddProduct() {
             <div className="grid gap-3">
               <Label htmlFor="category">Category</Label>
               <InputWithSuggestions id="category" name="category" placeholder="Select or type a category" options={categoryOptions} inputProps={{ spellCheck: false }} />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="location">Location</Label>
-              <Input id="location" name="location" />
             </div>
           </div>
           <DialogFooter className="mt-4">
