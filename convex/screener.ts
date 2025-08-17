@@ -35,6 +35,28 @@ async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, emai
   return user;
 }
 
+export const claim = mutation({
+  args: { id: v.id('requests'), screenerEmail: v.string() },
+  handler: async (ctx, { id, screenerEmail }) => {
+    const user = await assertScreener(ctx, screenerEmail);
+    const req = await ctx.db.get(id);
+    if (!req || req.deletedAt) throw new Error('Request not found');
+    if (!req.status.toLowerCase().includes('pending')) throw new Error('Only pending requests can be claimed');
+    if (req.claimedBy && req.claimedBy !== screenerEmail) throw new Error('Request already claimed by another screener');
+    const now = Date.now();
+    await ctx.db.patch(id, { claimedBy: screenerEmail, claimedAt: now, updatedAt: now });
+    await ctx.db.insert('auditLogs', {
+      userId: user._id,
+      action: 'claimRequest',
+      table: 'requests',
+      recordId: id,
+      changes: { claimedBy: screenerEmail },
+      timestamp: now,
+    });
+    return { ok: true } as const;
+  },
+});
+
 export const approve = mutation({
   args: { id: v.id('requests'), reviewedBy: v.string(), notes: v.optional(v.string()) },
   handler: async (ctx, { id, reviewedBy, notes }) => {
@@ -42,6 +64,7 @@ export const approve = mutation({
     const req = await ctx.db.get(id);
     if (!req || req.deletedAt) throw new Error('Request not found');
     if (!req.status.toLowerCase().includes('pending')) throw new Error('Already reviewed');
+    if (req.claimedBy && req.claimedBy !== reviewedBy) throw new Error('This request is claimed by another screener');
 
     const now = Date.now();
     await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewDate: now, reviewNotes: notes, updatedAt: now });
@@ -167,6 +190,7 @@ export const reject = mutation({
     const req = await ctx.db.get(id);
     if (!req || req.deletedAt) throw new Error('Request not found');
     if (!req.status.toLowerCase().includes('pending')) throw new Error('Already reviewed');
+    if (req.claimedBy && req.claimedBy !== reviewedBy) throw new Error('This request is claimed by another screener');
     const now = Date.now();
     await ctx.db.patch(id, {
       status: 'Rejected',
@@ -229,6 +253,7 @@ export const requestInfo = mutation({
     const req = await ctx.db.get(id);
     if (!req || req.deletedAt) throw new Error('Request not found');
     if (!req.status.toLowerCase().includes('pending')) throw new Error('Cannot request info after decision');
+    if (req.claimedBy && req.claimedBy !== screenerEmail) throw new Error('This request is claimed by another screener');
     const now = Date.now();
     await ctx.db.patch(id, {
       status: 'Pending Info',
@@ -600,11 +625,28 @@ export const detail = query({
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const allLogs = await ctx.db
+      .query('auditLogs')
+      .withIndex('by_table', (q) => q.eq('table', 'requests'))
+      .collect();
+    const relatedLogs = allLogs
+      .filter((l) => String(l.recordId) === String(id))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 100)
+      .map((l) => ({
+        action: l.action,
+        timestamp: l.timestamp,
+        changes: l.changes,
+        userId: l.userId,
+      }));
+
     return {
       request: r,
       requester: r.requestedBy,
       stakeholder,
       productsDetailed,
+      productChangeHistory: r.productChangeHistory || [],
+      auditLogs: relatedLogs,
       lastFive,
       totalSamples12mo,
       decisionCounts: { approved, rejected, pending },

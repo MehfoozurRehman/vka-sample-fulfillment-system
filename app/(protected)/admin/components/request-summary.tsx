@@ -22,9 +22,13 @@ export default function RequestSummary({ requestId }: { requestId: string }) {
   const detail = useQuery(api.screener.detail, { id }) as DetailShape | undefined;
 
   const auth = useAuth();
+
   const setBriefMut = useMutation(api.request.setBusinessBrief);
+
   const [editingBrief, setEditingBrief] = useState(false);
+
   const [briefText, setBriefText] = useState('');
+
   const [isSavingBrief, startSavingBrief] = useTransition();
 
   const order = useQuery(api.request.orderSummary, { requestId: id }) as

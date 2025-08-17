@@ -35,6 +35,7 @@ export function AddRequest() {
   const [requestId, setRequestId] = useState('');
 
   const [items, setItems] = useState<{ productId: string; quantity: number | ''; notes: string }[]>([]);
+
   const [businessBrief, setBusinessBrief] = useState('');
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -76,6 +77,7 @@ export function AddRequest() {
 
     if (!businessBrief.trim()) {
       toast.error('Please add a brief');
+
       return;
     }
 
@@ -93,7 +95,9 @@ export function AddRequest() {
           .filter((i) => i.productId && i.quantity !== '' && (i.quantity as number) > 0)
           .map((i) => {
             const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
+
             if (!pid) throw new Error('Invalid product selection');
+
             return { productId: pid, quantity: i.quantity as number, notes: i.notes || undefined };
           });
 
@@ -183,9 +187,9 @@ export function AddRequest() {
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="font-medium">Products Requested</Label>
+              <Label className="font-medium">Suggested Flavours</Label>
               <Button type="button" size="sm" variant="outline" onClick={handleAddItem}>
-                Add Product
+                Add
               </Button>
             </div>
             <div className="flex flex-col gap-4">
