@@ -151,6 +151,7 @@ export default defineSchema({
   })
     .index('by_status', ['status', 'createdAt'])
     .index('by_requestId', ['requestId'])
+    .index('by_orderId', ['orderId'])
     .index('by_createdAt', ['createdAt'])
     .index('by_requestId_status', ['requestId', 'status'])
     .index('by_packedBy', ['packedBy'])

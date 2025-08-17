@@ -100,16 +100,13 @@ export const recent = query({
 export const nextId = query({
   args: {},
   handler: async (ctx) => {
-    const items = await ctx.db.query('requests').collect();
     const prefix = 'REQ-';
     const width = 5;
+    const latest = await ctx.db.query('requests').withIndex('by_requestId').order('desc').first();
     let maxNum = 0;
-    for (const r of items) {
-      const m = /^REQ-(\d{5})$/.exec(r.requestId || '');
-      if (m) {
-        const n = parseInt(m[1], 10);
-        if (n > maxNum) maxNum = n;
-      }
+    if (latest && latest.requestId) {
+      const m = /^REQ-(\d{5})$/.exec(latest.requestId || '');
+      if (m) maxNum = parseInt(m[1], 10);
     }
     const next = maxNum + 1;
     const padded = String(next).padStart(width, '0');
@@ -147,16 +144,13 @@ export const add = mutation({
 
     let requestId = (args.requestId || '').trim();
     if (!requestId || requestId.toUpperCase() === 'AUTO') {
-      const all = await ctx.db.query('requests').collect();
       const prefix = 'REQ-';
       const width = 5;
+      const latest = await ctx.db.query('requests').withIndex('by_requestId').order('desc').first();
       let maxNum = 0;
-      for (const r of all) {
-        const m = /^REQ-(\d{5})$/.exec(r.requestId || '');
-        if (m) {
-          const n = parseInt(m[1], 10);
-          if (n > maxNum) maxNum = n;
-        }
+      if (latest && latest.requestId) {
+        const m = /^REQ-(\d{5})$/.exec(latest.requestId || '');
+        if (m) maxNum = parseInt(m[1], 10);
       }
       const next = maxNum + 1;
       const padded = String(next).padStart(width, '0');
