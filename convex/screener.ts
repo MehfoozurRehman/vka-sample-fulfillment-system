@@ -44,7 +44,7 @@ export const claim = mutation({
     if (!req.status.toLowerCase().includes('pending')) throw new Error('Only pending requests can be claimed');
     if (req.claimedBy && req.claimedBy !== screenerEmail) throw new Error('Request already claimed by another screener');
     const now = Date.now();
-    await ctx.db.patch(id, { claimedBy: screenerEmail, claimedAt: now, updatedAt: now });
+    await ctx.db.patch(id, { claimedBy: screenerEmail, claimedByUserId: user._id, claimedAt: now, updatedAt: now });
     await ctx.db.insert('auditLogs', {
       userId: user._id,
       action: 'claimRequest',
@@ -67,7 +67,7 @@ export const approve = mutation({
     if (req.claimedBy && req.claimedBy !== reviewedBy) throw new Error('This request is claimed by another screener');
 
     const now = Date.now();
-    await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewDate: now, reviewNotes: notes, updatedAt: now });
+    await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewedByUserId: reviewer._id, reviewDate: now, reviewNotes: notes, updatedAt: now });
 
     let orderId = 'ORD-00001';
     const existing = await ctx.db.query('orders').collect();
@@ -195,6 +195,7 @@ export const reject = mutation({
     await ctx.db.patch(id, {
       status: 'Rejected',
       reviewedBy,
+      reviewedByUserId: reviewer._id,
       reviewDate: now,
       rejectionReason: reason,
       reviewNotes: notes,
@@ -258,6 +259,7 @@ export const requestInfo = mutation({
     await ctx.db.patch(id, {
       status: 'Pending Info',
       infoRequestedBy: screenerEmail,
+      infoRequestedByUserId: reviewer._id,
       infoRequestedAt: now,
       infoRequestMessage: message,
       updatedAt: now,
@@ -547,8 +549,9 @@ export const recentDecisions = query({
 });
 
 export const detail = query({
-  args: { id: v.id('requests') },
+  args: { id: v.union(v.id('requests'), v.null()) },
   handler: async (ctx, { id }) => {
+    if (!id) return null;
     const r = await ctx.db.get(id);
     if (!r || r.deletedAt) return null;
     const stakeholder = await ctx.db.get(r.companyId);
