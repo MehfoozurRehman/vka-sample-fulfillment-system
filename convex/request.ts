@@ -102,7 +102,6 @@ export const nextId = query({
   handler: async (ctx) => {
     const prefix = 'REQ-';
     const width = 5;
-    // Find the most recent request by requestId index (descending) and derive next number
     const latest = await ctx.db.query('requests').withIndex('by_requestId').order('desc').first();
     let maxNum = 0;
     if (latest && latest.requestId) {
