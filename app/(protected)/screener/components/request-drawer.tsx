@@ -38,6 +38,8 @@ export default function RequestDrawer({
   reviewerEmail: string;
   afterAction: (processedId: Id<'requests'>, action: 'approve' | 'reject') => void;
 }) {
+  const auth = useAuth();
+
   const approveMut = useMutation(api.screener.approve);
 
   const rejectMut = useMutation(api.screener.reject);
@@ -57,9 +59,7 @@ export default function RequestDrawer({
   const [isRequesting, startRequesting] = useTransition();
 
   const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
-  const auth = useAuth();
 
-  // Business Brief editing state
   const [editingBrief, setEditingBrief] = useState(false);
   const [briefText, setBriefText] = useState('');
   const [isSavingBrief, startSavingBrief] = useTransition();
@@ -87,7 +87,6 @@ export default function RequestDrawer({
 
   const awaitingInfo = status === 'Pending Info';
 
-  // Keep brief text in sync when switching requests
   useEffect(() => {
     const currentBrief = ((detailData?.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
     if (!editingBrief) setBriefText(currentBrief);
