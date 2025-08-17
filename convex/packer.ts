@@ -143,6 +143,7 @@ export const markPacked = mutation({
     await ctx.db.patch(id, {
       status: 'Packed',
       packedBy,
+      packedByUserId: user._id,
       packedDate: now,
       lotNumbers: JSON.stringify(lotNumbers),
       documentsConfirmed: allTrue,
@@ -204,16 +205,27 @@ export const markPacked = mutation({
 });
 
 export const myHistory = query({
-  args: { email: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { email, limit }) => {
+  args: { email: v.optional(v.string()), userId: v.optional(v.id('users')), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, userId, limit }) => {
     const cap = Math.min(limit ?? 200, 500);
-    const orders = await ctx.db
-      .query('orders')
-      .withIndex('by_packedBy', (q) => q.eq('packedBy', email))
-      .order('desc')
-      .collect();
+    let orders: Doc<'orders'>[] = [];
+    if (userId) {
+      orders = await ctx.db
+        .query('orders')
+        .withIndex('by_packedByUserId', (q) => q.eq('packedByUserId', userId))
+        .order('desc')
+        .collect();
+    } else if (email) {
+      orders = await ctx.db
+        .query('orders')
+        .withIndex('by_packedBy', (q) => q.eq('packedBy', email))
+        .order('desc')
+        .collect();
+    } else {
+      orders = [];
+    }
     const trimmed = orders.filter((o) => !o.deletedAt && o.packedDate).slice(0, cap);
-    const reqs = await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)));
+    const reqs = (await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)))) as Array<Doc<'requests'> | null>;
     return trimmed.map((o, i) => ({
       id: o._id,
       orderId: o.orderId,
