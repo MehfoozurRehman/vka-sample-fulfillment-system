@@ -394,8 +394,14 @@ export default function ScreenerRequestPage() {
             </Button>
             <Button
               onClick={() => {
-                if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim())) {
-                  toast.error('Select product, qty > 0, and reason');
+                if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0)) {
+                  toast.error('Select product, qty > 0');
+
+                  return;
+                }
+
+                if (!addForm.reason.trim()) {
+                  toast.error('Reason for adding is required');
 
                   return;
                 }
@@ -472,8 +478,14 @@ export default function ScreenerRequestPage() {
               onClick={() => {
                 if (editIndex === null) return;
 
-                if (!(editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim())) {
-                  toast.error('Select product, qty > 0, and reason');
+                if (!(editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0)) {
+                  toast.error('Select product and qty > 0');
+
+                  return;
+                }
+
+                if (!editForm.reason.trim()) {
+                  toast.error('Reason for editing is required');
 
                   return;
                 }
