@@ -30,7 +30,6 @@ type ProductListItem = {
   productId: string;
   productName: string;
   category: string;
-  location: string;
   createdAt: number;
   updatedAt: number;
 };
@@ -294,7 +293,6 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                             <span className="font-medium">{prod ? `${prod.productName} (${prod.productId})` : 'Loading...'}</span>
                             <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">Qty: {p.quantity}</span>
                             {prod && <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{prod.category}</span>}
-                            {prod && <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{prod.location}</span>}
                           </div>
                           {p.notes && <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{p.notes}</p>}
                         </li>
