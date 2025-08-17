@@ -12,7 +12,6 @@ export default function HelpPage() {
         <h1 className="text-3xl font-bold tracking-tight">Screener Help & Guide</h1>
         <p className="text-muted-foreground text-sm">How to use the screening workspace to review and process incoming sample requests.</p>
       </header>
-
       <Section title="1. Overview" desc="High‑level purpose of the Screener workspace">
         <p>
           The Screener dashboard centralizes all <strong>pending sample requests</strong> that require an approval or rejection decision. It provides:
@@ -27,7 +26,6 @@ export default function HelpPage() {
           </li>
         </ul>
       </Section>
-
       <Section title="2. KPI Cards" desc="Meaning of the top statistic tiles">
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           {[
@@ -98,7 +96,6 @@ export default function HelpPage() {
           </p>
         </div>
       </Section>
-
       <Section title="5. Request Drawer" desc="Detailed review & action panel">
         <ol className="list-decimal pl-5 space-y-2 text-sm">
           <li>
@@ -132,7 +129,6 @@ export default function HelpPage() {
           </li>
         </ol>
       </Section>
-
       <Section title="6. Best Practices" desc="Operational recommendations">
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li>
@@ -144,7 +140,6 @@ export default function HelpPage() {
           <li>Maintain consistent terminology in rejection reasons (e.g. &ldquo;Incomplete application data&rdquo; vs varied phrasing).</li>
         </ul>
       </Section>
-
       <Section title="7. FAQ" desc="Common questions">
         <dl className="space-y-4 text-sm">
           <div>
@@ -161,8 +156,6 @@ export default function HelpPage() {
           </div>
         </dl>
       </Section>
-
-      <footer className="text-[11px] text-muted-foreground">Need more help? Contact the platform team or open an internal ticket referencing the request id.</footer>
     </div>
   );
 }
