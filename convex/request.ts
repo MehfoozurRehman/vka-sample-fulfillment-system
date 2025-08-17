@@ -128,6 +128,7 @@ export const add = mutation({
     country: v.string(),
     applicationType: v.string(),
     projectName: v.string(),
+    businessBrief: v.optional(v.string()),
     productsRequested: v.array(
       v.object({
         productId: v.id('products'),
@@ -164,7 +165,10 @@ export const add = mutation({
 
     const dayKey = dayjs().format('YYYYMMDD');
     const sortedProductIds = [...args.productsRequested.map((p) => String(p.productId))].sort();
-    const raw = `${args.companyId}|${sortedProductIds.join(',')}|${dayKey}`;
+    // If no products are provided, include the businessBrief in the duplicate hash so
+    // multiple brief-only submissions for the same company on the same day are not blocked.
+    const briefKey = sortedProductIds.length === 0 ? (args.businessBrief || '').trim() : '';
+    const raw = `${args.companyId}|${sortedProductIds.join(',')}|${briefKey}|${dayKey}`;
     const duplicateHash = await sha256Hex(raw);
 
     const existingSameDay = await ctx.db
@@ -186,6 +190,7 @@ export const add = mutation({
       country: args.country,
       applicationType: args.applicationType,
       projectName: args.projectName,
+      businessBrief: (args.businessBrief || '').trim() ? (args.businessBrief as string).trim() : undefined,
       productsRequested: args.productsRequested,
       status: 'Pending Review',
       requestedBy: args.requestedBy,
@@ -297,6 +302,7 @@ export const update = mutation({
     country: v.string(),
     applicationType: v.string(),
     projectName: v.string(),
+    businessBrief: v.optional(v.string()),
     productsRequested: v.array(
       v.object({
         productId: v.id('products'),
@@ -319,7 +325,11 @@ export const update = mutation({
 
     if (existingOrder) throw new Error('Cannot edit once order exists');
 
-    await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+    const patch: Record<string, unknown> = { ...rest, updatedAt: Date.now() };
+    if (typeof rest.businessBrief !== 'undefined') {
+      patch.businessBrief = (rest.businessBrief || '').trim() ? rest.businessBrief?.trim() : undefined;
+    }
+    await ctx.db.patch(id, patch);
 
     const actorUser = await ctx.db
       .query('users')
@@ -350,6 +360,25 @@ export const update = mutation({
         );
       }
     }
+    return { ok: true } as const;
+  },
+});
+
+export const setBusinessBrief = mutation({
+  args: { userId: v.id('users'), id: v.id('requests'), businessBrief: v.string() },
+  handler: async (ctx, { userId, id, businessBrief }) => {
+    const r = await ctx.db.get(id);
+    if (!r || r.deletedAt) throw new Error('Request not found');
+    const now = Date.now();
+    await ctx.db.patch(id, { businessBrief: businessBrief.trim() || undefined, updatedAt: now });
+    await ctx.db.insert('auditLogs', {
+      userId,
+      action: 'setBusinessBrief',
+      table: 'requests',
+      recordId: id,
+      changes: { businessBrief: businessBrief.trim() },
+      timestamp: now,
+    });
     return { ok: true } as const;
   },
 });
