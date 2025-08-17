@@ -25,7 +25,7 @@ export default function ScreenerRequestPage() {
 
   const searchParams = useSearchParams();
 
-  const requestId = searchParams.get('id') as unknown as Id<'requests'>;
+  const requestId = searchParams.get('id') as Id<'requests'>;
 
   const { data: detail } = useQueryWithStatus(api.screener.detail, { id: requestId });
   const { data: products } = useQueryWithStatus(api.product.list, {});
