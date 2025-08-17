@@ -5,28 +5,28 @@ export default function HelpPage() {
       title: 'Dashboard Overview',
       content: (
         <>
-          <p className="mb-4">After login as an Admin you land on the Dashboard. It presents high‑level operational metrics so you can immediately assess platform health.</p>
+          <p className="mb-4">After signing in as an Admin you land on the Dashboard. It presents live operational summaries so you can quickly understand platform health and priorities.</p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
-              <strong>Users</strong>: Total registered users and number currently active.
+              <strong>Users</strong>: Total registered users and recent active users.
             </li>
             <li>
-              <strong>Stakeholders</strong>: Total stakeholder entities with VIP count.
+              <strong>Stakeholders</strong>: Registered companies and VIP counts.
             </li>
             <li>
-              <strong>Products</strong>: Total products plus aggregate request count.
+              <strong>Products</strong>: Total product count and top categories.
             </li>
             <li>
-              <strong>Orders</strong>: Total orders with how many are still open.
+              <strong>Orders</strong>: Total orders and how many are in progress.
             </li>
             <li>
-              <strong>Pending Requests</strong>: Items awaiting screening / action.
+              <strong>Pending Requests</strong>: Immediate queue of requests needing attention.
             </li>
             <li>
-              <strong>Audit Logs</strong>: Total recorded change events.
+              <strong>Audit Logs</strong>: Recent recorded actions for quick traceability.
             </li>
           </ul>
-          <p className="text-sm text-muted-foreground">Each card updates in real time (Convex reactive queries). Use the metrics to prioritize workload (e.g. spikes in Pending Requests).</p>
+          <p className="text-sm text-muted-foreground">Use the cards to prioritise work — for example, click Pending Requests to open the requests list filtered to items requiring action.</p>
         </>
       ),
     },
@@ -35,19 +35,21 @@ export default function HelpPage() {
       title: 'Recent Requests Table',
       content: (
         <>
-          <p className="mb-3 text-sm">Shows the latest submissions and their progression. Columns include identifiers and operational fields for quick triage.</p>
+          <p className="mb-3 text-sm">Shows the latest submissions and their progression. Use this table to triage, assign, and act on requests.</p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
               <strong>ID</strong>: System generated <code className="font-mono">requestId</code>.
             </li>
             <li>
-              <strong>Company / Contact</strong>: Source stakeholder & contact person.
+              <strong>Company / Contact</strong>: Resolved from <code className="font-mono">companyId</code> (references <code className="font-mono">stakeholders</code>) and the contact fields on the
+              request.
             </li>
             <li>
               <strong>Type</strong>: Application or request category.
             </li>
             <li>
-              <strong>Products</strong>: Count of line items.
+              <strong>Products</strong>: Items under <code className="font-mono">productsRequested</code> (each line references a product id in <code className="font-mono">products</code> plus a
+              quantity).
             </li>
             <li>
               <strong>Status</strong>: Overall business status (see Status Codes).
@@ -56,14 +58,15 @@ export default function HelpPage() {
               <strong>Stage</strong>: Processing pipeline stage (screening, packing, shipping, etc.).
             </li>
             <li>
-              <strong>Assigned To</strong>: Responsible user or Unassigned.
+              <strong>Assigned To</strong>: Responsible user (may show <code className="font-mono">claimedByUserId</code> or <code className="font-mono">requestedByUserId</code> depending on context).
             </li>
             <li>
-              <strong>Created</strong>: Submission timestamp (localized).
+              <strong>Created</strong>: Submission timestamp (localized, stored in <code className="font-mono">createdAt</code>).
             </li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            Spinner icon appears while data is loading (<code className="font-mono">IconReload</code>). Empty state clarifies absence of recent records.
+            Actions available from each row include Claim, Review, Request Info, and Create Order (when applicable). Use the filters at the top of the table (status, stakeholder, date) to narrow the
+            list.
           </p>
         </>
       ),
@@ -73,7 +76,7 @@ export default function HelpPage() {
       title: 'Audit Logs Panel',
       content: (
         <>
-          <p className="mb-3 text-sm">Displays the most recent change events for transparency and traceability.</p>
+          <p className="mb-3 text-sm">Displays recent change events. Use Audit Logs to confirm who performed an action and when it occurred.</p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
               <strong>Action</strong>: Verb describing the change (CREATE / UPDATE / DELETE / ASSIGN etc.).
@@ -91,7 +94,9 @@ export default function HelpPage() {
               <strong>Timestamp</strong>: Localized date/time of the event.
             </li>
           </ul>
-          <p className="text-sm text-muted-foreground">Use Audit Logs to investigate data anomalies or confirm policy compliance.</p>
+          <p className="text-sm text-muted-foreground">
+            Tip: filter by user or table to focus your investigation. If you need assistance interpreting a log entry, capture the timestamp and record ID and contact support.
+          </p>
         </>
       ),
     },
@@ -100,7 +105,7 @@ export default function HelpPage() {
       title: 'Distribution Cards',
       content: (
         <>
-          <p className="mb-3 text-sm">Below the primary panels you will find distribution summaries to highlight concentration patterns.</p>
+          <p className="mb-3 text-sm">Below the primary panels are distribution summaries showing quick breakdowns across key dimensions to highlight concentration patterns.</p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
               <strong>Users by Role</strong>: Top roles with counts.
@@ -112,7 +117,9 @@ export default function HelpPage() {
               <strong>Requests by Status</strong>: Most frequent current statuses.
             </li>
           </ul>
-          <p className="text-sm text-muted-foreground">Only top N (default 3) entries are shown for quick scanning; expand functionality can be added later if needed.</p>
+          <p className="text-sm text-muted-foreground">
+            Only a short list (top items) is shown here for quick scanning; use the dedicated pages under <code className="font-mono">/admin</code> if you need full lists or exports.
+          </p>
         </>
       ),
     },
@@ -139,7 +146,7 @@ export default function HelpPage() {
             </li>
           </ol>
           <p className="text-sm text-muted-foreground">
-            Stages map to the <code className="font-mono">stage</code> column allowing granular tracking separate from high level status.
+            The lifecycle maps to the visible status and assigned users shown on the request details screen. Use the request timeline to see when it moved between stages and who acted on it.
           </p>
         </>
       ),
@@ -149,9 +156,7 @@ export default function HelpPage() {
       title: 'Status Codes & Badges',
       content: (
         <>
-          <p className="mb-3 text-sm">
-            Badges visually encode progress or risk. Color mapping (via <code className="font-mono">StatusPill</code>) is centralized and heuristic:
-          </p>
+          <p className="mb-3 text-sm">Badges encode progress or risk and are shown next to status fields across the app.</p>
           <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
             <li>
               <strong>Outline</strong>: Pending variants (e.g. Pending Review).
@@ -166,7 +171,11 @@ export default function HelpPage() {
               <strong>Secondary</strong>: Neutral / informational states.
             </li>
           </ul>
-          <p className="text-sm text-muted-foreground">Add new statuses by extending logic inside the badge function ensuring consistent visual semantics.</p>
+          <p className="text-sm text-muted-foreground">
+            Common statuses you will see include: <code className="font-mono">Pending</code>, <code className="font-mono">InfoRequested</code>, <code className="font-mono">UnderReview</code>,{' '}
+            <code className="font-mono">Approved</code>, <code className="font-mono">Rejected</code>, <code className="font-mono">Claimed</code>, <code className="font-mono">Packed</code>, and{' '}
+            <code className="font-mono">Shipped</code>. Hover or consult the status legend if you need clarification on a badge.
+          </p>
         </>
       ),
     },
@@ -183,7 +192,9 @@ export default function HelpPage() {
             <li>Perform user / stakeholder maintenance (add / disable as required).</li>
             <li>Export data or escalate anomalies to stakeholders.</li>
           </ol>
-          <p className="text-sm text-muted-foreground">Keep cycle times low by addressing unassigned and pending items early.</p>
+          <p className="text-sm text-muted-foreground">
+            Keep cycle times low by addressing unassigned and pending items early. Use the admin pages (Users, Stakeholders, Requests) to perform maintenance actions.
+          </p>
         </>
       ),
     },
@@ -195,7 +206,8 @@ export default function HelpPage() {
           <details className="mb-3 border rounded p-3 bg-card">
             <summary className="cursor-pointer font-medium">A metric shows “—”. Why?</summary>
             <p className="mt-2 text-sm text-muted-foreground">
-              The underlying query has not returned yet (loading) or there is no data. Confirm network connectivity; then verify data exists in Convex.
+              Either the data is still loading, or there is no data to display. Try refreshing the page; if the value still shows a dash, collect the timestamp and contact support with the page you
+              were on.
             </p>
           </details>
           <details className="mb-3 border rounded p-3 bg-card">
@@ -218,8 +230,14 @@ export default function HelpPage() {
       title: 'Support & Feedback',
       content: (
         <>
-          <p className="mb-2 text-sm">Report issues with timestamp, request ID, and screenshot of console (if error). This accelerates triage.</p>
-          <p className="text-sm text-muted-foreground">Feature suggestions: summarize use case, impacted roles, and expected ROI.</p>
+          <p className="mb-2 text-sm">
+            When reporting an issue include: the page URL, your role, the timestamp, and any relevant request or order ID. Attach a screenshot of the UI and any visible error messages. This helps
+            support reproduce and triage faster.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Feature requests: explain the problem, the role(s) affected, and how the change would help. Send support requests and feedback to{' '}
+            <code className="font-mono">support@your-org.example</code>.
+          </p>
         </>
       ),
     },
@@ -245,7 +263,6 @@ export default function HelpPage() {
             </section>
           ))}
         </div>
-        <footer className="mt-16 pt-8 border-t text-xs text-muted-foreground">Last updated: {new Date().toLocaleDateString()} · Send feedback to docs@example.com</footer>
       </main>
       <aside className="lg:w-64 lg:sticky lg:top-20 h-fit border rounded-md p-4 bg-card/50 backdrop-blur order-first lg:order-none">
         <h2 className="text-sm font-semibold mb-2 tracking-wide">Contents</h2>
