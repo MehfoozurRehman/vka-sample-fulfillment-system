@@ -1,174 +1,140 @@
 'use client';
 
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-
 export default function HelpPage() {
+  const sections = [
+    {
+      id: 'overview',
+      title: 'Screener Workspace Overview',
+      content: (
+        <>
+          <p className="mb-4 text-sm">The Screener dashboard centralizes pending requests that require review. Use it to validate submissions, apply approvals or rejections, and capture review notes.</p>
+          <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
+            <li>Real-time counts and aging for outstanding requests.</li>
+            <li>Filters and search by request id, company, application type, or project.</li>
+            <li>Drill-down to request details with product lines and company history.</li>
+            <li>Inline actions to Approve (creates an order) or Reject (requires a reason).</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: 'kpis',
+      title: 'KPI Cards & Aging',
+      content: (
+        <>
+          <p className="mb-3 text-sm">Top tiles show priority signals such as Pending count, VIP pending, and aging buckets (&lt;24h, 24–48h, &gt;48h).</p>
+          <p className="text-sm text-muted-foreground">Prioritise VIP and &gt;48h items first, and use the KPI tiles to pick a focused worklist for your session.</p>
+        </>
+      ),
+    },
+    {
+      id: 'activity-charts',
+      title: 'Activity Charts',
+      content: (
+        <>
+          <p className="mb-3 text-sm">Charts visualize approval/rejection trends and current age distribution so you can monitor throughput and detect spikes.</p>
+        </>
+      ),
+    },
+    {
+      id: 'pending-table',
+      title: 'Pending Requests Table',
+      content: (
+        <>
+          <p className="mb-3 text-sm">Each row is a request; key columns are Request ID, Company (VIP flagged), Items, Created, Status, and Assignee.</p>
+          <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
+            <li>Use search and filters to narrow by company, age, or status.</li>
+            <li>Click a row to open the Request Drawer for review and actions.</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: 'request-drawer',
+      title: 'Request Drawer (Review Panel)',
+      content: (
+        <>
+          <p className="mb-3 text-sm">The drawer shows full metadata, requested products, recent company activity, and internal notes. From here you can Approve or Reject the request.</p>
+          <ol className="list-decimal pl-6 space-y-1 text-sm mb-4">
+            <li>Review line items and any attachments.</li>
+            <li>Use the company history to assess repeat requests or volumes.</li>
+            <li>Provide a concise rejection reason when rejecting (required).</li>
+            <li>Approvals create an order and move the request to the packing queue.</li>
+          </ol>
+        </>
+      ),
+    },
+    {
+      id: 'best-practices',
+      title: 'Best Practices',
+      content: (
+        <>
+          <ul className="list-disc pl-6 space-y-1 text-sm mb-4">
+            <li>Process VIP and &gt;48h aged requests first.</li>
+            <li>Leave clear internal notes on borderline approvals.</li>
+            <li>Require specific rejection reasons to help requesters improve submissions.</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: 'faq',
+      title: 'FAQ',
+      content: (
+        <>
+          <details className="mb-3 border rounded p-3 bg-card">
+            <summary className="cursor-pointer font-medium">Why can&apos;t I click Approve/Reject?</summary>
+            <p className="mt-2 text-sm text-muted-foreground">The page may still be loading details or a required field (for example rejection reason) is missing. Wait briefly and try again, or capture the request ID and contact support.</p>
+          </details>
+          <details className="mb-3 border rounded p-3 bg-card">
+            <summary className="cursor-pointer font-medium">Where is the approval recorded?</summary>
+            <p className="mt-2 text-sm text-muted-foreground">All reviewer actions are audit logged with user identity and timestamps; include the request ID when raising a query.</p>
+          </details>
+        </>
+      ),
+    },
+    {
+      id: 'support',
+      title: 'Support',
+      content: (
+        <>
+          <p className="mb-2 text-sm">If you need help include the request id, the page you were on, and a short description. Contact <code className="font-mono">support@your-org.example</code>.</p>
+        </>
+      ),
+    },
+  ];
+
   return (
-    <div className="p-6 max-w-4xl space-y-10">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Screener Help & Guide</h1>
-        <p className="text-muted-foreground text-sm">How to use the screening workspace to review and process incoming sample requests.</p>
-      </header>
-      <Section title="1. Overview" desc="High‑level purpose of the Screener workspace">
-        <p>
-          The Screener dashboard centralizes all <strong>pending sample requests</strong> that require an approval or rejection decision. It provides:
-        </p>
-        <ul className="list-disc pl-5 space-y-1 text-sm mt-2">
-          <li>Real‑time counts and aging of outstanding requests.</li>
-          <li>Historical activity trends (approvals, rejections, still pending).</li>
-          <li>Filtering & quick search by request id, company, application type, or project name.</li>
-          <li>Detailed request drill‑down with product line items and recent company history.</li>
-          <li>
-            Inline actions to <strong>Approve</strong> (creates an order) or <strong>Reject</strong> (requires a reason).
-          </li>
-        </ul>
-      </Section>
-      <Section title="2. KPI Cards" desc="Meaning of the top statistic tiles">
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-          {[
-            { label: 'Pending', detail: 'Total number of unreviewed requests currently in the queue.' },
-            { label: 'VIP Pending', detail: 'Subset of pending requests associated with VIP stakeholders.' },
-            { label: 'Avg Items', detail: 'Average number of product line items across pending requests.' },
-            { label: '<24h', detail: 'Requests submitted within the last 24 hours.' },
-            { label: '24-48h', detail: 'Requests aging between 24 and 48 hours.' },
-            { label: '>48h', detail: 'Requests older than 48 hours (highest urgency).' },
-          ].map((c) => (
-            <Card key={c.label} className="border-dashed">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{c.label}</CardTitle>
-                <CardDescription className="text-xs leading-relaxed">{c.detail}</CardDescription>
-              </CardHeader>
-            </Card>
+    <div className="flex flex-col lg:flex-row gap-8 p-6">
+      <main className="flex-1 min-w-0">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Screener Help & Guide</h1>
+          <p className="text-muted-foreground text-sm">How to use the screening workspace to review and process incoming sample requests.</p>
+        </header>
+
+        <div className="space-y-12">
+          {sections.map((section) => (
+            <section key={section.id} id={section.id} className="scroll-mt-24">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                {section.title}
+                <a href={`#${section.id}`} className="text-xs font-normal text-muted-foreground hover:underline">#</a>
+              </h2>
+              <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed">{section.content}</div>
+            </section>
           ))}
         </div>
-        <p className="text-sm mt-4">
-          Aging buckets (<span className="font-medium">&lt;24h</span>, <span className="font-medium">24–48h</span>, <span className="font-medium">&gt;48h</span>) help prioritize. Focus first on{' '}
-          <span className="font-medium">VIP</span> and &gt;48h items.
-        </p>
-      </Section>
 
-      <Section title="3. Screening Activity Chart" desc="Understanding the stacked daily area & age bar charts">
-        <ul className="list-disc pl-5 space-y-1 text-sm">
-          <li>
-            <strong>Stacked Area</strong>: Relative distribution of Approved, Rejected, and still Pending requests by day (range selectable: 30–120 days).
-          </li>
-          <li>
-            <strong>Age Bar</strong>: Current snapshot of how many pending requests fall into each aging bucket.
-          </li>
-          <li>
-            <strong>Approval Rate</strong> (implied): Track approved vs rejected to monitor quality and throughput.
-          </li>
-        </ul>
-      </Section>
+        <footer className="mt-16 pt-8 border-t text-xs text-muted-foreground">Last updated: {new Date().toLocaleDateString()} · Support: support@your-org.example</footer>
+      </main>
 
-      <Section title="4. Pending Requests Table" desc="Columns & visual cues">
-        <div className="text-sm space-y-3">
-          <p>Each row represents a single pending request.</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              <strong>Colored dot</strong>: Green (&lt;24h), Amber (24–48h), Red (&gt;48h).
-            </li>
-            <li>
-              <strong>Request</strong>: Internal request identifier (monospaced for scanability).
-            </li>
-            <li>
-              <strong>Company</strong>: Name +{' '}
-              <Badge variant="destructive" className="align-middle">
-                VIP
-              </Badge>{' '}
-              tag if elevated priority.
-            </li>
-            <li>
-              <strong>Application / Project</strong>: Context for intended use and project grouping.
-            </li>
-            <li>
-              <strong>Items</strong>: Count of product lines in the request.
-            </li>
-            <li>
-              <strong>Created</strong>: Submission timestamp (local format) to assess aging.
-            </li>
-          </ul>
-          <p>
-            <strong>Search</strong> filters dynamically across request id, company, application type, and project name.
-          </p>
-        </div>
-      </Section>
-      <Section title="5. Request Drawer" desc="Detailed review & action panel">
-        <ol className="list-decimal pl-5 space-y-2 text-sm">
-          <li>
-            <strong>Header Block</strong>: Core metadata (company, application, project, submitted time) and VIP highlight.
-          </li>
-          <li>
-            <strong>Requested Products</strong>: Line items with product id, name, quantity, notes.
-          </li>
-          <li>
-            <strong>Recent Requests</strong>: Last 5 historical requests from the same company + 12‑month total units for pattern recognition.
-          </li>
-          <li>
-            <strong>Internal Notes</strong> (optional): Persisted with the approval/rejection for audit trail.
-          </li>
-          <li>
-            <strong>Rejection Reason</strong> (required for Reject): Must be at least 3 characters; enforces clarity and transparency.
-          </li>
-          <li>
-            <strong>Actions</strong>:
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>
-                <strong>Approve</strong>: Creates an order downstream. Notes are optional.
-              </li>
-              <li>
-                <strong>Reject</strong>: Requires a reason; notes may add internal context.
-              </li>
-            </ul>
-          </li>
-          <li>
-            All actions are <strong>audit logged</strong> with reviewer identity & timestamps.
-          </li>
-        </ol>
-      </Section>
-      <Section title="6. Best Practices" desc="Operational recommendations">
-        <ul className="list-disc pl-5 text-sm space-y-1">
-          <li>
-            Process <strong>VIP</strong> and <strong>&gt;48h</strong> aged requests first each session.
-          </li>
-          <li>Use notes to capture rationale if an approval is borderline to aid future audits.</li>
-          <li>Reject only when criteria clearly not met; provide a concise and actionable reason.</li>
-          <li>Scan the company history panel for volume anomalies before approving large multi‑item requests.</li>
-          <li>Maintain consistent terminology in rejection reasons (e.g. &ldquo;Incomplete application data&rdquo; vs varied phrasing).</li>
-        </ul>
-      </Section>
-      <Section title="7. FAQ" desc="Common questions">
-        <dl className="space-y-4 text-sm">
-          <div>
-            <dt className="font-medium">Why can&apos;t I click Approve/Reject?</dt>
-            <dd className="text-muted-foreground mt-1">The system is still loading details or the rejection reason is missing / too short.</dd>
-          </div>
-          <div>
-            <dt className="font-medium">Where is the approval logged?</dt>
-            <dd className="text-muted-foreground mt-1">All actions are captured in the audit log with your user identity, timestamp, and metadata.</dd>
-          </div>
-          <div>
-            <dt className="font-medium">How is VIP determined?</dt>
-            <dd className="text-muted-foreground mt-1">The stakeholder record includes a vipFlag; when true the request row and drawer are visually emphasized.</dd>
-          </div>
-        </dl>
-      </Section>
+      <aside className="lg:w-64 lg:sticky lg:top-20 h-fit border rounded-md p-4 bg-card/50 backdrop-blur order-first lg:order-none">
+        <h2 className="text-sm font-semibold mb-2 tracking-wide">Contents</h2>
+        <nav className="space-y-1 text-sm">
+          {sections.map((s) => (
+            <a key={s.id} href={`#${s.id}`} className="block px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground transition">{s.title}</a>
+          ))}
+        </nav>
+      </aside>
     </div>
-  );
-}
-
-function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-        {desc && <p className="text-xs text-muted-foreground mt-1 max-w-prose">{desc}</p>}
-      </div>
-      <div className="space-y-3 leading-relaxed">{children}</div>
-      <Separator className="my-2" />
-    </section>
   );
 }
