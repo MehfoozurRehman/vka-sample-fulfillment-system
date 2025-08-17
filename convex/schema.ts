@@ -69,6 +69,7 @@ export default defineSchema({
         notes: v.optional(v.string()),
       }),
     ),
+    businessBrief: v.optional(v.string()),
     status: v.string(),
     requestedBy: v.string(),
     reviewedBy: v.optional(v.string()),
