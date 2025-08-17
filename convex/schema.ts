@@ -19,6 +19,7 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index('by_email', ['email'])
+  .index('by_role', ['roles'])
     .index('by_activeRole', ['activeRole'])
     .index('by_googleId', ['googleId'])
     .index('by_createdAt', ['createdAt']),
