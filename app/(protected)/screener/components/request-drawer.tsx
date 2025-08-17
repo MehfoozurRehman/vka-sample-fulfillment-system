@@ -45,6 +45,7 @@ export default function RequestDrawer({
   const rejectMut = useMutation(api.screener.reject);
 
   const requestInfoMut = useMutation(api.screener.requestInfo);
+  const claimMut = useMutation(api.screener.claim);
 
   const [notes, setNotes] = useState('');
 
@@ -74,6 +75,9 @@ export default function RequestDrawer({
   const { data: detailData } = useQueryWithStatus(api.screener.detail, currentId ? { id: currentId } : 'skip');
 
   const vip = !!detailData?.stakeholder?.vipFlag;
+  const claimedBy = (detailData?.request as { claimedBy?: string } | undefined)?.claimedBy;
+  const isClaimedByMe = !!claimedBy && claimedBy === reviewerEmail;
+  const isClaimedByOther = !!claimedBy && claimedBy !== reviewerEmail;
 
   const handleSelect = (id: Id<'requests'>) => {
     setCurrentId(id);
@@ -119,40 +123,8 @@ export default function RequestDrawer({
                 <div className="pt-2 text-[12px]">
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-muted-foreground text-[10px]">Business Brief</div>
-                    {!editingBrief ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-[10px]"
-                        onClick={() => {
-                          const currentBrief = ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
-                          setBriefText(currentBrief);
-                          setEditingBrief(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          className="h-6 px-2 text-[10px]"
-                          disabled={isSavingBrief || !currentId || briefText.trim().length < 5}
-                          onClick={() => {
-                            if (!currentId) return;
-                            startSavingBrief(async () => {
-                              try {
-                                await setBriefMut({ userId: auth.id, id: currentId, businessBrief: briefText.trim() });
-                                setEditingBrief(false);
-                                toast.success('Business brief updated');
-                              } catch (e) {
-                                toastError(e);
-                              }
-                            });
-                          }}
-                        >
-                          {isSavingBrief && <Loader className="mr-1 size-3 animate-spin" />} Save
-                        </Button>
+                    {isClaimedByMe &&
+                      (!editingBrief ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -160,14 +132,47 @@ export default function RequestDrawer({
                           onClick={() => {
                             const currentBrief = ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
                             setBriefText(currentBrief);
-                            setEditingBrief(false);
+                            setEditingBrief(true);
                           }}
-                          disabled={isSavingBrief}
                         >
-                          Cancel
+                          Edit
                         </Button>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="h-6 px-2 text-[10px]"
+                            disabled={isSavingBrief || !currentId || briefText.trim().length < 5}
+                            onClick={() => {
+                              if (!currentId) return;
+                              startSavingBrief(async () => {
+                                try {
+                                  await setBriefMut({ userId: auth.id, id: currentId, businessBrief: briefText.trim() });
+                                  setEditingBrief(false);
+                                  toast.success('Business brief updated');
+                                } catch (e) {
+                                  toastError(e);
+                                }
+                              });
+                            }}
+                          >
+                            {isSavingBrief && <Loader className="mr-1 size-3 animate-spin" />} Save
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => {
+                              const currentBrief = ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
+                              setBriefText(currentBrief);
+                              setEditingBrief(false);
+                            }}
+                            disabled={isSavingBrief}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ))}
                   </div>
                   {!editingBrief ? (
                     ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim() ? (
@@ -217,6 +222,26 @@ export default function RequestDrawer({
                 </Card>
               )}
               <RecentRequestsPanel data={detailData.lastFive} total={detailData.totalSamples12mo} onSelect={handleSelect} activeId={currentId} />
+              {status.toLowerCase().includes('pending') && (
+                <div className="flex items-center justify-between rounded-md border p-2 bg-card/40">
+                  <div className="text-[11px]">
+                    {claimedBy ? (
+                      isClaimedByMe ? (
+                        <span className="text-emerald-500">You have claimed this request.</span>
+                      ) : (
+                        <span className="text-amber-500">Claimed by {claimedBy}. You can view but not edit.</span>
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">This request is unclaimed.</span>
+                    )}
+                  </div>
+                  {!claimedBy && currentId && (
+                    <Button size="sm" onClick={() => claimMut({ id: currentId, screenerEmail: reviewerEmail }).catch(toastError)}>
+                      Claim
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="grid gap-3 md:grid-cols-2">
                 <Card className="border">
                   <CardHeader className="pb-1">
@@ -275,12 +300,13 @@ export default function RequestDrawer({
                   </CardContent>
                 </Card>
               ) : null}
-              {detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected' ? null : (
+              {detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected' || !isClaimedByMe ? null : (
                 <div className="space-y-3">
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes (optional)" className="resize-none h-24" />
                   <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Rejection reason (required to reject)" />
                   <div className="text-[10px] text-muted-foreground">
                     Approvals create an order. Rejections require a reason. All actions are audit logged. {awaitingInfo && 'Awaiting requester info response.'}
+                    {isClaimedByOther && ' You cannot edit because another screener claimed this request.'}
                   </div>
                 </div>
               )}
@@ -306,7 +332,7 @@ export default function RequestDrawer({
                   </CardContent>
                 </Card>
               )}
-              {!detailData.request.infoResponseMessage && !awaitingInfo && status.toLowerCase().includes('pending') && (
+              {!detailData.request.infoResponseMessage && !awaitingInfo && status.toLowerCase().includes('pending') && isClaimedByMe && (
                 <div className="space-y-2">
                   {!showInfoForm && (
                     <Button variant="secondary" size="sm" onClick={() => setShowInfoForm(true)} disabled={!currentId}>
@@ -358,41 +384,45 @@ export default function RequestDrawer({
         <DrawerFooter>
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex gap-2">
-              <Button
-                disabled={isSaving || !currentId || awaitingInfo || detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected'}
-                onClick={() => {
-                  if (!currentId || awaitingInfo) return;
-                  startSaving(async () => {
-                    try {
-                      await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
-                      afterAction(currentId, 'approve');
-                      toast.success('Request approved');
-                    } catch (e) {
-                      toastError(e);
-                    }
-                  });
-                }}
-              >
-                {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Approve
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={isSaving || !currentId || !canReject || awaitingInfo}
-                onClick={() => {
-                  if (!currentId || !canReject || awaitingInfo) return;
-                  startSaving(async () => {
-                    try {
-                      await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
-                      afterAction(currentId, 'reject');
-                      toast.success('Request rejected');
-                    } catch (e) {
-                      toastError(e);
-                    }
-                  });
-                }}
-              >
-                {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Reject
-              </Button>
+              {isClaimedByMe && (
+                <Button
+                  onClick={() => {
+                    if (!currentId || awaitingInfo) return;
+                    startSaving(async () => {
+                      try {
+                        await approveMut({ id: currentId, reviewedBy: reviewerEmail, notes: notes || undefined });
+                        afterAction(currentId, 'approve');
+                        toast.success('Request approved');
+                      } catch (e) {
+                        toastError(e);
+                      }
+                    });
+                  }}
+                  disabled={isSaving || !currentId || awaitingInfo || detailData?.request?.status?.toLowerCase() === 'approved' || detailData?.request?.status?.toLowerCase() === 'rejected'}
+                >
+                  {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Approve
+                </Button>
+              )}
+              {isClaimedByMe && (
+                <Button
+                  variant="destructive"
+                  disabled={isSaving || !currentId || !canReject || awaitingInfo}
+                  onClick={() => {
+                    if (!currentId || !canReject || awaitingInfo) return;
+                    startSaving(async () => {
+                      try {
+                        await rejectMut({ id: currentId, reviewedBy: reviewerEmail, reason: reason.trim(), notes: notes || undefined });
+                        afterAction(currentId, 'reject');
+                        toast.success('Request rejected');
+                      } catch (e) {
+                        toastError(e);
+                      }
+                    });
+                  }}
+                >
+                  {isSaving && <Loader className="mr-2 size-4 animate-spin" />} Reject
+                </Button>
+              )}
             </div>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
