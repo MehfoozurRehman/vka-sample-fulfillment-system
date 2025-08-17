@@ -69,17 +69,15 @@ export const approve = mutation({
     const now = Date.now();
     await ctx.db.patch(id, { status: 'Approved', reviewedBy, reviewedByUserId: reviewer._id, reviewDate: now, reviewNotes: notes, updatedAt: now });
 
-    let orderId = 'ORD-00001';
-    const existing = await ctx.db.query('orders').collect();
+    const width = 5;
+    // Find latest order by orderId index to compute next sequence number
+    const latestOrder = await ctx.db.query('orders').withIndex('by_orderId').order('desc').first();
     let max = 0;
-    for (const o of existing) {
-      const m = /^ORD-(\d{5})$/.exec(o.orderId || '');
-      if (m) {
-        const n = parseInt(m[1], 10);
-        if (n > max) max = n;
-      }
+    if (latestOrder && latestOrder.orderId) {
+      const m = /^ORD-(\d{5})$/.exec(latestOrder.orderId || '');
+      if (m) max = parseInt(m[1], 10);
     }
-    orderId = `ORD-${String(max + 1).padStart(5, '0')}`;
+    const orderId = `ORD-${String(max + 1).padStart(width, '0')}`;
 
     const newOrderId = await ctx.db.insert('orders', {
       orderId,
