@@ -165,8 +165,6 @@ export const add = mutation({
 
     const dayKey = dayjs().format('YYYYMMDD');
     const sortedProductIds = [...args.productsRequested.map((p) => String(p.productId))].sort();
-    // If no products are provided, include the businessBrief in the duplicate hash so
-    // multiple brief-only submissions for the same company on the same day are not blocked.
     const briefKey = sortedProductIds.length === 0 ? (args.businessBrief || '').trim() : '';
     const raw = `${args.companyId}|${sortedProductIds.join(',')}|${briefKey}|${dayKey}`;
     const duplicateHash = await sha256Hex(raw);
