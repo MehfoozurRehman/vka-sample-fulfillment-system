@@ -25,9 +25,10 @@ export default function ScreenerRequestPage() {
 
   const searchParams = useSearchParams();
 
-  const requestId = searchParams.get('id') as Id<'requests'>;
+  const requestIdParam = searchParams.get('id');
+  const requestId = requestIdParam ? (requestIdParam as unknown as Id<'requests'>) : null;
 
-  const { data: detail } = useQueryWithStatus(api.screener.detail, { id: requestId });
+  const { data: detail, isPending } = useQueryWithStatus(api.screener.detail, { id: requestId });
 
   const { data: products } = useQueryWithStatus(api.product.list, {});
 
@@ -102,12 +103,16 @@ export default function ScreenerRequestPage() {
     setRemoveReason('');
   }, [requestId]);
 
-  if (!detail)
+  if (isPending)
     return (
       <div className="p-4 text-sm text-muted-foreground flex items-center gap-2 justify-center w-full h-[500px]">
         <Loader className="animate-spin" />
       </div>
     );
+
+  if (!detail) {
+    return <div className="p-4 text-sm text-muted-foreground flex items-center gap-2 justify-center w-full h-[500px]">No request details available</div>;
+  }
 
   const r = detail.request;
 
@@ -144,7 +149,7 @@ export default function ScreenerRequestPage() {
               onClick={() =>
                 startClaiming(async () => {
                   try {
-                    await claimMut({ id: requestId, screenerEmail: auth.email });
+                    await claimMut({ id: r._id as Id<'requests'>, screenerEmail: auth.email });
                     toast.success('Request claimed');
                   } catch (e) {
                     toastError(e);
@@ -219,7 +224,7 @@ export default function ScreenerRequestPage() {
                             if (!infoMsg.trim()) return;
                             startRequesting(async () => {
                               try {
-                                await requestInfoMut({ id: requestId, screenerEmail: auth.email, message: infoMsg.trim() });
+                                await requestInfoMut({ id: r._id as Id<'requests'>, screenerEmail: auth.email, message: infoMsg.trim() });
                                 setShowInfoForm(false);
                                 setInfoMsg('');
                                 toast.success('Info request sent');
@@ -242,7 +247,7 @@ export default function ScreenerRequestPage() {
                   onClick={() => {
                     startSaving(async () => {
                       try {
-                        await approveMut({ id: requestId, reviewedBy: auth.email, notes: notes || undefined });
+                        await approveMut({ id: r._id as Id<'requests'>, reviewedBy: auth.email, notes: notes || undefined });
                         toast.success('Request approved');
                       } catch (e) {
                         toastError(e);
@@ -259,7 +264,7 @@ export default function ScreenerRequestPage() {
                     if (!reason.trim()) return toast.error('Reason required to reject');
                     startSaving(async () => {
                       try {
-                        await rejectMut({ id: requestId, reviewedBy: auth.email, reason: reason.trim(), notes: notes || undefined });
+                        await rejectMut({ id: r._id as Id<'requests'>, reviewedBy: auth.email, reason: reason.trim(), notes: notes || undefined });
                         toast.success('Request rejected');
                       } catch (e) {
                         toastError(e);
@@ -399,7 +404,7 @@ export default function ScreenerRequestPage() {
                   try {
                     const line = { productId: addForm.productId as Id<'products'>, quantity: addForm.quantity as number, notes: addForm.notes || undefined };
 
-                    await addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: addForm.reason.trim() });
+                    await addLineMut({ id: r._id as Id<'requests'>, screenerEmail: auth.email, line, reason: addForm.reason.trim() });
                     toast.success('Line added');
                     setAddOpen(false);
                     setAddForm({ productId: null, quantity: 1, notes: '', reason: '' });
@@ -477,7 +482,7 @@ export default function ScreenerRequestPage() {
                   try {
                     const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
 
-                    await editLineMut({ id: requestId, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() });
+                    await editLineMut({ id: r._id as Id<'requests'>, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() });
                     toast.success('Line updated');
                     setEditOpen(false);
                     setEditIndex(null);
@@ -533,7 +538,7 @@ export default function ScreenerRequestPage() {
 
                 startRemove(async () => {
                   try {
-                    await removeLineMut({ id: requestId, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() });
+                    await removeLineMut({ id: r._id as Id<'requests'>, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() });
                     toast.success('Line removed');
                     setRemoveOpen(false);
                     setRemoveIndex(null);

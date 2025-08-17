@@ -139,6 +139,12 @@ export const add = mutation({
     requestedBy: v.string(),
   },
   handler: async (ctx, args) => {
+    const requesterUser = await ctx.db
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', args.requestedBy))
+      .unique();
+    if (!requesterUser) throw new Error('User not found for requestedBy email');
+
     let requestId = (args.requestId || '').trim();
     if (!requestId || requestId.toUpperCase() === 'AUTO') {
       const all = await ctx.db.query('requests').collect();
@@ -192,17 +198,12 @@ export const add = mutation({
       productsRequested: args.productsRequested,
       status: 'Pending Review',
       requestedBy: args.requestedBy,
+      requestedByUserId: requesterUser._id,
       duplicateHash,
       createdAt: now,
       updatedAt: now,
     });
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', args.requestedBy))
-      .unique();
-
-    if (!user) throw new Error('User not found for requestedBy email');
+    const user = requesterUser;
 
     await ctx.db.insert('auditLogs', {
       userId: user._id,
@@ -374,13 +375,13 @@ export const addProductLine = mutation({
     const now = Date.now();
     const products = [...(req.productsRequested || [])];
     products.push(line);
-    const history = [...(req.productChangeHistory || [])];
-    history.push({ at: now, by: screenerEmail, type: 'add', lineIndex: products.length - 1, to: line, reason });
-    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     const actor = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', screenerEmail))
       .unique();
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, byUserId: actor?._id, type: 'add', lineIndex: products.length - 1, to: line, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     if (actor) {
       await ctx.db.insert('auditLogs', {
         userId: actor._id,
@@ -413,13 +414,13 @@ export const editProductLine = mutation({
     const products = [...(req.productsRequested || [])];
     const from = products[index];
     products[index] = to;
-    const history = [...(req.productChangeHistory || [])];
-    history.push({ at: now, by: screenerEmail, type: 'edit', lineIndex: index, from, to, reason });
-    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     const actor = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', screenerEmail))
       .unique();
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, byUserId: actor?._id, type: 'edit', lineIndex: index, from, to, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     if (actor) {
       await ctx.db.insert('auditLogs', {
         userId: actor._id,
@@ -451,13 +452,13 @@ export const removeProductLine = mutation({
     const products = [...(req.productsRequested || [])];
     const from = products[index];
     products.splice(index, 1);
-    const history = [...(req.productChangeHistory || [])];
-    history.push({ at: now, by: screenerEmail, type: 'remove', lineIndex: index, from, reason });
-    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     const actor = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', screenerEmail))
       .unique();
+    const history = [...(req.productChangeHistory || [])];
+    history.push({ at: now, by: screenerEmail, byUserId: actor?._id, type: 'remove', lineIndex: index, from, reason });
+    await ctx.db.patch(id, { productsRequested: products, productChangeHistory: history, updatedAt: now });
     if (actor) {
       await ctx.db.insert('auditLogs', {
         userId: actor._id,
@@ -570,14 +571,23 @@ export const orderSummary = query({
 });
 
 export const my = query({
-  args: { email: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { email, limit }) => {
+  args: { email: v.optional(v.string()), userId: v.optional(v.id('users')), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, userId, limit }) => {
     const cap = Math.min(limit ?? 200, 500);
-    const items = await ctx.db
-      .query('requests')
-      .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
-      .order('desc')
-      .collect();
+    let items: ReqDoc[] = [];
+    if (userId) {
+      items = (await ctx.db
+        .query('requests')
+        .withIndex('by_requestedByUserId', (q) => q.eq('requestedByUserId', userId))
+        .order('desc')
+        .collect()) as ReqDoc[];
+    } else if (email) {
+      items = (await ctx.db
+        .query('requests')
+        .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
+        .order('desc')
+        .collect()) as ReqDoc[];
+    }
     const trimmed = items.filter((r) => !r.deletedAt).slice(0, cap) as ReqDoc[];
 
     const orders = await Promise.all(
@@ -641,14 +651,23 @@ export const my = query({
 });
 
 export const myHistory = query({
-  args: { email: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { email, limit }) => {
+  args: { email: v.optional(v.string()), userId: v.optional(v.id('users')), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, userId, limit }) => {
     const cap = Math.min(limit ?? 500, 1000);
-    const reqs = await ctx.db
-      .query('requests')
-      .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
-      .order('desc')
-      .collect();
+    let reqs: ReqDoc[] = [];
+    if (userId) {
+      reqs = (await ctx.db
+        .query('requests')
+        .withIndex('by_requestedByUserId', (q) => q.eq('requestedByUserId', userId))
+        .order('desc')
+        .collect()) as ReqDoc[];
+    } else if (email) {
+      reqs = (await ctx.db
+        .query('requests')
+        .withIndex('by_requestedBy', (q) => q.eq('requestedBy', email))
+        .order('desc')
+        .collect()) as ReqDoc[];
+    }
     const relevant = reqs.filter((r) => !r.deletedAt).slice(0, cap) as ReqDoc[];
 
     const requestIds = relevant.map((r) => r._id as Id<'requests'>);

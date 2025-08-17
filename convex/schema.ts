@@ -87,6 +87,7 @@ export default defineSchema({
         v.object({
           at: v.number(),
           by: v.string(),
+          byUserId: v.optional(v.id('users')),
           type: v.string(),
           lineIndex: v.number(),
           from: v.optional(v.object({ productId: v.id('products'), quantity: v.number(), notes: v.optional(v.string()) })),
@@ -97,6 +98,10 @@ export default defineSchema({
     ),
     claimedBy: v.optional(v.string()),
     claimedAt: v.optional(v.number()),
+    requestedByUserId: v.optional(v.id('users')),
+    reviewedByUserId: v.optional(v.id('users')),
+    infoRequestedByUserId: v.optional(v.id('users')),
+    claimedByUserId: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
@@ -109,7 +114,11 @@ export default defineSchema({
     .index('by_company_status', ['companyId', 'status'])
     .index('by_duplicateHash', ['duplicateHash'])
     .index('by_requestedBy', ['requestedBy'])
-    .index('by_reviewedBy', ['reviewedBy']),
+    .index('by_reviewedBy', ['reviewedBy'])
+    .index('by_requestedByUserId', ['requestedByUserId'])
+    .index('by_reviewedByUserId', ['reviewedByUserId'])
+    .index('by_claimedByUserId', ['claimedByUserId'])
+    .index('by_infoRequestedByUserId', ['infoRequestedByUserId']),
 
   orders: defineTable({
     orderId: v.string(),
@@ -134,6 +143,8 @@ export default defineSchema({
     serviceLevel: v.optional(v.string()),
     internationalDocsIncluded: v.optional(v.boolean()),
     shippedEmailSent: v.optional(v.boolean()),
+    packedByUserId: v.optional(v.id('users')),
+    shippedByUserId: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
@@ -143,7 +154,9 @@ export default defineSchema({
     .index('by_createdAt', ['createdAt'])
     .index('by_requestId_status', ['requestId', 'status'])
     .index('by_packedBy', ['packedBy'])
-    .index('by_shippedBy', ['shippedBy']),
+    .index('by_shippedBy', ['shippedBy'])
+    .index('by_packedByUserId', ['packedByUserId'])
+    .index('by_shippedByUserId', ['shippedByUserId']),
 
   auditLogs: defineTable({
     userId: v.id('users'),

@@ -205,7 +205,7 @@ function Info({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function PackerPage() {
-  const { email } = useAuth()!;
+  const { email, id: userId } = useAuth()!;
 
   const { data: stats } = useQueryWithStatus(api.packer.stats, {});
 
@@ -213,7 +213,7 @@ export default function PackerPage() {
 
   const trend = useQuery(api.packer.trend, { days: 90 }) as { date: string; packed: number }[] | undefined;
 
-  const myHistory = useQuery(api.packer.myHistory, { email, limit: 200 }) as
+  const myHistory = useQuery(api.packer.myHistory, { userId, limit: 200 }) as
     | { id: Id<'orders'>; orderId: string; packedDate?: number; shippedDate?: number; status: string; requestId?: string }[]
     | undefined;
 
