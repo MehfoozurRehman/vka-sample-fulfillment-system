@@ -45,7 +45,6 @@ const columns: ColumnDef<ProductType>[] = [
   { accessorKey: 'productId', header: 'Product ID' },
   { accessorKey: 'productName', header: 'Name' },
   { accessorKey: 'category', header: 'Category' },
-  { accessorKey: 'location', header: 'Location' },
   { accessorKey: 'createdAt', header: 'Created At', cell: ({ row }) => dayjs(row.original.createdAt).format('MMM D, YYYY') },
 ];
 
@@ -103,7 +102,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
 
     if (q) {
       d = d.filter((p) => {
-        const parts = [p.productId, p.productName, p.category, p.location];
+        const parts = [p.productId, p.productName, p.category];
 
         return parts.some((part) => normalize(part).includes(q));
       });
@@ -134,7 +133,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
     <>
       <Tabs value={'all'} className="w-full flex-col justify-start gap-6">
         <div className="flex items-center justify-end px-4 lg:px-6 gap-2">
-          <Input placeholder="Search id, name, category, location..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Search id, name, category..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <AddProduct />
         </div>
         <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
@@ -211,10 +210,7 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                     inputProps={{ spellCheck: false }}
                   />
                 </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="location">Location</Label>
-                  <Input id="location" value={(edit?.location ?? selected.location) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), location: e.target.value })} />
-                </div>
+
                 <div className="flex flex-col gap-3 rounded-lg border p-3">
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">Created At</span>
@@ -310,7 +306,6 @@ export function DataTable({ data: initialData, isPending }: { data: ProductType[
                       productId: (edit?.productId ?? selected.productId) || '',
                       productName: (edit?.productName ?? selected.productName) || '',
                       category: (edit?.category ?? selected.category) || '',
-                      location: (edit?.location ?? selected.location) || '',
                     };
 
                     startSaving(async () => {
