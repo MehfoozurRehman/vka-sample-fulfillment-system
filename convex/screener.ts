@@ -625,11 +625,28 @@ export const detail = query({
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const allLogs = await ctx.db
+      .query('auditLogs')
+      .withIndex('by_table', (q) => q.eq('table', 'requests'))
+      .collect();
+    const relatedLogs = allLogs
+      .filter((l) => String(l.recordId) === String(id))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 100)
+      .map((l) => ({
+        action: l.action,
+        timestamp: l.timestamp,
+        changes: l.changes,
+        userId: l.userId,
+      }));
+
     return {
       request: r,
       requester: r.requestedBy,
       stakeholder,
       productsDetailed,
+      productChangeHistory: r.productChangeHistory || [],
+      auditLogs: relatedLogs,
       lastFive,
       totalSamples12mo,
       decisionCounts: { approved, rejected, pending },
