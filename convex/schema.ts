@@ -82,6 +82,19 @@ export default defineSchema({
     infoRequestMessage: v.optional(v.string()),
     infoResponseAt: v.optional(v.number()),
     infoResponseMessage: v.optional(v.string()),
+    productChangeHistory: v.optional(
+      v.array(
+        v.object({
+          at: v.number(),
+          by: v.string(),
+          type: v.string(),
+          lineIndex: v.number(),
+          from: v.optional(v.object({ productId: v.id('products'), quantity: v.number(), notes: v.optional(v.string()) })),
+          to: v.optional(v.object({ productId: v.id('products'), quantity: v.number(), notes: v.optional(v.string()) })),
+          reason: v.string(),
+        }),
+      ),
+    ),
     claimedBy: v.optional(v.string()),
     claimedAt: v.optional(v.number()),
     createdAt: v.number(),
