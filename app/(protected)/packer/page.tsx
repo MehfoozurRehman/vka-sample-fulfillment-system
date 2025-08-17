@@ -146,7 +146,7 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{prod ? `${prod.productName} (${prod.productId})` : 'Loading...'}</span>
                   {prod && <span className="text-xs text-muted-foreground">{prod.category}</span>}
-                  {prod && <span className="text-xs text-muted-foreground">Loc: {prod.location}</span>}
+
                   <span className="text-xs text-muted-foreground">Qty: {p.quantity}</span>
                 </div>
                 {!isPacked ? (
