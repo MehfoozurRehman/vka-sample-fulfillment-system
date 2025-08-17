@@ -19,7 +19,6 @@ export const list = query({
       productId: p.productId,
       productName: p.productName,
       category: p.category,
-      location: p.location,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
@@ -114,7 +113,6 @@ export const add = mutation({
     productId: v.string(),
     productName: v.string(),
     category: v.string(),
-    location: v.string(),
   },
   handler: async (ctx, args) => {
     let productId = (args.productId || '').trim();
@@ -144,14 +142,14 @@ export const add = mutation({
     if (duplicate) throw new Error('Product with this productId already exists');
 
     const now = Date.now();
-    const id = await ctx.db.insert('products', { productId, productName: args.productName, category: args.category, location: args.location, createdAt: now, updatedAt: now });
+    const id = await ctx.db.insert('products', { productId, productName: args.productName, category: args.category, createdAt: now, updatedAt: now });
 
     await ctx.db.insert('auditLogs', {
       userId: args.userId,
       action: 'addProduct',
       table: 'products',
       recordId: id,
-      changes: { productId, productName: args.productName, category: args.category, location: args.location },
+      changes: { productId, productName: args.productName, category: args.category },
       timestamp: now,
     });
 
@@ -175,27 +173,27 @@ export const update = mutation({
     productId: v.string(),
     productName: v.string(),
     category: v.string(),
-    location: v.string(),
   },
-  handler: async (ctx, { userId, id, ...rest }) => {
+  handler: async (ctx, args) => {
+    const { userId, id, productId, productName, category } = args;
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Product not found');
 
     const dupe = await ctx.db
       .query('products')
-      .withIndex('by_productId', (q) => q.eq('productId', rest.productId))
+      .withIndex('by_productId', (q) => q.eq('productId', productId))
       .filter((q) => q.and(q.eq(q.field('deletedAt'), undefined), q.neq(q.field('_id'), id)))
       .first();
     if (dupe) throw new Error('Another product with this productId exists');
 
-    await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+    await ctx.db.patch(id, { productId, productName, category, updatedAt: Date.now() });
 
     await ctx.db.insert('auditLogs', {
       userId,
       action: 'updateProduct',
       table: 'products',
       recordId: id,
-      changes: rest,
+      changes: { productId, productName, category },
       timestamp: Date.now(),
     });
     const users = await ctx.db.query('users').collect();
@@ -205,7 +203,7 @@ export const update = mutation({
     );
     const ids = Array.from(new Set(recipients.map((u) => u._id))) as Id<'users'>[];
     if (ids.length) {
-      await sendInternalNotifications(ctx, userId, 'product.updated', `Product ${rest.productId} updated`, ids);
+      await sendInternalNotifications(ctx, userId, 'product.updated', `Product ${productId} updated`, ids);
     }
     return { ok: true };
   },
