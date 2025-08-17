@@ -191,7 +191,7 @@ function Info({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function ShipperPage() {
-  const { email } = useAuth()!;
+  const { email, id: userId } = useAuth()!;
 
   const { data: stats } = useQueryWithStatus(api.shipper.stats, {});
 
@@ -199,7 +199,7 @@ export default function ShipperPage() {
 
   const trend = useQuery(api.shipper.trend, { days: 90 }) as { date: string; shipped: number }[] | undefined;
 
-  const myHistory = useQuery(api.shipper.myHistory, { email, limit: 200 }) as
+  const myHistory = useQuery(api.shipper.myHistory, { userId, limit: 200 }) as
     | { id: Id<'orders'>; orderId: string; shippedDate?: number; packedDate?: number; status: string; requestId?: string }[]
     | undefined;
 
