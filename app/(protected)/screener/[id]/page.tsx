@@ -28,7 +28,7 @@ export default function ScreenerRequestPage() {
   const requestIdParam = searchParams.get('id');
   const requestId = requestIdParam ? (requestIdParam as unknown as Id<'requests'>) : null;
 
-  const { data: detail } = useQueryWithStatus(api.screener.detail, { id: requestId });
+  const { data: detail, isPending } = useQueryWithStatus(api.screener.detail, { id: requestId });
 
   const { data: products } = useQueryWithStatus(api.product.list, {});
 
@@ -103,12 +103,16 @@ export default function ScreenerRequestPage() {
     setRemoveReason('');
   }, [requestId]);
 
-  if (!detail)
+  if (isPending)
     return (
       <div className="p-4 text-sm text-muted-foreground flex items-center gap-2 justify-center w-full h-[500px]">
         <Loader className="animate-spin" />
       </div>
     );
+
+  if (!detail) {
+    return <div className="p-4 text-sm text-muted-foreground flex items-center gap-2 justify-center w-full h-[500px]">No request details available</div>;
+  }
 
   const r = detail.request;
 
