@@ -17,6 +17,7 @@ import { useQueryWithStatus } from '@/hooks/use-query';
 import type { useQuery } from 'convex/react';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
+import { useAuth } from '@/hooks/use-user';
 
 type ScreenerDetail = NonNullable<ReturnType<typeof useQuery<typeof api.screener.detail>>>;
 
@@ -56,6 +57,13 @@ export default function RequestDrawer({
   const [isRequesting, startRequesting] = useTransition();
 
   const [currentId, setCurrentId] = useState<Id<'requests'> | null>(null);
+  const auth = useAuth();
+
+  // Business Brief editing state
+  const [editingBrief, setEditingBrief] = useState(false);
+  const [briefText, setBriefText] = useState('');
+  const [isSavingBrief, startSavingBrief] = useTransition();
+  const setBriefMut = useMutation(api.request.setBusinessBrief);
 
   useEffect(() => {
     if (row) setCurrentId(row.id);
@@ -78,6 +86,12 @@ export default function RequestDrawer({
   const status = detailData?.request?.status || '';
 
   const awaitingInfo = status === 'Pending Info';
+
+  // Keep brief text in sync when switching requests
+  useEffect(() => {
+    const currentBrief = ((detailData?.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
+    if (!editingBrief) setBriefText(currentBrief);
+  }, [detailData, editingBrief]);
 
   return (
     <Drawer direction={'right'} open={open} onOpenChange={onOpenChange}>
@@ -102,6 +116,69 @@ export default function RequestDrawer({
                   <LabelVal label="Project" value={detailData.request.projectName} />
                   <LabelVal label="Request By" value={detailData.requester} />
                   <LabelVal label="Submitted" value={dayjs(detailData.request.createdAt).format('MMM D, YYYY h:mm A')} />
+                </div>
+                <div className="pt-2 text-[12px]">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-muted-foreground text-[10px]">Business Brief</div>
+                    {!editingBrief ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-[10px]"
+                        onClick={() => {
+                          const currentBrief = ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
+                          setBriefText(currentBrief);
+                          setEditingBrief(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          disabled={isSavingBrief || !currentId || briefText.trim().length < 5}
+                          onClick={() => {
+                            if (!currentId) return;
+                            startSavingBrief(async () => {
+                              try {
+                                await setBriefMut({ userId: auth.id, id: currentId, businessBrief: briefText.trim() });
+                                setEditingBrief(false);
+                                toast.success('Business brief updated');
+                              } catch (e) {
+                                toastError(e);
+                              }
+                            });
+                          }}
+                        >
+                          {isSavingBrief && <Loader className="mr-1 size-3 animate-spin" />} Save
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => {
+                            const currentBrief = ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim();
+                            setBriefText(currentBrief);
+                            setEditingBrief(false);
+                          }}
+                          disabled={isSavingBrief}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {!editingBrief ? (
+                    ((detailData.request as unknown as { businessBrief?: string })?.businessBrief || '').trim() ? (
+                      <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">{(detailData.request as unknown as { businessBrief?: string }).businessBrief}</div>
+                    ) : (
+                      <div className="text-muted-foreground italic">No brief provided.</div>
+                    )
+                  ) : (
+                    <Textarea value={briefText} onChange={(e) => setBriefText(e.target.value)} className="h-28 resize-none" placeholder="Describe the business problem/use-case and desired outcome" />
+                  )}
                 </div>
               </div>
               {detailData.productsDetailed && detailData.productsDetailed.length > 0 && (
