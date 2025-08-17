@@ -92,13 +92,7 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
 
   async function completePacking() {
     if (!details) return;
-    const lots = details.request.productsRequested.map((p) => ({ productId: p.productId, lot: lotNumbers[String(p.productId)] || '' }));
-
-    if (lots.some((l) => !l.lot.trim())) {
-      toast.error('Enter lot numbers for all products');
-
-      return;
-    }
+    const lots = details.request.productsRequested.map((p) => ({ productId: p.productId, lot: (lotNumbers[String(p.productId)] || '').trim() })).filter((l) => l.lot.length > 0);
 
     if (!Object.values(checks).every(Boolean)) {
       toast.error('Please confirm all checklist items');
@@ -132,7 +126,6 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
         <Info label="Company" value={details.stakeholder?.companyName || 'Unknown'} />
         <Info label="Submitted" value={dayjs(details.request.createdAt).format('MMM D, YYYY HH:mm')} />
       </div>
-
       <div className="space-y-2">
         <h4 className="font-semibold text-sm tracking-tight">Products</h4>
         <div className="rounded-md border divide-y">
@@ -152,7 +145,7 @@ function PackingDialog({ orderId, email, onClose }: { orderId: Id<'orders'>; ema
                 {!isPacked ? (
                   <div className="flex items-center gap-2">
                     <TextInput
-                      placeholder="Lot #"
+                      placeholder="Lot # (optional)"
                       value={lotNumbers[String(p.productId)] || ''}
                       onChange={(e) => setLotNumbers((prev) => ({ ...prev, [String(p.productId)]: e.target.value }))}
                       className="h-8 w-40"
