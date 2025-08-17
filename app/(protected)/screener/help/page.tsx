@@ -1,5 +1,3 @@
-export const dynamic = 'force-static';
-
 const sections = [
   {
     id: 'overview',
