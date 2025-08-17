@@ -35,6 +35,7 @@ export function AddRequest() {
   const [requestId, setRequestId] = useState('');
 
   const [items, setItems] = useState<{ productId: string; quantity: number | ''; notes: string }[]>([]);
+
   const [businessBrief, setBusinessBrief] = useState('');
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -76,6 +77,7 @@ export function AddRequest() {
 
     if (!businessBrief.trim()) {
       toast.error('Please add a brief');
+
       return;
     }
 
@@ -93,7 +95,9 @@ export function AddRequest() {
           .filter((i) => i.productId && i.quantity !== '' && (i.quantity as number) > 0)
           .map((i) => {
             const pid = (products || []).find((p) => `${p.productId} - ${p.productName}` === i.productId)?.id as Id<'products'> | undefined;
+
             if (!pid) throw new Error('Invalid product selection');
+
             return { productId: pid, quantity: i.quantity as number, notes: i.notes || undefined };
           });
 

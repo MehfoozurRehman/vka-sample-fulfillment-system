@@ -28,34 +28,57 @@ export default function ScreenerRequestPage() {
   const requestId = searchParams.get('id') as Id<'requests'>;
 
   const { data: detail } = useQueryWithStatus(api.screener.detail, { id: requestId });
+
   const { data: products } = useQueryWithStatus(api.product.list, {});
 
   const approveMut = useMutation(api.screener.approve);
+
   const rejectMut = useMutation(api.screener.reject);
+
   const requestInfoMut = useMutation(api.screener.requestInfo);
+
   const claimMut = useMutation(api.screener.claim);
 
   const addLineMut = useMutation(api.request.addProductLine);
+
   const editLineMut = useMutation(api.request.editProductLine);
+
   const removeLineMut = useMutation(api.request.removeProductLine);
 
   const [notes, setNotes] = useState('');
+
   const [reason, setReason] = useState('');
+
   const [infoMsg, setInfoMsg] = useState('');
+
   const [showInfoForm, setShowInfoForm] = useState(false);
+
   const [isSaving, startSaving] = useTransition();
+
   const [isRequesting, startRequesting] = useTransition();
+
   const [isClaiming, startClaiming] = useTransition();
+
   const [isAddPending, startAdd] = useTransition();
+
   const [isEditPending, startEdit] = useTransition();
+
   const [isRemovePending, startRemove] = useTransition();
+
   const [addOpen, setAddOpen] = useState(false);
+
   const [addForm, setAddForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
+
   const [editOpen, setEditOpen] = useState(false);
+
   const [editIndex, setEditIndex] = useState<number | null>(null);
+
   const [editForm, setEditForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
+
   const [removeOpen, setRemoveOpen] = useState(false);
+
   const [removeIndex, setRemoveIndex] = useState<number | null>(null);
+
   const [removeReason, setRemoveReason] = useState('');
 
   const status = detail?.request?.status || '';
@@ -332,13 +355,16 @@ export default function ScreenerRequestPage() {
           <div className="space-y-3">
             {(() => {
               const selectedIds = new Set(r.productsRequested.map((l) => l.productId as Id<'products'>));
+
               const filteredAddOptions = productOptions.filter((o) => !selectedIds.has(o.id)).map((o) => o.label);
+
               return (
                 <InputWithSuggestions
                   className="h-9"
                   value={addForm.productId ? productLabelById.get(addForm.productId) || '' : ''}
                   onValueChange={(v) => {
                     const match = productOptions.find((o) => o.label === v);
+
                     setAddForm((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
                   }}
                   options={filteredAddOptions}
@@ -365,11 +391,14 @@ export default function ScreenerRequestPage() {
               onClick={() => {
                 if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim())) {
                   toast.error('Select product, qty > 0, and reason');
+
                   return;
                 }
+
                 startAdd(async () => {
                   try {
                     const line = { productId: addForm.productId as Id<'products'>, quantity: addForm.quantity as number, notes: addForm.notes || undefined };
+
                     await addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: addForm.reason.trim() });
                     toast.success('Line added');
                     setAddOpen(false);
@@ -395,14 +424,18 @@ export default function ScreenerRequestPage() {
           <div className="space-y-3">
             {(() => {
               const idx = editIndex ?? -1;
+
               const selectedOtherIds = new Set(r.productsRequested.map((l, i) => (i === idx ? null : (l.productId as Id<'products'>))).filter(Boolean) as Id<'products'>[]);
+
               const filteredEditOptions = productOptions.filter((o) => !selectedOtherIds.has(o.id)).map((o) => o.label);
+
               return (
                 <InputWithSuggestions
                   className="h-9"
                   value={editForm.productId ? productLabelById.get(editForm.productId) || '' : ''}
                   onValueChange={(v) => {
                     const match = productOptions.find((o) => o.label === v);
+
                     setEditForm((f) => ({ ...f, productId: match ? (match.id as Id<'products'>) : null }));
                   }}
                   options={filteredEditOptions}
@@ -433,13 +466,17 @@ export default function ScreenerRequestPage() {
             <Button
               onClick={() => {
                 if (editIndex === null) return;
+
                 if (!(editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim())) {
                   toast.error('Select product, qty > 0, and reason');
+
                   return;
                 }
+
                 startEdit(async () => {
                   try {
                     const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
+
                     await editLineMut({ id: requestId, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() });
                     toast.success('Line updated');
                     setEditOpen(false);
@@ -469,8 +506,10 @@ export default function ScreenerRequestPage() {
               <div className="font-medium">
                 {(() => {
                   const idx = removeIndex ?? -1;
+
                   if (idx < 0) return '—';
                   const pid = r.productsRequested[idx]?.productId as Id<'products'> | undefined;
+
                   return (pid && productLabelById.get(pid)) || String(pid ?? '—');
                 })()}
               </div>
@@ -485,10 +524,13 @@ export default function ScreenerRequestPage() {
               variant="destructive"
               onClick={() => {
                 if (removeIndex === null) return;
+
                 if (!removeReason.trim()) {
                   toast.error('Reason required');
+
                   return;
                 }
+
                 startRemove(async () => {
                   try {
                     await removeLineMut({ id: requestId, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() });

@@ -32,6 +32,7 @@ export function mapToVariant(value?: string, kind: StatusKind = 'status'): Varia
 
 export function StatusPill({ value, kind = 'status', className }: { value?: string; kind?: StatusKind; className?: string }) {
   const variant = mapToVariant(value, kind);
+
   return (
     <Badge variant={variant} className={className}>
       {value || '—'}
