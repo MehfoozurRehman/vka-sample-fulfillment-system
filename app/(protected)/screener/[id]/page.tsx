@@ -45,7 +45,10 @@ export default function ScreenerRequestPage() {
   const [showInfoForm, setShowInfoForm] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [isRequesting, startRequesting] = useTransition();
-  // Dialog-based product change state
+  const [isClaiming, startClaiming] = useTransition();
+  const [isAddPending, startAdd] = useTransition();
+  const [isEditPending, startEdit] = useTransition();
+  const [isRemovePending, startRemove] = useTransition();
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState<{ productId: Id<'products'> | null; quantity: number | ''; notes?: string; reason: string }>({ productId: null, quantity: 1, notes: '', reason: '' });
   const [editOpen, setEditOpen] = useState(false);
@@ -68,7 +71,6 @@ export default function ScreenerRequestPage() {
   const productLabelById = useMemo(() => new Map(productOptions.map((p) => [p.id, p.label])), [productOptions]);
 
   useEffect(() => {
-    // Reset any open dialogs when navigating
     setAddOpen(false);
     setEditOpen(false);
     setRemoveOpen(false);
@@ -114,8 +116,21 @@ export default function ScreenerRequestPage() {
             )}
           </div>
           {!claimedBy && (
-            <Button size="sm" onClick={() => claimMut({ id: requestId, screenerEmail: auth.email }).catch(toastError)}>
-              Claim
+            <Button
+              size="sm"
+              onClick={() =>
+                startClaiming(async () => {
+                  try {
+                    await claimMut({ id: requestId, screenerEmail: auth.email });
+                    toast.success('Request claimed');
+                  } catch (e) {
+                    toastError(e);
+                  }
+                })
+              }
+              disabled={isClaiming}
+            >
+              {isClaiming && <Loader className="mr-2 size-3 animate-spin" />} Claim
             </Button>
           )}
         </div>
@@ -308,8 +323,6 @@ export default function ScreenerRequestPage() {
           </Table>
         </div>
       </div>
-
-      {/* Add Product Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
@@ -350,25 +363,29 @@ export default function ScreenerRequestPage() {
             </Button>
             <Button
               onClick={() => {
-                if (addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim()) {
-                  const line = { productId: addForm.productId as Id<'products'>, quantity: addForm.quantity as number, notes: addForm.notes || undefined };
-                  addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: addForm.reason.trim() })
-                    .then(() => {
-                      toast.success('Line added');
-                      setAddOpen(false);
-                      setAddForm({ productId: null, quantity: 1, notes: '', reason: '' });
-                    })
-                    .catch(toastError);
-                } else toast.error('Select product, qty > 0, and reason');
+                if (!(addForm.productId && addForm.quantity !== '' && (addForm.quantity as number) > 0 && addForm.reason.trim())) {
+                  toast.error('Select product, qty > 0, and reason');
+                  return;
+                }
+                startAdd(async () => {
+                  try {
+                    const line = { productId: addForm.productId as Id<'products'>, quantity: addForm.quantity as number, notes: addForm.notes || undefined };
+                    await addLineMut({ id: requestId, screenerEmail: auth.email, line, reason: addForm.reason.trim() });
+                    toast.success('Line added');
+                    setAddOpen(false);
+                    setAddForm({ productId: null, quantity: 1, notes: '', reason: '' });
+                  } catch (e) {
+                    toastError(e);
+                  }
+                });
               }}
+              disabled={isAddPending}
             >
-              Add
+              {isAddPending && <Loader className="mr-2 size-3 animate-spin" />} Add
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Product Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
@@ -416,26 +433,30 @@ export default function ScreenerRequestPage() {
             <Button
               onClick={() => {
                 if (editIndex === null) return;
-                if (editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim()) {
-                  const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
-                  editLineMut({ id: requestId, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() })
-                    .then(() => {
-                      toast.success('Line updated');
-                      setEditOpen(false);
-                      setEditIndex(null);
-                      setEditForm({ productId: null, quantity: 1, notes: '', reason: '' });
-                    })
-                    .catch(toastError);
-                } else toast.error('Select product, qty > 0, and reason');
+                if (!(editForm.productId && editForm.quantity !== '' && (editForm.quantity as number) > 0 && editForm.reason.trim())) {
+                  toast.error('Select product, qty > 0, and reason');
+                  return;
+                }
+                startEdit(async () => {
+                  try {
+                    const to = { productId: editForm.productId as Id<'products'>, quantity: editForm.quantity as number, notes: editForm.notes || undefined };
+                    await editLineMut({ id: requestId, screenerEmail: auth.email, index: editIndex, to, reason: editForm.reason.trim() });
+                    toast.success('Line updated');
+                    setEditOpen(false);
+                    setEditIndex(null);
+                    setEditForm({ productId: null, quantity: 1, notes: '', reason: '' });
+                  } catch (e) {
+                    toastError(e);
+                  }
+                });
               }}
+              disabled={isEditPending}
             >
-              Save
+              {isEditPending && <Loader className="mr-2 size-3 animate-spin" />} Save
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Remove Product Dialog */}
       <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
         <DialogContent>
           <DialogHeader>
@@ -468,17 +489,21 @@ export default function ScreenerRequestPage() {
                   toast.error('Reason required');
                   return;
                 }
-                removeLineMut({ id: requestId, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() })
-                  .then(() => {
+                startRemove(async () => {
+                  try {
+                    await removeLineMut({ id: requestId, screenerEmail: auth.email, index: removeIndex, reason: removeReason.trim() });
                     toast.success('Line removed');
                     setRemoveOpen(false);
                     setRemoveIndex(null);
                     setRemoveReason('');
-                  })
-                  .catch(toastError);
+                  } catch (e) {
+                    toastError(e);
+                  }
+                });
               }}
+              disabled={isRemovePending}
             >
-              Remove
+              {isRemovePending && <Loader className="mr-2 size-3 animate-spin" />} Remove
             </Button>
           </DialogFooter>
         </DialogContent>
