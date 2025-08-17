@@ -138,6 +138,7 @@ export const markShipped = mutation({
     await ctx.db.patch(id, {
       status: 'Shipped',
       shippedBy,
+      shippedByUserId: user._id,
       shippedDate: now,
       internationalDocsIncluded,
       carrier: rest.carrier,
@@ -218,16 +219,25 @@ export const markShipped = mutation({
 });
 
 export const myHistory = query({
-  args: { email: v.string(), limit: v.optional(v.number()) },
-  handler: async (ctx, { email, limit }) => {
+  args: { email: v.optional(v.string()), userId: v.optional(v.id('users')), limit: v.optional(v.number()) },
+  handler: async (ctx, { email, userId, limit }) => {
     const cap = Math.min(limit ?? 200, 500);
-    const orders = await ctx.db
-      .query('orders')
-      .withIndex('by_shippedBy', (q) => q.eq('shippedBy', email))
-      .order('desc')
-      .collect();
+    let orders: Doc<'orders'>[] = [];
+    if (userId) {
+      orders = await ctx.db
+        .query('orders')
+        .withIndex('by_shippedByUserId', (q) => q.eq('shippedByUserId', userId))
+        .order('desc')
+        .collect();
+    } else if (email) {
+      orders = await ctx.db
+        .query('orders')
+        .withIndex('by_shippedBy', (q) => q.eq('shippedBy', email))
+        .order('desc')
+        .collect();
+    }
     const trimmed = orders.filter((o) => !o.deletedAt && o.shippedDate).slice(0, cap);
-    const reqs = await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)));
+    const reqs = (await Promise.all(trimmed.map((o) => ctx.db.get(o.requestId)))) as Array<Doc<'requests'> | null>;
     return trimmed.map((o, i) => ({
       id: o._id,
       orderId: o.orderId,
