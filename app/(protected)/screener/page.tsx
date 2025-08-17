@@ -8,7 +8,6 @@ import { parseAsString, useQueryState } from 'nuqs';
 import CustomerSearch from './components/customer-search';
 import { Id } from '@/convex/_generated/dataModel';
 import ReportsPanel from './components/reports-panel';
-import RequestDrawer from './components/request-drawer';
 import ScreenerChart from './components/screener-chart';
 import ScreenerStats from './components/screener-stats';
 import ScreenerTable from './components/screener-table';
@@ -18,6 +17,7 @@ import { computeStats } from './components/utils';
 import dayjs from 'dayjs';
 import { useAuth } from '@/hooks/use-user';
 import { useQueryWithStatus } from '@/hooks/use-query';
+import { useRouter } from 'next/navigation';
 
 export default function ScreenerPage() {
   const auth = useAuth();
@@ -26,8 +26,7 @@ export default function ScreenerPage() {
 
   const pending = useMemo(() => pendingData ?? [], [pendingData]);
 
-  type SelectedRow = { id: Id<'requests'>; requestId: string } | null;
-  const [selected, setSelected] = useState<SelectedRow>(null);
+  const router = useRouter();
 
   const [range, setRange] = useState('90');
 
@@ -71,19 +70,7 @@ export default function ScreenerPage() {
 
   const stats = useMemo(() => computeStats(filtered), [filtered]);
 
-  const handleAfterAction = useCallback(
-    (id: string) => {
-      const ordered = [...filtered].sort((a, b) => a.createdAt - b.createdAt);
-
-      const idx = ordered.findIndex((r) => r.id === id);
-
-      const next = ordered[idx + 1] || null;
-
-      if (next) setSelected({ id: next.id, requestId: next.requestId });
-      else setSelected(null);
-    },
-    [filtered],
-  );
+  const goToRequest = useCallback(({ id, url }: { id: Id<'requests'>; url: string }) => router.push('/screener/' + url + `?id=${id}`), [router]);
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
@@ -98,7 +85,18 @@ export default function ScreenerPage() {
           <TabsContent value="queue" className="flex flex-col gap-6">
             <ScreenerStats stats={stats} isLoading={isPending} />
             <ScreenerChart metrics={metrics} range={range} setRange={setRange} />
-            <ScreenerTable data={filtered} isPending={isPending} onSelect={(r) => setSelected({ id: r.id, requestId: r.requestId })} search={search} setSearch={setSearch} />
+            <ScreenerTable
+              data={filtered}
+              isPending={isPending}
+              onSelect={(r) =>
+                goToRequest({
+                  id: r.id,
+                  url: r.requestId,
+                })
+              }
+              search={search}
+              setSearch={setSearch}
+            />
           </TabsContent>
           <TabsContent value="customers">
             <CustomerSearch />
@@ -123,7 +121,7 @@ export default function ScreenerPage() {
                 <TableBody>
                   {filteredHistory?.length ? (
                     filteredHistory.map((r, i) => (
-                      <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected({ id: r.id, requestId: r.requestId })}>
+                      <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => goToRequest({ id: r.id, url: r.requestId })}>
                         <TableCell>{r.requestId}</TableCell>
                         <TableCell>{r.status}</TableCell>
                         <TableCell>{r.reviewDate ? dayjs(r.reviewDate).format('YYYY-MM-DD HH:mm') : '—'}</TableCell>
@@ -142,13 +140,6 @@ export default function ScreenerPage() {
           </TabsContent>
         </Tabs>
       </div>
-      <RequestDrawer
-        open={!!selected}
-        onOpenChange={(openState: boolean) => !openState && setSelected(null)}
-        row={selected}
-        reviewerEmail={auth.email}
-        afterAction={(processedId: string) => handleAfterAction(processedId)}
-      />
     </div>
   );
 }
