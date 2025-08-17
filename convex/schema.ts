@@ -43,7 +43,7 @@ export default defineSchema({
     productId: v.string(),
     productName: v.string(),
     category: v.string(),
-    location: v.string(),
+    location: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
