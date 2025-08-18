@@ -2,7 +2,7 @@ import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
 import dayjs from 'dayjs';
-import { resend } from './resend';
+import { api } from './_generated/api';
 import { roles } from '@/constants';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
@@ -85,9 +85,11 @@ export const inviteUser = mutation({
       timestamp: Date.now(),
     });
 
-    await resend.sendEmail(ctx, {
+    await ctx.runMutation(api.email.sendAndRecordEmail, {
+      createdBy: invitedBy,
+      type: 'user.invited.email',
       from: 'VKA <no-reply@vkaff.com>',
-      to: email,
+      to: [email],
       subject: 'Invitation to join VKA',
       html: `
         <p>Hello ${name},</p>
@@ -250,9 +252,11 @@ export const resendInvite = mutation({
     if (user.googleId) throw new Error('User already accepted invite');
     if (user.deletedAt) throw new Error('User deleted');
     const { activeRole } = normalizeRoles(user as Doc<'users'>);
-    await resend.sendEmail(ctx, {
+    await ctx.runMutation(api.email.sendAndRecordEmail, {
+      createdBy: (user.invitedByUser as Id<'users'>) ?? (user._id as Id<'users'>),
+      type: 'user.inviteReminder.email',
       from: 'VKA <no-reply@vkaff.com>',
-      to: user.email,
+      to: [user.email],
       subject: 'Invitation to join VKA (Reminder)',
       html: `
         <p>Hello ${user.name || 'there'},</p>
