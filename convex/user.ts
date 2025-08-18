@@ -254,6 +254,14 @@ export const resendInvite = mutation({
     if (user.googleId) throw new Error('User already accepted invite');
     if (user.deletedAt) throw new Error('User deleted');
     const { activeRole } = normalizeRoles(user as Doc<'users'>);
+
+    const html = await renderInvitationHtml({
+      title: 'Invitation to join VKA (Reminder)',
+      name: user.name,
+      role: activeRole || 'member',
+      inviteUrl: `https://portal.vkaff.com?invite=${user._id}`,
+    });
+
     await ctx.runMutation(api.email.sendAndRecordEmail, {
       createdBy: (user.invitedByUser as Id<'users'>) ?? (user._id as Id<'users'>),
       type: 'user.inviteReminder.email',
@@ -261,12 +269,7 @@ export const resendInvite = mutation({
       to: [user.email],
       subject: 'Invitation to join VKA (Reminder)',
       text: `Hello ${user.name || 'there'},\n\nThis is a reminder to join VKA as a ${activeRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user._id}\n\nIf you did not expect this, you can ignore this email.\n\nBest regards,\nVKA Team`,
-      html: await renderInvitationHtml({
-        title: 'Invitation to join VKA (Reminder)',
-        name: user.name,
-        role: activeRole || 'member',
-        inviteUrl: `https://portal.vkaff.com?invite=${user._id}`,
-      }),
+      html,
     });
 
     await ctx.db.insert('auditLogs', {
