@@ -1,5 +1,4 @@
 import VkaLayout from './VkaLayout';
-import { render } from '@react-email/render';
 
 type InvitationProps = {
   title: string;
@@ -8,7 +7,7 @@ type InvitationProps = {
   inviteUrl: string;
 };
 
-export function Invitation({ title, name, role, inviteUrl }: InvitationProps) {
+function Invitation({ title, name, role, inviteUrl }: InvitationProps) {
   const safeName = name && name.trim().length ? name : 'there';
   const body = `Hello ${safeName},
 
@@ -23,10 +22,6 @@ Best regards,
 VKA Team`;
 
   return <VkaLayout title={title} body={body} />;
-}
-
-export function renderInvitationHtml(props: InvitationProps) {
-  return render(<Invitation {...props} />);
 }
 
 export default Invitation;
