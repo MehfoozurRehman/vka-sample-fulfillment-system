@@ -1,8 +1,8 @@
 import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
-import dayjs from 'dayjs';
 import { api } from './_generated/api';
+import dayjs from 'dayjs';
 import { renderInvitationHtml } from '../emails/Invitation';
 import { roles } from '@/constants';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
@@ -86,6 +86,13 @@ export const inviteUser = mutation({
       timestamp: Date.now(),
     });
 
+    const html = await renderInvitationHtml({
+      title: 'Invitation to join VKA',
+      name,
+      role: newRole,
+      inviteUrl: `https://portal.vkaff.com?invite=${user}`,
+    });
+
     await ctx.runMutation(api.email.sendAndRecordEmail, {
       createdBy: invitedBy,
       type: 'user.invited.email',
@@ -93,12 +100,7 @@ export const inviteUser = mutation({
       to: [email],
       subject: 'Invitation to join VKA',
       text: `Hello ${name},\n\nYou have been invited to join VKA as a ${newRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user}\n\nBest regards,\nVKA Team`,
-      html: await renderInvitationHtml({
-        title: 'Invitation to join VKA',
-        name,
-        role: newRole,
-        inviteUrl: `https://portal.vkaff.com?invite=${user}`,
-      }),
+      html,
     });
 
     const allUsers = await ctx.db.query('users').collect();
