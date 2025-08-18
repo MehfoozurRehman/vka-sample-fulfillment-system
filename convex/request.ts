@@ -3,7 +3,6 @@ import { mutation, query } from './_generated/server';
 
 import { api } from './_generated/api';
 import dayjs from 'dayjs';
-import { renderRequestSubmittedHtml } from '../emails/RequestSubmitted';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
@@ -240,16 +239,16 @@ We will notify you once it is reviewed.
 
 Thank you,
 VKA`;
-      const html = await renderRequestSubmittedHtml({
-        requestId,
-        companyName: stakeholder?.companyName,
-        products: await Promise.all(
-          args.productsRequested.map(async (p) => {
-            const prod = await ctx.db.get(p.productId);
-            return { name: prod?.productName || String(p.productId), quantity: p.quantity, notes: p.notes };
-          }),
-        ),
-      });
+      // const html = await renderRequestSubmittedHtml({
+      //   requestId,
+      //   companyName: stakeholder?.companyName,
+      //   products: await Promise.all(
+      //     args.productsRequested.map(async (p) => {
+      //       const prod = await ctx.db.get(p.productId);
+      //       return { name: prod?.productName || String(p.productId), quantity: p.quantity, notes: p.notes };
+      //     }),
+      //   ),
+      // });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: user._id,
@@ -259,7 +258,7 @@ VKA`;
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { requestId: id, stakeholderId: args.companyId },
       });
     } catch {}
