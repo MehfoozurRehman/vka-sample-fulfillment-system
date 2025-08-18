@@ -3,6 +3,7 @@ import { mutation, query } from './_generated/server';
 
 import dayjs from 'dayjs';
 import { api } from './_generated/api';
+import { renderInvitationHtml } from '../emails/Invitation';
 import { roles } from '@/constants';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
@@ -91,14 +92,13 @@ export const inviteUser = mutation({
       from: 'VKA <no-reply@vkaff.com>',
       to: [email],
       subject: 'Invitation to join VKA',
-      html: `
-        <p>Hello ${name},</p>
-        <p>You have been invited to join VKA with role <strong>${newRole}</strong>. Please click the link below to accept the invitation and set up your account.</p>
-        <p>
-          <a href="https://portal.vkaff.com?invite=${user}">Accept Invitation</a>
-        </p>
-        <p>Best regards,<br/>VKA Team</p>
-      `,
+      text: `Hello ${name},\n\nYou have been invited to join VKA as a ${newRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user}\n\nBest regards,\nVKA Team`,
+      html: await renderInvitationHtml({
+        title: 'Invitation to join VKA',
+        name,
+        role: newRole,
+        inviteUrl: `https://portal.vkaff.com?invite=${user}`,
+      }),
     });
 
     const allUsers = await ctx.db.query('users').collect();
@@ -258,15 +258,13 @@ export const resendInvite = mutation({
       from: 'VKA <no-reply@vkaff.com>',
       to: [user.email],
       subject: 'Invitation to join VKA (Reminder)',
-      html: `
-        <p>Hello ${user.name || 'there'},</p>
-        <p>This is a reminder to join VKA as a <strong>${activeRole}</strong>. Please click the link below to accept the invitation and set up your account.</p>
-        <p>
-          <a href="https://portal.vkaff.com?invite=${user._id}">Accept Invitation</a>
-        </p>
-        <p>If you did not expect this, you can ignore this email.</p>
-        <p>Best regards,<br/>VKA Team</p>
-      `,
+      text: `Hello ${user.name || 'there'},\n\nThis is a reminder to join VKA as a ${activeRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user._id}\n\nIf you did not expect this, you can ignore this email.\n\nBest regards,\nVKA Team`,
+      html: await renderInvitationHtml({
+        title: 'Invitation to join VKA (Reminder)',
+        name: user.name,
+        role: activeRole || 'member',
+        inviteUrl: `https://portal.vkaff.com?invite=${user._id}`,
+      }),
     });
 
     await ctx.db.insert('auditLogs', {
