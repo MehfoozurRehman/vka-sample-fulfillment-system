@@ -1,7 +1,7 @@
+import { Doc, Id } from './_generated/dataModel';
 import { appUrl, roles } from '@/constants';
 import { mutation, query } from './_generated/server';
 
-import { Doc, Id } from './_generated/dataModel';
 import dayjs from 'dayjs';
 import { resend } from './resend';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
@@ -86,7 +86,7 @@ export const inviteUser = mutation({
     });
 
     await resend.sendEmail(ctx, {
-      from: 'VKA <onboarding@resend.dev>',
+      from: 'VKA <no-reply@vkaff.com>',
       to: email,
       subject: 'Invitation to join VKA',
       html: `
@@ -251,7 +251,7 @@ export const resendInvite = mutation({
     if (user.deletedAt) throw new Error('User deleted');
     const { activeRole } = normalizeRoles(user as Doc<'users'>);
     await resend.sendEmail(ctx, {
-      from: 'VKA <onboarding@resend.dev>',
+      from: 'VKA <no-reply@vkaff.com>',
       to: user.email,
       subject: 'Invitation to join VKA (Reminder)',
       html: `
