@@ -1,9 +1,9 @@
 import { Doc, Id } from './_generated/dataModel';
-import { appUrl, roles } from '@/constants';
 import { mutation, query } from './_generated/server';
 
 import dayjs from 'dayjs';
 import { resend } from './resend';
+import { roles } from '@/constants';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
 
@@ -93,7 +93,7 @@ export const inviteUser = mutation({
         <p>Hello ${name},</p>
         <p>You have been invited to join VKA with role <strong>${newRole}</strong>. Please click the link below to accept the invitation and set up your account.</p>
         <p>
-          <a href="${appUrl}?invite=${user}">Accept Invitation</a>
+          <a href="https://portal.vkaff.com?invite=${user}">Accept Invitation</a>
         </p>
         <p>Best regards,<br/>VKA Team</p>
       `,
@@ -258,7 +258,7 @@ export const resendInvite = mutation({
         <p>Hello ${user.name || 'there'},</p>
         <p>This is a reminder to join VKA as a <strong>${activeRole}</strong>. Please click the link below to accept the invitation and set up your account.</p>
         <p>
-          <a href="${appUrl}?invite=${user._id}">Accept Invitation</a>
+          <a href="https://portal.vkaff.com?invite=${user._id}">Accept Invitation</a>
         </p>
         <p>If you did not expect this, you can ignore this email.</p>
         <p>Best regards,<br/>VKA Team</p>
