@@ -5,11 +5,6 @@ import dayjs from 'dayjs';
 import { v } from 'convex/values';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { api, internal } from './_generated/api';
-import { renderRequestApprovedHtml } from '../emails/RequestApproved';
-import { renderOrderReadyHtml } from '../emails/OrderReady';
-import { renderRequestInfoRequestedHtml } from '../emails/RequestInfoRequested';
-import { renderRequestInfoRespondedHtml } from '../emails/RequestInfoResponded';
-import { renderRequestRejectedHtml } from '../emails/RequestRejected';
 
 function uniqEmails(emails: Array<string | undefined | null>): string[] {
   return Array.from(
@@ -36,19 +31,14 @@ async function assertScreener(ctx: { db: DatabaseReader | DatabaseWriter }, emai
 }
 
 async function getUsersByRole(ctx: { db: DatabaseReader | DatabaseWriter }, role: string) {
-  // Prefer an index on `activeRole` for efficient queries. If no matches, fall back to scanning
-  // users to find roles that may be stored in the array field.
   try {
     const fromActive = await ctx.db
       .query('users')
       .withIndex('by_activeRole', (q) => q.eq('activeRole', role))
       .collect();
     if (fromActive && fromActive.length) return fromActive.filter((u) => !u.deletedAt && u.active);
-  } catch {
-    // ignore
-  }
+  } catch {}
 
-  // Last resort: collect all users (slow) and filter by roles array or activeRole
   const allUsers = await ctx.db.query('users').collect();
   return allUsers.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes(role)) || u.activeRole === role));
 }
@@ -150,7 +140,7 @@ export const approve = mutation({
 
       const subject = `VKA Sample Request [${req.requestId}] Approved`;
       const text = `Hello,\n\nYour sample request ${req.requestId} has been approved and is moving to packing.\n\nThank you,\nVKA`;
-      const html = await renderRequestApprovedHtml({ requestId: req.requestId });
+      // const html = await renderRequestApprovedHtml({ requestId: req.requestId });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -160,7 +150,7 @@ export const approve = mutation({
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -177,7 +167,7 @@ export const approve = mutation({
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail]);
       const subject = `VKA Order [${orderId}] Ready to Pack`;
       const text = `Hello,\n\nOrder ${orderId} from request ${req.requestId} is ready for packing.\n\nThank you,\nVKA`;
-      const html = await renderOrderReadyHtml({ orderId, requestId: req.requestId });
+      // const html = await renderOrderReadyHtml({ orderId, requestId: req.requestId });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -187,7 +177,7 @@ export const approve = mutation({
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { orderId: newOrderId, requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -240,7 +230,7 @@ export const reject = mutation({
       const cc = uniqEmails([requesterUser?.email, stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
       const subject = `VKA Sample Request [${req.requestId}] Status Update`;
       const text = `Hello,\n\nWe are sorry to inform you that request ${req.requestId} was rejected.\nReason: ${reason}\n\nThank you,\nVKA`;
-      const html = await renderRequestRejectedHtml({ requestId: req.requestId, reason });
+      // const html = await renderRequestRejectedHtml({ requestId: req.requestId, reason });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -250,7 +240,7 @@ export const reject = mutation({
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
@@ -307,7 +297,7 @@ export const requestInfo = mutation({
       const cc = uniqEmails([stakeholder?.salesRepEmail, ...(stakeholder?.vipFlag ? adminEmails : [])]);
       const subject = `VKA Sample Request [${req.requestId}] – Additional Information Requested`;
       const text = `Hello ${requester?.name ?? ''},\n\nAdditional information has been requested for ${req.requestId}:\n${message}\n\nPlease reply at your earliest convenience.\n\nThank you,\nVKA`;
-      const html = await renderRequestInfoRequestedHtml({ requestId: req.requestId, message, requesterName: requester?.name });
+      // const html = await renderRequestInfoRequestedHtml({ requestId: req.requestId, message, requesterName: requester?.name });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: reviewer._id,
@@ -317,7 +307,7 @@ export const requestInfo = mutation({
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
 
@@ -375,7 +365,7 @@ export const respondInfo = mutation({
       const cc = uniqEmails([stakeholder?.salesRepEmail]);
       const subject = `VKA Sample Request [${req.requestId}] – Information Provided`;
       const text = `Hello,\n\nThe requester has provided additional information for ${req.requestId}:\n${message}\n\nThank you,\nVKA`;
-      const html = await renderRequestInfoRespondedHtml({ requestId: req.requestId, message });
+      // const html = await renderRequestInfoRespondedHtml({ requestId: req.requestId, message });
 
       await ctx.runMutation(api.email.sendAndRecordEmail, {
         createdBy: owner?._id ?? (screeners[0]?._id as Id<'users'>),
@@ -385,7 +375,7 @@ export const respondInfo = mutation({
         cc,
         subject,
         text,
-        html,
+        // html,
         related: { requestId: id, stakeholderId: req.companyId },
       });
     } catch {}
