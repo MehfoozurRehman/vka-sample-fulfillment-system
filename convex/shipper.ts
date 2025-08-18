@@ -4,7 +4,6 @@ import { v } from 'convex/values';
 import dayjs from 'dayjs';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { api } from './_generated/api';
-import { renderRequestSubmittedHtml } from '../emails/RequestSubmitted';
 
 function uniqEmails(emails: Array<string | undefined | null>): string[] {
   return Array.from(
@@ -195,10 +194,10 @@ export const markShipped = mutation({
           ]);
           const subject = `VKA Samples Shipped - Tracking: ${rest.trackingNumber}`;
           const text = `Hello,\n\nYour samples have shipped for request ${req.requestId}.\nCarrier: ${rest.carrier}\nTracking: ${rest.trackingNumber}\n\nThank you,\nVKA`;
-          const html = await renderRequestSubmittedHtml({
-            requestId: req.requestId,
-            companyName: stakeholder?.companyName,
-          });
+          // const html = await renderRequestSubmittedHtml({
+          //   requestId: req.requestId,
+          //   companyName: stakeholder?.companyName,
+          // });
 
           await ctx.runMutation(api.email.sendAndRecordEmail, {
             createdBy: user._id,
@@ -208,7 +207,7 @@ export const markShipped = mutation({
             cc,
             subject,
             text,
-            html,
+            // html,
             related: { orderId: id, requestId: order.requestId, stakeholderId: req.companyId },
           });
         } catch {}
