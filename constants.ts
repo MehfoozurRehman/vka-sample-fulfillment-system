@@ -1,5 +1,3 @@
-export const appUrl = new URL((process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')).replace(/\/$/, ''));
-
 export const roles = ['admin', 'requester', 'screener', 'packer', 'shipper'] as const;
 
 export type RoleType = (typeof roles)[number];
