@@ -3,7 +3,6 @@ import { mutation, query } from './_generated/server';
 
 import { api } from './_generated/api';
 import dayjs from 'dayjs';
-import { renderInvitationHtml } from '../emails/Invitation';
 import { roles } from '@/constants';
 import { sendInternalNotifications } from '@/utils/sendInternalNotifications';
 import { v } from 'convex/values';
@@ -86,12 +85,12 @@ export const inviteUser = mutation({
       timestamp: Date.now(),
     });
 
-    const html = await renderInvitationHtml({
-      title: 'Invitation to join VKA',
-      name,
-      role: newRole,
-      inviteUrl: `https://portal.vkaff.com?invite=${user}`,
-    });
+    // const html = await renderInvitationHtml({
+    //   title: 'Invitation to join VKA',
+    //   name,
+    //   role: newRole,
+    //   inviteUrl: `https://portal.vkaff.com?invite=${user}`,
+    // });
 
     await ctx.runMutation(api.email.sendAndRecordEmail, {
       createdBy: invitedBy,
@@ -100,7 +99,7 @@ export const inviteUser = mutation({
       to: [email],
       subject: 'Invitation to join VKA',
       text: `Hello ${name},\n\nYou have been invited to join VKA as a ${newRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user}\n\nBest regards,\nVKA Team`,
-      html,
+      // html,
     });
 
     const allUsers = await ctx.db.query('users').collect();
@@ -255,12 +254,12 @@ export const resendInvite = mutation({
     if (user.deletedAt) throw new Error('User deleted');
     const { activeRole } = normalizeRoles(user as Doc<'users'>);
 
-    const html = await renderInvitationHtml({
-      title: 'Invitation to join VKA (Reminder)',
-      name: user.name,
-      role: activeRole || 'member',
-      inviteUrl: `https://portal.vkaff.com?invite=${user._id}`,
-    });
+    // const html = await renderInvitationHtml({
+    //   title: 'Invitation to join VKA (Reminder)',
+    //   name: user.name,
+    //   role: activeRole || 'member',
+    //   inviteUrl: `https://portal.vkaff.com?invite=${user._id}`,
+    // });
 
     await ctx.runMutation(api.email.sendAndRecordEmail, {
       createdBy: (user.invitedByUser as Id<'users'>) ?? (user._id as Id<'users'>),
@@ -269,7 +268,7 @@ export const resendInvite = mutation({
       to: [user.email],
       subject: 'Invitation to join VKA (Reminder)',
       text: `Hello ${user.name || 'there'},\n\nThis is a reminder to join VKA as a ${activeRole}.\n\nAccept your invitation: https://portal.vkaff.com?invite=${user._id}\n\nIf you did not expect this, you can ignore this email.\n\nBest regards,\nVKA Team`,
-      html,
+      // html,
     });
 
     await ctx.db.insert('auditLogs', {
