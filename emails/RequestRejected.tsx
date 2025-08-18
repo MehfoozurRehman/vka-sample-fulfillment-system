@@ -1,12 +1,11 @@
 import VkaLayout from './VkaLayout';
-import { render } from '@react-email/render';
 
 type RequestRejectedProps = {
   requestId: string;
   reason: string;
 };
 
-export function RequestRejected({ requestId, reason }: RequestRejectedProps) {
+function RequestRejected({ requestId, reason }: RequestRejectedProps) {
   const title = `VKA Sample Request [${requestId}] Status Update`;
   const body = `Hello,
 
@@ -16,10 +15,6 @@ Reason: ${reason}
 Thank you,
 VKA`;
   return <VkaLayout title={title} body={body} />;
-}
-
-export function renderRequestRejectedHtml(props: RequestRejectedProps) {
-  return render(<RequestRejected {...props} />);
 }
 
 export default RequestRejected;
