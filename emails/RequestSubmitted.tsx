@@ -1,5 +1,4 @@
 import VkaLayout from './VkaLayout';
-import { render } from '@react-email/render';
 
 type RequestSubmittedProps = {
   requestId: string;
@@ -7,7 +6,7 @@ type RequestSubmittedProps = {
   products?: Array<{ name: string; quantity: number; notes?: string | null }>;
 };
 
-export function RequestSubmitted({ requestId, companyName, products }: RequestSubmittedProps) {
+function RequestSubmitted({ requestId, companyName, products }: RequestSubmittedProps) {
   const title = `VKA Sample Request [${requestId}] Received`;
   const productsText = (products || []).map((p) => `- ${p.name} x ${p.quantity}${p.notes ? ` (${p.notes})` : ''}`).join('\n');
   const body = `Hello,
@@ -19,10 +18,6 @@ ${products && products.length ? `Products:\n${productsText}\n\n` : ''}We will no
 Thank you,
 VKA`;
   return <VkaLayout title={title} body={body} />;
-}
-
-export function renderRequestSubmittedHtml(props: RequestSubmittedProps) {
-  return render(<RequestSubmitted {...props} />);
 }
 
 export default RequestSubmitted;
