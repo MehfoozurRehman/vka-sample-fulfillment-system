@@ -35,6 +35,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
             },
           });
 
+          if (!userInfoResponse.ok) {
+            const status = userInfoResponse.status;
+            const errText = await userInfoResponse.text().catch(() => '');
+            toast.error(`Failed to fetch Google user info (${status})`);
+            console.error('Google userinfo error:', status, errText);
+            return;
+          }
+
           const gInfo = await userInfoResponse.json();
 
           if (gInfo && gInfo.email && gInfo.sub) {
