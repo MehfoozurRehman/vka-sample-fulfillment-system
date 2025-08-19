@@ -4,6 +4,7 @@ import { api } from '@/convex/_generated/api';
 import { cookies } from 'next/headers';
 import { preloadQuery } from 'convex/nextjs';
 import { redirect } from 'next/navigation';
+import { removeToken } from '@/actions/remove-token';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -14,7 +15,10 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     return redirect('/');
   }
 
-  const userQuery = await preloadQuery(api.auth.getUser, { userId: token });
-
-  return <AuthProvider userQuery={userQuery}>{children}</AuthProvider>;
+  try {
+    const userQuery = await preloadQuery(api.auth.getUser, { userId: token });
+    return <AuthProvider userQuery={userQuery}>{children}</AuthProvider>;
+  } catch {
+    await removeToken();
+  }
 }
