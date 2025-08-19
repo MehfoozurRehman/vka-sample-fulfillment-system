@@ -14,8 +14,6 @@ import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const SIDEBAR_COOKIE_NAME = 'sidebar_state';
-
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 const SIDEBAR_WIDTH = '16rem';
@@ -78,8 +76,6 @@ function SidebarProvider({
       } else {
         _setOpen(openState);
       }
-
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
     [setOpenProp, open],
   );
