@@ -317,7 +317,9 @@ export const update = mutation({
 
     if (existingOrder) throw new Error('Cannot edit once order exists');
 
-    const patch: Record<string, unknown> = { ...rest, businessBrief: rest.businessBrief.trim(), updatedAt: Date.now() };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { userId, ...patchRest } = rest;
+    const patch: Record<string, unknown> = { ...patchRest, businessBrief: patchRest.businessBrief.trim(), updatedAt: Date.now() };
     await ctx.db.patch(id, patch);
 
     const actorUser = await ctx.db
@@ -332,7 +334,7 @@ export const update = mutation({
       action: 'updateRequest',
       table: 'requests',
       recordId: id,
-      changes: rest,
+      changes: patchRest,
       timestamp: Date.now(),
     });
 
