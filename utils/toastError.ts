@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 
 export default function toastError(error: unknown) {
+  console.error(error);
   if (error instanceof Error) {
     const errorMessage = error.message.split(' at ')[0].split('Error: ')[1] || error.message;
     toast.error(errorMessage);
