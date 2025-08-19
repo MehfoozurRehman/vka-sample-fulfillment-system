@@ -31,6 +31,7 @@ export function AddRequest() {
   const { data: suggestions } = useQueryWithStatus(api.request.suggestions);
 
   const addReq = useMutation(api.request.add);
+  const addStakeholder = useMutation(api.stakeholder.addStakeholder);
 
   const [requestId, setRequestId] = useState('');
 
@@ -69,8 +70,8 @@ export function AddRequest() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!selectedCompany) {
-      toast.error('Select a company');
+    if (!companyId.trim()) {
+      toast.error('Select or enter a company');
 
       return;
     }
@@ -89,8 +90,35 @@ export function AddRequest() {
       return;
     }
 
+    const contactNameVal = ((event.currentTarget.elements.namedItem('contactName') as HTMLInputElement | null)?.value || '').trim();
+    const emailVal = ((event.currentTarget.elements.namedItem('email') as HTMLInputElement | null)?.value || '').trim();
+    const phoneVal = ((event.currentTarget.elements.namedItem('phone') as HTMLInputElement | null)?.value || '').trim();
+    const countryVal = ((event.currentTarget.elements.namedItem('country') as HTMLInputElement | null)?.value || '').trim();
+    const applicationTypeVal = ((event.currentTarget.elements.namedItem('applicationType') as HTMLInputElement | null)?.value || '').trim();
+    const projectNameVal = ((event.currentTarget.elements.namedItem('projectName') as HTMLInputElement | null)?.value || '').trim();
+
     startTransition(async () => {
       try {
+        let companyIdToUse: Id<'stakeholders'> | undefined = selectedCompany?.id;
+
+        if (!companyIdToUse) {
+          try {
+            const newId = await addStakeholder({
+              userId: auth.id,
+              companyName: companyId.trim(),
+              salesRepEmail: '',
+              accountManagerEmail: '',
+              complianceOfficerEmail: '',
+              vipFlag: false,
+            });
+
+            companyIdToUse = newId as Id<'stakeholders'>;
+          } catch (err) {
+            toastError(err);
+            return;
+          }
+        }
+
         const productsRequested = items
           .filter((i) => i.productId && i.quantity !== '' && (i.quantity as number) > 0)
           .map((i) => {
@@ -104,18 +132,20 @@ export function AddRequest() {
         await addReq({
           userId: auth.id,
           requestId: requestId?.trim() || '',
-          companyId: selectedCompany.id,
-          contactName: (event.currentTarget.elements.namedItem('contactName') as HTMLInputElement).value.trim(),
-          email: (event.currentTarget.elements.namedItem('email') as HTMLInputElement).value.trim(),
-          phone: (event.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.trim(),
-          country: (event.currentTarget.elements.namedItem('country') as HTMLInputElement).value.trim(),
-          applicationType: (event.currentTarget.elements.namedItem('applicationType') as HTMLInputElement).value.trim(),
-          projectName: (event.currentTarget.elements.namedItem('projectName') as HTMLInputElement).value.trim(),
+          companyId: companyIdToUse as Id<'stakeholders'>,
+          contactName: contactNameVal,
+          email: emailVal,
+          phone: phoneVal,
+          country: countryVal,
+          applicationType: applicationTypeVal,
+          projectName: projectNameVal,
           businessBrief: businessBrief.trim(),
           productsRequested,
           requestedBy: auth.email,
         });
+
         toast.success('Request submitted');
+
         setOpen(false);
       } catch (error) {
         toastError(error);
