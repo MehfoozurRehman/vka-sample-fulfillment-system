@@ -14,11 +14,13 @@ export default async function LoginPage() {
   const token = cookie.get(TOKEN_COOKIE_NAME)?.value || null;
 
   if (token) {
-    const user = await fetchQuery(api.auth.checkUserRole, { userId: token });
+    try {
+      const user = await fetchQuery(api.auth.checkUserRole, { userId: token });
 
-    if (user) {
-      return redirect(`/${user.activeRole}`);
-    }
+      if (user) {
+        return redirect(`/${user.activeRole}`);
+      }
+    } catch {}
   }
 
   return (
