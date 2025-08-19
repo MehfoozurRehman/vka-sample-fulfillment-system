@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:email": "email dev",
     "dev:server": "npx convex dev",
     "build": "next build",
     "start": "next start",
@@ -50,12 +51,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@react-email/preview-server": "4.2.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.7",
+    "react-email": "4.2.8",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5"
