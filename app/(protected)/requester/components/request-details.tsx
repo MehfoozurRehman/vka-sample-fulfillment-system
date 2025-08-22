@@ -1,6 +1,23 @@
 'use client';
 
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import {
+  accountTypeOptions,
+  certificationsRequiredOptions,
+  commercialPotentialOptions,
+  countries,
+  documentsNeededOptions,
+  foodMatrix,
+  formatRequiredOptions,
+  healthApplications,
+  internalPriorityLevels,
+  legalStatusOptions,
+  nonFoodApplications,
+  processingConditionsList,
+  requestUrgencies,
+  sampleVolumeOptions,
+  shelfLifeExpectations,
+} from '@/constants';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +30,6 @@ import { Loader } from 'lucide-react';
 import StatusPill from '@/components/status-pill';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
-import { countries } from '@/constants';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { toast } from 'sonner';
@@ -32,6 +48,33 @@ type ProductListItem = {
   category: string;
   createdAt: number;
   updatedAt: number;
+};
+
+type RequestExtended = {
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  applicationType?: string;
+  applicationDetail?: string;
+  applicationSubDetail?: string;
+  projectName?: string;
+  internalReferenceCode?: string;
+  businessBrief?: string;
+  urgency?: string;
+  processingConditions?: string[];
+  shelfLifeExpectation?: string;
+  formatRequired?: string;
+  legalStatus?: string;
+  certificationsRequired?: string;
+  sampleVolume?: string;
+  sampleVolumeOther?: string;
+  documentsNeeded?: string[];
+  documentsOther?: string;
+  accountType?: string;
+  commercialPotential?: string;
+  internalPriorityLevel?: string;
+  productsRequested?: { productId: Id<'products'>; quantity: number; notes?: string }[];
 };
 
 type Props = {
@@ -97,8 +140,24 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     phone: '',
     country: '',
     applicationType: '',
+    applicationDetail: '',
+    applicationSubDetail: '',
     projectName: '',
+    internalReferenceCode: '',
     businessBrief: '',
+    urgency: '',
+    processingConditions: [] as string[],
+    shelfLifeExpectation: '',
+    formatRequired: '',
+    legalStatus: '',
+    certificationsRequired: '',
+    sampleVolume: '',
+    sampleVolumeOther: '',
+    documentsNeeded: [] as string[],
+    documentsOther: '',
+    accountType: '',
+    commercialPotential: '',
+    internalPriorityLevel: '',
     productsRequested: [] as { productId: Id<'products'>; quantity: number; notes?: string }[],
   });
 
@@ -109,14 +168,32 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (request) {
       const pr = (request.productsRequested as { productId: Id<'products'>; quantity: number; notes?: string }[]) || [];
 
+      const r = request as RequestExtended;
+
       setForm({
-        contactName: request.contactName || '',
-        email: request.email || '',
-        phone: request.phone || '',
-        country: request.country || '',
-        applicationType: request.applicationType || '',
-        projectName: request.projectName || '',
-        businessBrief: (request as unknown as { businessBrief?: string })?.businessBrief || '',
+        contactName: r.contactName || '',
+        email: r.email || '',
+        phone: r.phone || '',
+        country: r.country || '',
+        applicationType: r.applicationType || '',
+        applicationDetail: r.applicationDetail || '',
+        applicationSubDetail: r.applicationSubDetail || '',
+        projectName: r.projectName || '',
+        internalReferenceCode: r.internalReferenceCode || '',
+        businessBrief: r.businessBrief || '',
+        urgency: r.urgency || '',
+        processingConditions: (r.processingConditions || []) as string[],
+        shelfLifeExpectation: r.shelfLifeExpectation || '',
+        formatRequired: r.formatRequired || '',
+        legalStatus: r.legalStatus || '',
+        certificationsRequired: r.certificationsRequired || '',
+        sampleVolume: r.sampleVolume || '',
+        sampleVolumeOther: r.sampleVolumeOther || '',
+        documentsNeeded: (r.documentsNeeded || []) as string[],
+        documentsOther: r.documentsOther || '',
+        accountType: r.accountType || '',
+        commercialPotential: r.commercialPotential || '',
+        internalPriorityLevel: r.internalPriorityLevel || '',
         productsRequested: pr,
       });
       setProductLines(
@@ -159,7 +236,34 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
     startSaving(async () => {
       try {
-        await update({ userId: auth.id, id: row.id, ...form });
+        await update({
+          userId: auth.id,
+          id: row.id,
+          contactName: form.contactName,
+          email: form.email,
+          phone: form.phone,
+          country: form.country,
+          applicationType: form.applicationType,
+          applicationDetail: form.applicationDetail || undefined,
+          applicationSubDetail: form.applicationSubDetail || undefined,
+          projectName: form.projectName,
+          internalReferenceCode: form.internalReferenceCode || undefined,
+          businessBrief: form.businessBrief,
+          urgency: form.urgency || undefined,
+          processingConditions: form.processingConditions.length ? form.processingConditions : undefined,
+          shelfLifeExpectation: form.shelfLifeExpectation || undefined,
+          formatRequired: form.formatRequired || undefined,
+          legalStatus: form.legalStatus || undefined,
+          certificationsRequired: form.certificationsRequired || undefined,
+          sampleVolume: form.sampleVolume || undefined,
+          sampleVolumeOther: form.sampleVolume === 'other' && form.sampleVolumeOther ? form.sampleVolumeOther : undefined,
+          documentsNeeded: form.documentsNeeded.length ? form.documentsNeeded : undefined,
+          documentsOther: form.documentsNeeded.includes('Other') && form.documentsOther ? form.documentsOther : undefined,
+          accountType: form.accountType || undefined,
+          commercialPotential: form.commercialPotential || undefined,
+          internalPriorityLevel: form.internalPriorityLevel || undefined,
+          productsRequested: form.productsRequested,
+        });
         setEditing(false);
         toast.success('Request updated');
       } catch (error) {
@@ -336,8 +440,43 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   />
                 </div>
                 <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Application Detail</Label>
+                  <InputWithSuggestions
+                    value={form.applicationDetail}
+                    onValueChange={(v) => {
+                      setForm((f) => ({ ...f, applicationDetail: v, applicationSubDetail: '' }));
+                    }}
+                    options={(function () {
+                      if (form.applicationType === 'Food') return Object.keys(foodMatrix);
+                      if (form.applicationType === 'Health') return healthApplications as unknown as string[];
+                      if (form.applicationType === 'Non-Food') return nonFoodApplications as unknown as string[];
+                      return [];
+                    })()}
+                    placeholder="Depends on type"
+                  />
+                </div>
+                {form.applicationType === 'Food' && form.applicationDetail && foodMatrix[form.applicationDetail] && (
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Food Sub-Detail</Label>
+                    <InputWithSuggestions
+                      value={form.applicationSubDetail}
+                      onValueChange={(v) => updateField('applicationSubDetail', v)}
+                      options={foodMatrix[form.applicationDetail]}
+                      placeholder="Select sub-category"
+                    />
+                  </div>
+                )}
+                <div className="grid gap-2">
                   <Label className="text-sm font-medium">Project Name</Label>
                   <InputWithSuggestions value={form.projectName} onValueChange={(v) => updateField('projectName', v)} options={suggestions?.projectNames || []} placeholder="Select or type" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Internal Ref Code</Label>
+                  <Input value={form.internalReferenceCode} onChange={(e) => updateField('internalReferenceCode', e.target.value)} placeholder="Optional" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Urgency</Label>
+                  <InputWithSuggestions value={form.urgency} onValueChange={(v) => updateField('urgency', v)} options={requestUrgencies as unknown as string[]} placeholder="Select" />
                 </div>
                 <div className="md:col-span-2 grid gap-2">
                   <Label className="text-sm font-medium">Business Brief</Label>
@@ -347,6 +486,118 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                     placeholder="Describe the business problem/use-case and desired outcome"
                     className="h-28 resize-none"
                   />
+                </div>
+                <div className="md:col-span-2 grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Processing Conditions</Label>
+                    <div className="flex flex-wrap gap-2 text-[11px]">
+                      {processingConditionsList.map((pc) => {
+                        const active = form.processingConditions.includes(pc);
+                        return (
+                          <button
+                            key={pc}
+                            type="button"
+                            onClick={() =>
+                              setForm((f) => ({
+                                ...f,
+                                processingConditions: active ? f.processingConditions.filter((x) => x !== pc) : [...f.processingConditions, pc],
+                              }))
+                            }
+                            className={`px-2 py-1 rounded border ${active ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70'}`}
+                          >
+                            {pc}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Shelf Life Expectation</Label>
+                    <InputWithSuggestions
+                      value={form.shelfLifeExpectation}
+                      onValueChange={(v) => updateField('shelfLifeExpectation', v)}
+                      options={shelfLifeExpectations as unknown as string[]}
+                      placeholder="Select"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Format Required</Label>
+                    <InputWithSuggestions
+                      value={form.formatRequired}
+                      onValueChange={(v) => updateField('formatRequired', v)}
+                      options={formatRequiredOptions as unknown as string[]}
+                      placeholder="Select"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Legal Status</Label>
+                    <InputWithSuggestions value={form.legalStatus} onValueChange={(v) => updateField('legalStatus', v)} options={legalStatusOptions as unknown as string[]} placeholder="Select" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Required Certifications</Label>
+                    <InputWithSuggestions
+                      value={form.certificationsRequired}
+                      onValueChange={(v) => updateField('certificationsRequired', v)}
+                      options={certificationsRequiredOptions as unknown as string[]}
+                      placeholder="Select"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Sample Volume</Label>
+                    <InputWithSuggestions
+                      value={form.sampleVolume}
+                      onValueChange={(v) => setForm((f) => ({ ...f, sampleVolume: v, sampleVolumeOther: v === 'other' ? f.sampleVolumeOther : '' }))}
+                      options={sampleVolumeOptions as unknown as string[]}
+                      placeholder="Select"
+                    />
+                    {form.sampleVolume === 'other' && <Input value={form.sampleVolumeOther} onChange={(e) => updateField('sampleVolumeOther', e.target.value)} placeholder="Specify" />}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Documents Needed</Label>
+                    <div className="flex flex-wrap gap-2 text-[11px]">
+                      {documentsNeededOptions.map((d) => {
+                        const active = form.documentsNeeded.includes(d);
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() =>
+                              setForm((f) => ({
+                                ...f,
+                                documentsNeeded: active ? f.documentsNeeded.filter((x) => x !== d) : [...f.documentsNeeded, d],
+                              }))
+                            }
+                            className={`px-2 py-1 rounded border ${active ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70'}`}
+                          >
+                            {d}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {form.documentsNeeded.includes('Other') && <Input value={form.documentsOther} onChange={(e) => updateField('documentsOther', e.target.value)} placeholder="Other docs" />}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Account Type</Label>
+                    <InputWithSuggestions value={form.accountType} onValueChange={(v) => updateField('accountType', v)} options={accountTypeOptions as unknown as string[]} placeholder="Select" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Commercial Potential</Label>
+                    <InputWithSuggestions
+                      value={form.commercialPotential}
+                      onValueChange={(v) => updateField('commercialPotential', v)}
+                      options={commercialPotentialOptions as unknown as string[]}
+                      placeholder="Select"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-medium">Internal Priority Level</Label>
+                    <InputWithSuggestions
+                      value={form.internalPriorityLevel}
+                      onValueChange={(v) => updateField('internalPriorityLevel', v)}
+                      options={internalPriorityLevels as unknown as string[]}
+                      placeholder="Select"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-3">

@@ -17,7 +17,17 @@ export function RecentRequestsPanel({
   onSelect,
   activeId,
 }: {
-  data: { id: Id<'requests'>; requestId: string; status: string; createdAtFmt: string; products: number }[];
+  data: {
+    id: Id<'requests'>;
+    requestId: string;
+    status: string;
+    createdAtFmt: string;
+    products: number;
+    applicationType?: string;
+    applicationDetail?: string;
+    urgency?: string;
+    legalStatus?: string;
+  }[];
   total: number;
   onSelect: (id: Id<'requests'>) => void;
   activeId: Id<'requests'> | null;
@@ -33,7 +43,7 @@ export function RecentRequestsPanel({
           {data.map((i) => (
             <li
               key={i.id}
-              className={`grid grid-cols-3 gap-2 items-center cursor-pointer rounded-sm px-1 py-0.5 transition-colors ${activeId === i.id ? 'bg-muted' : 'hover:bg-muted/60'}`}
+              className={`grid grid-cols-6 gap-2 items-center cursor-pointer rounded-sm px-1 py-0.5 transition-colors ${activeId === i.id ? 'bg-muted' : 'hover:bg-muted/60'}`}
               onClick={() => onSelect(i.id)}
             >
               <span className="font-mono truncate" title={i.requestId}>
@@ -42,8 +52,17 @@ export function RecentRequestsPanel({
               <span className="truncate" title={i.status}>
                 {i.status}
               </span>
-              <span className="text-muted-foreground text-right" title={i.createdAtFmt}>
-                {i.createdAtFmt}
+              <span className="truncate" title={i.applicationType}>
+                {i.applicationType || '—'}
+              </span>
+              <span className="truncate" title={i.applicationDetail}>
+                {i.applicationDetail || '—'}
+              </span>
+              <span className="truncate" title={i.urgency}>
+                {i.urgency || '—'}
+              </span>
+              <span className="truncate" title={i.legalStatus}>
+                {i.legalStatus || '—'}
               </span>
             </li>
           ))}

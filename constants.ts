@@ -201,3 +201,41 @@ export const countries = [
   'Zambia',
   'Zimbabwe',
 ];
+
+export const requestUrgencies = ['Urgent (<1 week)', 'Short-term (1–2 months)', 'Medium-term (3–6 months)', 'Long-term (>6 months)'] as const;
+
+export const applicationTypes = ['Food', 'Health', 'Non-Food'] as const;
+
+export const foodMatrix: Record<string, string[]> = {
+  Beverage: ['Carbonated', 'Juice', 'Alcoholic', 'RTD coffee & tea', 'Energy', 'Flavoured water'],
+  'Bakery & Cereals': ['Bread', 'Cakes', 'Biscuits', 'Cereals', 'Snack bars'],
+  'Dairy & Alternatives': ['Milk', 'Yogurt', 'Cheese', 'Plant-based', 'Ice cream'],
+  Confectionery: ['Sugar', 'Chocolate', 'Chewing gum', 'Lozenges'],
+  'Savoury & Culinary': ['Soups', 'Sauces', 'Ready meals', 'Snacks', 'Instant noodles'],
+  'Meat & Plant-Based Proteins': ['Processed meat', 'Seafood', 'Analogues'],
+  Snacks: ['Extruded', 'Nuts', 'Coated snacks'],
+};
+
+export const healthApplications = ['Nutraceuticals', 'Infant nutrition', 'Medical nutrition'] as const;
+
+export const nonFoodApplications = ['Pharma', 'Oral Care', 'Personal Care', 'Cosmetics'] as const;
+
+export const processingConditionsList = ['Heat', 'UHT', 'Baking', 'Extrusion', 'Acidic pH', 'Neutral pH', 'Fermentation', 'Freezing'] as const;
+
+export const shelfLifeExpectations = ['<6 months', '6–12 months', '>12 months'] as const;
+
+export const formatRequiredOptions = ['Liquid', 'Powder', 'Encapsulated', 'No preference'] as const;
+
+export const legalStatusOptions = ['Natural', 'Nature-Identical', 'Synthetic'] as const;
+
+export const certificationsRequiredOptions = ['Halal', 'Kosher', 'Both', 'None'] as const;
+
+export const sampleVolumeOptions = ['30g', '50g', '100g', 'other'] as const;
+
+export const documentsNeededOptions = ['TDS', 'SDS', 'Halal', 'Kosher', 'Other'] as const;
+
+export const accountTypeOptions = ['Strategic', 'Growth', 'New', 'Transactional'] as const;
+
+export const commercialPotentialOptions = ['Trial', 'Pilot <1MT', 'Commercial >10MT'] as const;
+
+export const internalPriorityLevels = ['High', 'Medium', 'Low'] as const;
