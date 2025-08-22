@@ -217,19 +217,25 @@ export default function CustomerSearch() {
                     </CardHeader>
                     <CardContent className="pt-1">
                       <div className="max-h-56 overflow-auto text-[11px] pr-1">
-                        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 font-medium sticky top-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/70 py-1 border-b mb-1">
+                        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 font-medium sticky top-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/70 py-1 border-b mb-1">
                           <span className="pl-0">ID</span>
                           <span>Status</span>
+                          <span>App Type</span>
+                          <span>Urgency</span>
                           <span>Date</span>
                           <span className="sr-only">&nbsp;</span>
                         </div>
                         <div className="space-y-1">
                           {overview.recent.map((r) => (
-                            <div key={r.id} className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center rounded px-1 py-1 hover:bg-accent/40 transition-colors">
+                            <div key={r.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center rounded px-1 py-1 hover:bg-accent/40 transition-colors">
                               <span className="font-mono text-[10px]">{r.requestId}</span>
                               <span className="truncate text-muted-foreground flex items-center gap-1">
                                 <StatusPill value={r.status} kind="status" className="capitalize" />
                               </span>
+                              <span className="truncate">
+                                {typeof (r as unknown as { applicationType?: unknown }).applicationType === 'string' ? (r as unknown as { applicationType?: string }).applicationType : '—'}
+                              </span>
+                              <span className="truncate">{typeof (r as unknown as { urgency?: unknown }).urgency === 'string' ? (r as unknown as { urgency?: string }).urgency : '—'}</span>
                               <span className="text-muted-foreground tabular-nums">{r.dateFmt}</span>
                               <span className="opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
