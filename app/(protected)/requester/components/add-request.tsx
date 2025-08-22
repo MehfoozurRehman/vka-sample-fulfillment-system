@@ -2,6 +2,24 @@
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
+import {
+  accountTypeOptions,
+  applicationTypes,
+  certificationsRequiredOptions,
+  commercialPotentialOptions,
+  countries,
+  documentsNeededOptions,
+  foodMatrix,
+  formatRequiredOptions,
+  healthApplications,
+  internalPriorityLevels,
+  legalStatusOptions,
+  nonFoodApplications,
+  processingConditionsList,
+  requestUrgencies,
+  sampleVolumeOptions,
+  shelfLifeExpectations,
+} from '@/constants';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -12,7 +30,6 @@ import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
-import { countries } from '@/constants';
 import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
@@ -38,6 +55,22 @@ export function AddRequest() {
   const [items, setItems] = useState<{ productId: string; quantity: number | ''; notes: string }[]>([]);
 
   const [businessBrief, setBusinessBrief] = useState('');
+  const [urgency, setUrgency] = useState('');
+  const [applicationDetail, setApplicationDetail] = useState('');
+  const [applicationSubDetail, setApplicationSubDetail] = useState('');
+  const [processingConditions, setProcessingConditions] = useState<string[]>([]);
+  const [shelfLifeExpectation, setShelfLifeExpectation] = useState('');
+  const [formatRequired, setFormatRequired] = useState('');
+  const [legalStatus, setLegalStatus] = useState('');
+  const [certificationsRequired, setCertificationsRequired] = useState('');
+  const [sampleVolume, setSampleVolume] = useState('');
+  const [sampleVolumeOther, setSampleVolumeOther] = useState('');
+  const [documentsNeeded, setDocumentsNeeded] = useState<string[]>([]);
+  const [documentsOther, setDocumentsOther] = useState('');
+  const [accountType, setAccountType] = useState('');
+  const [commercialPotential, setCommercialPotential] = useState('');
+  const [internalPriorityLevel, setInternalPriorityLevel] = useState('');
+  const [internalReferenceCode, setInternalReferenceCode] = useState('');
 
   const [companyId, setCompanyId] = useState<string>('');
 
@@ -56,8 +89,6 @@ export function AddRequest() {
   const companyOptions = useMemo(() => (stakeholders || []).map((s) => s.companyName).sort(), [stakeholders]);
 
   const productOptions = useMemo(() => (products || []).map((p) => `${p.productId} - ${p.productName}`), [products]);
-
-  const applicationTypeOptions = useMemo(() => suggestions?.applicationTypes || [], [suggestions]);
 
   const projectNameOptions = useMemo(() => suggestions?.projectNames || [], [suggestions]);
 
@@ -138,8 +169,24 @@ export function AddRequest() {
           phone: phoneVal,
           country: countryVal,
           applicationType: applicationTypeVal,
+          applicationDetail: applicationDetail || undefined,
+          applicationSubDetail: applicationSubDetail || undefined,
           projectName: projectNameVal,
+          internalReferenceCode: internalReferenceCode || undefined,
           businessBrief: businessBrief.trim(),
+          urgency: urgency || undefined,
+          processingConditions: processingConditions.length ? processingConditions : undefined,
+          shelfLifeExpectation: shelfLifeExpectation || undefined,
+          formatRequired: formatRequired || undefined,
+          legalStatus: legalStatus || undefined,
+          certificationsRequired: certificationsRequired || undefined,
+          sampleVolume: sampleVolume || undefined,
+          sampleVolumeOther: sampleVolume === 'other' && sampleVolumeOther ? sampleVolumeOther : undefined,
+          documentsNeeded: documentsNeeded.length ? documentsNeeded : undefined,
+          documentsOther: documentsNeeded.includes('Other') && documentsOther ? documentsOther : undefined,
+          accountType: accountType || undefined,
+          commercialPotential: commercialPotential || undefined,
+          internalPriorityLevel: internalPriorityLevel || undefined,
           productsRequested,
           requestedBy: auth.email,
         });
@@ -196,12 +243,54 @@ export function AddRequest() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="applicationType">Application Type</Label>
-              <InputWithSuggestions id="applicationType" name="applicationType" options={applicationTypeOptions} placeholder="Select or type" />
+              <InputWithSuggestions
+                id="applicationType"
+                name="applicationType"
+                options={applicationTypes as unknown as string[]}
+                placeholder="Select or type"
+                onValueChange={() => {
+                  setApplicationDetail('');
+                  setApplicationSubDetail('');
+                }}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="projectName">Project Name</Label>
               <InputWithSuggestions id="projectName" name="projectName" options={projectNameOptions} placeholder="Select or type" />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="internalReferenceCode">Internal Ref Code</Label>
+              <Input id="internalReferenceCode" value={internalReferenceCode} onChange={(e) => setInternalReferenceCode(e.target.value)} placeholder="Optional" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Urgency</Label>
+              <InputWithSuggestions options={requestUrgencies as unknown as string[]} value={urgency} onValueChange={(v) => setUrgency(v)} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Application Detail</Label>
+              <InputWithSuggestions
+                value={applicationDetail}
+                onValueChange={(v) => {
+                  setApplicationDetail(v);
+                  setApplicationSubDetail('');
+                }}
+                options={(function () {
+                  const typeEl = document?.getElementById('applicationType') as HTMLInputElement | null;
+                  const val = typeEl?.value || '';
+                  if (val === 'Food') return Object.keys(foodMatrix);
+                  if (val === 'Health') return healthApplications as unknown as string[];
+                  if (val === 'Non-Food') return nonFoodApplications as unknown as string[];
+                  return [];
+                })()}
+                placeholder="Depends on type"
+              />
+            </div>
+            {applicationDetail && (document?.getElementById('applicationType') as HTMLInputElement | null)?.value === 'Food' && foodMatrix[applicationDetail] && (
+              <div className="grid gap-2">
+                <Label>Food Sub-Detail</Label>
+                <InputWithSuggestions value={applicationSubDetail} onValueChange={(v) => setApplicationSubDetail(v)} options={foodMatrix[applicationDetail]} placeholder="Select sub-category" />
+              </div>
+            )}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="businessBrief">Business Brief</Label>
@@ -214,6 +303,95 @@ export function AddRequest() {
               className="min-h-24 resize-y"
             />
             <span className="text-xs text-muted-foreground">Required. Products are optional and can be suggested later.</span>
+          </div>
+          {/* Technical & Commercial Sections */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label>Processing Conditions</Label>
+              <div className="flex flex-wrap gap-2 text-[11px]">
+                {processingConditionsList.map((pc) => {
+                  const active = processingConditions.includes(pc);
+                  return (
+                    <button
+                      key={pc}
+                      type="button"
+                      onClick={() => setProcessingConditions((p) => (active ? p.filter((x) => x !== pc) : [...p, pc]))}
+                      className={`px-2 py-1 rounded border ${active ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70'}`}
+                    >
+                      {pc}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Shelf Life Expectation</Label>
+              <InputWithSuggestions value={shelfLifeExpectation} onValueChange={(v) => setShelfLifeExpectation(v)} options={shelfLifeExpectations as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Format Required</Label>
+              <InputWithSuggestions value={formatRequired} onValueChange={(v) => setFormatRequired(v)} options={formatRequiredOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Legal Status</Label>
+              <InputWithSuggestions value={legalStatus} onValueChange={(v) => setLegalStatus(v)} options={legalStatusOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Required Certifications</Label>
+              <InputWithSuggestions
+                value={certificationsRequired}
+                onValueChange={(v) => setCertificationsRequired(v)}
+                options={certificationsRequiredOptions as unknown as string[]}
+                placeholder="Select"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Sample Volume</Label>
+              <InputWithSuggestions
+                value={sampleVolume}
+                onValueChange={(v) => {
+                  setSampleVolume(v);
+                  if (v !== 'other') setSampleVolumeOther('');
+                }}
+                options={sampleVolumeOptions as unknown as string[]}
+                placeholder="Select"
+              />
+              {sampleVolume === 'other' && <Input placeholder="Specify" value={sampleVolumeOther} onChange={(e) => setSampleVolumeOther(e.target.value)} />}
+            </div>
+            <div className="grid gap-2">
+              <Label>Documents Needed</Label>
+              <div className="flex flex-wrap gap-2 text-[11px]">
+                {documentsNeededOptions.map((d) => {
+                  const active = documentsNeeded.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDocumentsNeeded((p) => (active ? p.filter((x) => x !== d) : [...p, d]))}
+                      className={`px-2 py-1 rounded border ${active ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70'}`}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+              {documentsNeeded.includes('Other') && <Input placeholder="Other docs" value={documentsOther} onChange={(e) => setDocumentsOther(e.target.value)} />}
+            </div>
+            <div className="grid gap-2">
+              <Label>Account Type</Label>
+              <InputWithSuggestions value={accountType} onValueChange={(v) => setAccountType(v)} options={accountTypeOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Commercial Potential</Label>
+              <InputWithSuggestions value={commercialPotential} onValueChange={(v) => setCommercialPotential(v)} options={commercialPotentialOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Internal Priority Level</Label>
+              <InputWithSuggestions value={internalPriorityLevel} onValueChange={(v) => setInternalPriorityLevel(v)} options={internalPriorityLevels as unknown as string[]} placeholder="Select" />
+            </div>
+          </div>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <p>Sections 2–5 enrich technical evaluation & internal prioritization.</p>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
