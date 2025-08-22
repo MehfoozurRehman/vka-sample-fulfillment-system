@@ -168,8 +168,8 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (request) {
       const pr = (request.productsRequested as { productId: Id<'products'>; quantity: number; notes?: string }[]) || [];
 
-      // Ensure the request object matches RequestExtended shape
       const r = request as RequestExtended;
+
       setForm({
         contactName: r.contactName || '',
         email: r.email || '',
