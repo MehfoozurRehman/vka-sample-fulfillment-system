@@ -274,9 +274,8 @@ export function AddRequest() {
                   setApplicationDetail(v);
                   setApplicationSubDetail('');
                 }}
-                options={(function () {
-                  const typeEl = document?.getElementById('applicationType') as HTMLInputElement | null;
-                  const val = typeEl?.value || '';
+                options={(() => {
+                  const val = applicationDetail;
                   if (val === 'Food') return Object.keys(foodMatrix);
                   if (val === 'Health') return healthApplications as unknown as string[];
                   if (val === 'Non-Food') return nonFoodApplications as unknown as string[];
@@ -285,15 +284,10 @@ export function AddRequest() {
                 placeholder="Depends on type"
               />
             </div>
-            {applicationDetail && applicationType === 'Food' && foodMatrix[applicationDetail] && (
+            {applicationDetail && applicationDetail === 'Food' && foodMatrix[applicationDetail] && (
               <div className="grid gap-2">
                 <Label>Food Sub-Detail</Label>
-                <InputWithSuggestions
-                  value={applicationSubDetail}
-                  onValueChange={(v) => setApplicationSubDetail(v)}
-                  options={foodMatrix[applicationDetail]}
-                  placeholder="Select sub-category"
-                />
+                <InputWithSuggestions value={applicationSubDetail} onValueChange={(v) => setApplicationSubDetail(v)} options={foodMatrix[applicationDetail]} placeholder="Select sub-category" />
               </div>
             )}
           </div>
