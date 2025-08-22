@@ -33,6 +33,9 @@ export default function ScreenerTable({
                 <TableHead>Request</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead className="hidden md:table-cell">Application</TableHead>
+                <TableHead className="hidden md:table-cell">App Detail</TableHead>
+                <TableHead className="hidden md:table-cell">Urgency</TableHead>
+                <TableHead className="hidden md:table-cell">Legal Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Project</TableHead>
                 <TableHead className="hidden md:table-cell">Items</TableHead>
                 <TableHead className="hidden lg:table-cell">Created</TableHead>
@@ -69,6 +72,26 @@ export default function ScreenerTable({
                       </TableCell>
                       <TableCell className="hidden md:table-cell max-w-[140px] truncate" title={row.applicationType}>
                         {row.applicationType}
+                      </TableCell>
+                      <TableCell
+                        className="hidden md:table-cell max-w-[140px] truncate"
+                        title={
+                          typeof (row as unknown as { applicationDetail?: unknown }).applicationDetail === 'string' ? (row as unknown as { applicationDetail?: string }).applicationDetail : undefined
+                        }
+                      >
+                        {typeof (row as unknown as { applicationDetail?: unknown }).applicationDetail === 'string' ? (row as unknown as { applicationDetail?: string }).applicationDetail : '—'}
+                      </TableCell>
+                      <TableCell
+                        className="hidden md:table-cell max-w-[100px] truncate"
+                        title={typeof (row as unknown as { urgency?: unknown }).urgency === 'string' ? (row as unknown as { urgency?: string }).urgency : undefined}
+                      >
+                        {typeof (row as unknown as { urgency?: unknown }).urgency === 'string' ? (row as unknown as { urgency?: string }).urgency : '—'}
+                      </TableCell>
+                      <TableCell
+                        className="hidden md:table-cell max-w-[100px] truncate"
+                        title={typeof (row as unknown as { legalStatus?: unknown }).legalStatus === 'string' ? (row as unknown as { legalStatus?: string }).legalStatus : undefined}
+                      >
+                        {typeof (row as unknown as { legalStatus?: unknown }).legalStatus === 'string' ? (row as unknown as { legalStatus?: string }).legalStatus : '—'}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell max-w-[160px] truncate" title={row.projectName}>
                         {row.projectName}
