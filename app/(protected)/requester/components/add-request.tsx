@@ -284,10 +284,15 @@ export function AddRequest() {
                 placeholder="Depends on type"
               />
             </div>
-            {applicationDetail && (document?.getElementById('applicationType') as HTMLInputElement | null)?.value === 'Food' && foodMatrix[applicationDetail] && (
+            {applicationDetail && applicationType === 'Food' && foodMatrix[applicationDetail] && (
               <div className="grid gap-2">
                 <Label>Food Sub-Detail</Label>
-                <InputWithSuggestions value={applicationSubDetail} onValueChange={(v) => setApplicationSubDetail(v)} options={foodMatrix[applicationDetail]} placeholder="Select sub-category" />
+                <InputWithSuggestions
+                  value={applicationSubDetail}
+                  onValueChange={(v) => setApplicationSubDetail(v)}
+                  options={foodMatrix[applicationDetail]}
+                  placeholder="Select sub-category"
+                />
               </div>
             )}
           </div>
