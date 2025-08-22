@@ -14,21 +14,34 @@ import { toast } from 'sonner';
 import toastError from '@/utils/toastError';
 import { useAuth } from '@/hooks/use-user';
 
-type DetailShape = { request?: { requestId: string; status: string; applicationType: string; projectName: string; createdAt: number }; stakeholder?: { companyName?: string } };
+type RequestExtended = {
+  requestId: string;
+  status: string;
+  applicationType: string;
+  applicationDetail?: string;
+  applicationSubDetail?: string;
+  projectName: string;
+  createdAt: number;
+  businessBrief?: string;
+  urgency?: string;
+  processingConditions?: string[];
+  legalStatus?: string;
+  documents?: string[];
+  commercialContext?: string;
+  logisticsContext?: string;
+  technicalContext?: string;
+  customerContext?: string;
+};
+
+type DetailShapeExt = { request?: RequestExtended; stakeholder?: { companyName?: string } };
 
 export default function RequestSummary({ requestId }: { requestId: string }) {
   const id = requestId as unknown as Id<'requests'>;
-
-  const detail = useQuery(api.screener.detail, { id }) as DetailShape | undefined;
-
+  const detail = useQuery(api.screener.detail, { id }) as DetailShapeExt | undefined;
   const auth = useAuth();
-
   const setBriefMut = useMutation(api.request.setBusinessBrief);
-
   const [editingBrief, setEditingBrief] = useState(false);
-
   const [briefText, setBriefText] = useState('');
-
   const [isSavingBrief, startSavingBrief] = useTransition();
 
   const order = useQuery(api.request.orderSummary, { requestId: id }) as
@@ -40,7 +53,9 @@ export default function RequestSummary({ requestId }: { requestId: string }) {
     return <StatusPill value={detail?.request?.status} kind="status" />;
   }, [detail]);
 
-  const businessBrief = (detail?.request as unknown as { businessBrief?: string } | undefined)?.businessBrief;
+  const businessBrief = detail?.request?.businessBrief;
+
+  const renderArray = (arr?: string[]) => (arr && arr.length ? arr.join(', ') : '—');
 
   return (
     <Card>
@@ -60,7 +75,17 @@ export default function RequestSummary({ requestId }: { requestId: string }) {
                 <div className="font-medium">{statusBadge}</div>
               </div>
               <Info label="Application" value={detail.request?.applicationType} />
+              <Info label="Application Detail" value={detail.request?.applicationDetail} />
+              <Info label="Application Sub-Detail" value={detail.request?.applicationSubDetail} />
               <Info label="Project" value={detail.request?.projectName} />
+              <Info label="Urgency" value={detail.request?.urgency} />
+              <Info label="Processing Conditions" value={renderArray(detail.request?.processingConditions)} />
+              <Info label="Legal Status" value={detail.request?.legalStatus} />
+              <Info label="Documents" value={renderArray(detail.request?.documents)} />
+              <Info label="Customer Context" value={detail.request?.customerContext} />
+              <Info label="Technical Context" value={detail.request?.technicalContext} />
+              <Info label="Logistics Context" value={detail.request?.logisticsContext} />
+              <Info label="Commercial Context" value={detail.request?.commercialContext} />
               {detail.request?.createdAt && <Info label="Submitted" value={dayjs(detail.request.createdAt).format('YYYY-MM-DD HH:mm')} />}
               {order && <Info label="Order" value={`${order.orderId} · ${order.status}`} />}
               {order?.packedDate && <Info label="Packed" value={dayjs(order.packedDate).format('YYYY-MM-DD HH:mm')} />}
