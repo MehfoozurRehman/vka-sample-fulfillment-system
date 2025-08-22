@@ -275,7 +275,8 @@ export function AddRequest() {
                   setApplicationSubDetail('');
                 }}
                 options={(function () {
-                  const val = applicationType;
+                  const typeEl = document?.getElementById('applicationType') as HTMLInputElement | null;
+                  const val = typeEl?.value || '';
                   if (val === 'Food') return Object.keys(foodMatrix);
                   if (val === 'Health') return healthApplications as unknown as string[];
                   if (val === 'Non-Food') return nonFoodApplications as unknown as string[];
