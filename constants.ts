@@ -232,7 +232,7 @@ export const certificationsRequiredOptions = ['Halal', 'Kosher', 'Both', 'None']
 
 export const sampleVolumeOptions = ['30g', '50g', '100g', 'other'] as const;
 
-export const documentsNeededOptions = ['TDS', 'SDS', 'Halal', 'Kosher', 'Other'] as const;
+export const documentsNeededOptions = ['TDS', 'SDS', 'Product Spec'] as const;
 
 export const accountTypeOptions = ['Strategic', 'Growth', 'New', 'Transactional'] as const;
 
