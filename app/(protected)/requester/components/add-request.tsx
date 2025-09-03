@@ -267,6 +267,10 @@ export function AddRequest() {
               <InputWithSuggestions options={requestUrgencies as unknown as string[]} value={urgency} onValueChange={(v) => setUrgency(v)} placeholder="Select" />
             </div>
             <div className="grid gap-2">
+              <Label>Internal Priority Level</Label>
+              <InputWithSuggestions value={internalPriorityLevel} onValueChange={(v) => setInternalPriorityLevel(v)} options={internalPriorityLevels as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
               <Label>Application Detail</Label>
               <InputWithSuggestions
                 value={applicationDetail}
@@ -383,10 +387,6 @@ export function AddRequest() {
             <div className="grid gap-2">
               <Label>Commercial Potential</Label>
               <InputWithSuggestions value={commercialPotential} onValueChange={(v) => setCommercialPotential(v)} options={commercialPotentialOptions as unknown as string[]} placeholder="Select" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Internal Priority Level</Label>
-              <InputWithSuggestions value={internalPriorityLevel} onValueChange={(v) => setInternalPriorityLevel(v)} options={internalPriorityLevels as unknown as string[]} placeholder="Select" />
             </div>
           </div>
           <div className="space-y-2 text-xs text-muted-foreground">
