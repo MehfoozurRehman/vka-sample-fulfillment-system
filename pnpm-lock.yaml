@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@convex-dev/resend':
-        specifier: ^0.1.10
-        version: 0.1.10(convex-helpers@0.1.104(@standard-schema/spec@1.0.0)(convex@1.26.2(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5))(convex@1.26.2(react@19.1.1))(react@19.1.1)
+        specifier: ^0.1.12
+        version: 0.1.12(convex-helpers@0.1.104(@standard-schema/spec@1.0.0)(convex@1.26.2(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5))(convex@1.26.2(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-avatar':
         specifier: ^1.1.10
         version: 1.1.10(@types/react-dom@19.1.7(@types/react@19.1.9))(@types/react@19.1.9)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -249,8 +249,8 @@ packages:
       react:
         optional: true
 
-  '@convex-dev/resend@0.1.10':
-    resolution: {integrity: sha512-Mj0ygti3iaZXyW0vjW9GlxdVHymBELE/NZm9LT83iscIGRQD9vCeP9GsDGrP7X5gtiPtQSIRq85VxFpLg+R2Ig==}
+  '@convex-dev/resend@0.1.12':
+    resolution: {integrity: sha512-afdoRqYwBVRwB/gD+xUHko8937xcw3EVzTPGN6CS7xEjEsgRnIpl11LRxxqdLzfMpXHR7pkDUsHhlW3zTPrRyw==}
     peerDependencies:
       convex: ^1.23.0
       convex-helpers: ^0.1.99
@@ -4894,7 +4894,7 @@ snapshots:
     optionalDependencies:
       react: 19.1.1
 
-  '@convex-dev/resend@0.1.10(convex-helpers@0.1.104(@standard-schema/spec@1.0.0)(convex@1.26.2(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5))(convex@1.26.2(react@19.1.1))(react@19.1.1)':
+  '@convex-dev/resend@0.1.12(convex-helpers@0.1.104(@standard-schema/spec@1.0.0)(convex@1.26.2(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5))(convex@1.26.2(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@convex-dev/rate-limiter': 0.2.12(convex@1.26.2(react@19.1.1))(react@19.1.1)
       '@convex-dev/workpool': 0.2.17(convex-helpers@0.1.104(@standard-schema/spec@1.0.0)(convex@1.26.2(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5))(convex@1.26.2(react@19.1.1))
