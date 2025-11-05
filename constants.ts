@@ -239,3 +239,11 @@ export const accountTypeOptions = ['Strategic', 'Growth', 'New', 'Transactional'
 export const commercialPotentialOptions = ['Trial', 'Pilot <1MT', 'Commercial >10MT'] as const;
 
 export const internalPriorityLevels = ['High', 'Medium', 'Low'] as const;
+
+export const isCommercialProjectOptions = ['Trial', 'Confirmed'] as const;
+
+export const customerTypeOptions = ['Strategic', 'Growth', 'New', 'Transactional', 'Existing'] as const;
+
+export const intendedMarketOptions = ['Domestic', 'International', 'Both'] as const;
+
+export const samplingSizeOptions = ['Small (<50g)', 'Medium (50-200g)', 'Large (>200g)', 'Custom'] as const;
