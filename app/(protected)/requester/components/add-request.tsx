@@ -8,16 +8,20 @@ import {
   certificationsRequiredOptions,
   commercialPotentialOptions,
   countries,
+  customerTypeOptions,
   documentsNeededOptions,
   foodMatrix,
   formatRequiredOptions,
   healthApplications,
+  intendedMarketOptions,
   internalPriorityLevels,
+  isCommercialProjectOptions,
   legalStatusOptions,
   nonFoodApplications,
   processingConditionsList,
   requestUrgencies,
   sampleVolumeOptions,
+  samplingSizeOptions,
   shelfLifeExpectations,
 } from '@/constants';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -73,6 +77,19 @@ export function AddRequest() {
   const [internalReferenceCode, setInternalReferenceCode] = useState('');
 
   const [companyId, setCompanyId] = useState<string>('');
+  const [companyFullName, setCompanyFullName] = useState('');
+  const [companyShortName, setCompanyShortName] = useState('');
+  const [requestorName, setRequestorName] = useState('');
+  const [requestorCountry, setRequestorCountry] = useState('');
+  const [isCommercialProject, setIsCommercialProject] = useState('');
+  const [customerType, setCustomerType] = useState('');
+  const [intendedMarket, setIntendedMarket] = useState('');
+  const [numberOfFlavorProfiles, setNumberOfFlavorProfiles] = useState<number | ''>('');
+  const [samplingSize, setSamplingSize] = useState('');
+  const [sampleQuantityRequired, setSampleQuantityRequired] = useState('');
+  const [customerDeadline, setCustomerDeadline] = useState('');
+  const [otherComments, setOtherComments] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('');
 
   const [isPending, startTransition] = useTransition();
 
@@ -83,8 +100,21 @@ export function AddRequest() {
       setRequestId(nextId || '');
       setItems([]);
       setBusinessBrief('');
+      setRequestorName(auth.name || '');
+      setRequestorCountry('');
+      setIsCommercialProject('');
+      setCustomerType('');
+      setIntendedMarket('');
+      setNumberOfFlavorProfiles('');
+      setSamplingSize('');
+      setSampleQuantityRequired('');
+      setCustomerDeadline('');
+      setOtherComments('');
+      setPhoneCountryCode('');
+      setCompanyFullName('');
+      setCompanyShortName('');
     }
-  }, [open, nextId]);
+  }, [open, nextId, auth.name]);
 
   const companyOptions = useMemo(() => (stakeholders || []).map((s) => s.companyName).sort(), [stakeholders]);
 
@@ -113,6 +143,12 @@ export function AddRequest() {
       return;
     }
 
+    if (businessBrief.length > 2000) {
+      toast.error('Business brief must be 2000 characters or less');
+
+      return;
+    }
+
     const invalid = items.some((i) => !i.productId || i.quantity === '' || (i.quantity as number) <= 0);
 
     if (invalid) {
@@ -123,8 +159,17 @@ export function AddRequest() {
 
     const contactNameVal = ((event.currentTarget.elements.namedItem('contactName') as HTMLInputElement | null)?.value || '').trim();
     const emailVal = ((event.currentTarget.elements.namedItem('email') as HTMLInputElement | null)?.value || '').trim();
-    const phoneVal = ((event.currentTarget.elements.namedItem('phone') as HTMLInputElement | null)?.value || '').trim();
-    const countryVal = ((event.currentTarget.elements.namedItem('country') as HTMLInputElement | null)?.value || '').trim();
+        const phoneVal = ((event.currentTarget.elements.namedItem('phone') as HTMLInputElement | null)?.value || '').trim();
+        const countryVal = ((event.currentTarget.elements.namedItem('country') as HTMLInputElement | null)?.value || '').trim();
+        
+        // Parse customer deadline if provided
+        let customerDeadlineTimestamp: number | undefined;
+        if (customerDeadline) {
+          const deadlineDate = new Date(customerDeadline);
+          if (!isNaN(deadlineDate.getTime())) {
+            customerDeadlineTimestamp = deadlineDate.getTime();
+          }
+        }
     const applicationTypeVal = ((event.currentTarget.elements.namedItem('applicationType') as HTMLInputElement | null)?.value || '').trim();
     const projectNameVal = ((event.currentTarget.elements.namedItem('projectName') as HTMLInputElement | null)?.value || '').trim();
 
@@ -189,6 +234,19 @@ export function AddRequest() {
           internalPriorityLevel: internalPriorityLevel || undefined,
           productsRequested,
           requestedBy: auth.email,
+          requestorName: requestorName.trim() || undefined,
+          requestorCountry: requestorCountry.trim() || undefined,
+          isCommercialProject: isCommercialProject || undefined,
+          customerType: customerType || undefined,
+          intendedMarket: intendedMarket || undefined,
+          numberOfFlavorProfiles: numberOfFlavorProfiles !== '' ? (numberOfFlavorProfiles as number) : undefined,
+          samplingSize: samplingSize || undefined,
+          sampleQuantityRequired: sampleQuantityRequired.trim() || undefined,
+          customerDeadline: customerDeadlineTimestamp,
+          otherComments: otherComments.trim() || undefined,
+          phoneCountryCode: phoneCountryCode.trim() || undefined,
+          companyFullName: companyFullName.trim() || undefined,
+          companyShortName: companyShortName.trim() || undefined,
         });
 
         toast.success('Request submitted');
@@ -214,6 +272,28 @@ export function AddRequest() {
             <DialogTitle>Submit Request</DialogTitle>
             <DialogDescription>Create a new fulfillment request.</DialogDescription>
           </DialogHeader>
+          {/* Enquiry Information Section */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Enquiry Information</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="requestorName">Requestor Name *</Label>
+                <Input id="requestorName" name="requestorName" value={requestorName} onChange={(e) => setRequestorName(e.target.value)} placeholder="Requestor Name" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="requestorCountry">Requestor Country *</Label>
+                <InputWithSuggestions id="requestorCountry" name="requestorCountry" value={requestorCountry} onValueChange={(val) => setRequestorCountry(val)} options={countries} placeholder="Select country" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="dateOfRequest">Date of Request</Label>
+                <Input id="dateOfRequest" name="dateOfRequest" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="isCommercialProject">Is this a confirmed commercial project? *</Label>
+                <InputWithSuggestions id="isCommercialProject" name="isCommercialProject" value={isCommercialProject} onValueChange={(val) => setIsCommercialProject(val)} options={isCommercialProjectOptions as unknown as string[]} placeholder="Select" />
+              </div>
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="requestId">Request ID</Label>
@@ -226,6 +306,15 @@ export function AddRequest() {
               <span className="mt-4" />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="companyFullName">Company Full Name *</Label>
+              <Input id="companyFullName" name="companyFullName" value={companyFullName} onChange={(e) => setCompanyFullName(e.target.value)} placeholder="E.g. Advanced Flavors & Fragrances Pte Ltd." maxLength={255} required />
+              <span className="text-xs text-muted-foreground">Maximum 255 characters</span>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="companyShortName">Company Name (Short Form) *</Label>
+              <Input id="companyShortName" name="companyShortName" value={companyShortName} onChange={(e) => setCompanyShortName(e.target.value)} placeholder="E.g. AFF" required />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="contactName">Contact Name</Label>
               <Input id="contactName" name="contactName" />
             </div>
@@ -235,7 +324,10 @@ export function AddRequest() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" name="phone" />
+              <div className="flex gap-2">
+                <Input id="phoneCountryCode" name="phoneCountryCode" value={phoneCountryCode} onChange={(e) => setPhoneCountryCode(e.target.value)} placeholder="+92" className="w-24" />
+                <Input id="phone" name="phone" placeholder="Enter full phone number" />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="country">Country</Label>
@@ -261,6 +353,30 @@ export function AddRequest() {
             <div className="grid gap-2">
               <Label htmlFor="internalReferenceCode">Internal Ref Code</Label>
               <Input id="internalReferenceCode" value={internalReferenceCode} onChange={(e) => setInternalReferenceCode(e.target.value)} placeholder="Optional" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="customerType">Customer Type *</Label>
+              <InputWithSuggestions id="customerType" name="customerType" value={customerType} onValueChange={(v) => setCustomerType(v)} options={customerTypeOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="intendedMarket">Intended Market *</Label>
+              <InputWithSuggestions id="intendedMarket" name="intendedMarket" value={intendedMarket} onValueChange={(v) => setIntendedMarket(v)} options={intendedMarketOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="numberOfFlavorProfiles">Number of interested flavor profile(s) *</Label>
+              <Input id="numberOfFlavorProfiles" name="numberOfFlavorProfiles" type="number" min={1} value={numberOfFlavorProfiles === '' ? '' : numberOfFlavorProfiles} onChange={(e) => setNumberOfFlavorProfiles(e.target.value === '' ? '' : parseInt(e.target.value, 10))} placeholder="Enter number" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="samplingSize">Sampling Size *</Label>
+              <InputWithSuggestions id="samplingSize" name="samplingSize" value={samplingSize} onValueChange={(v) => setSamplingSize(v)} options={samplingSizeOptions as unknown as string[]} placeholder="Select" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="sampleQuantityRequired">Sample Quantity Required *</Label>
+              <Input id="sampleQuantityRequired" name="sampleQuantityRequired" value={sampleQuantityRequired} onChange={(e) => setSampleQuantityRequired(e.target.value)} placeholder="Enter quantity" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="customerDeadline">Customer Deadline</Label>
+              <Input id="customerDeadline" name="customerDeadline" type="date" value={customerDeadline} onChange={(e) => setCustomerDeadline(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label>Urgency</Label>
@@ -296,16 +412,29 @@ export function AddRequest() {
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="businessBrief">Business Brief</Label>
+            <Label htmlFor="businessBrief">Enquiry Brief *</Label>
             <Textarea
               id="businessBrief"
               name="businessBrief"
               value={businessBrief}
               onChange={(e) => setBusinessBrief(e.target.value)}
-              placeholder="Describe the business problem/use-case and desired outcome"
+              placeholder="Please include as much information as possible about the company's requirements and concerns."
               className="min-h-24 resize-y"
+              maxLength={2000}
+              required
             />
-            <span className="text-xs text-muted-foreground">Required. Products are optional and can be suggested later.</span>
+            <span className="text-xs text-muted-foreground">{businessBrief.length}/2000 characters. Required. Products are optional and can be suggested later.</span>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="otherComments">Other Comments</Label>
+            <Textarea
+              id="otherComments"
+              name="otherComments"
+              value={otherComments}
+              onChange={(e) => setOtherComments(e.target.value)}
+              placeholder="Any additional comments or notes"
+              className="min-h-20 resize-y"
+            />
           </div>
           {/* Technical & Commercial Sections */}
           <div className="grid md:grid-cols-2 gap-4">
