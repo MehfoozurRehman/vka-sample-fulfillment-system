@@ -40,7 +40,17 @@ import { useMutation } from 'convex/react';
 import { useTransition } from 'react';
 
 const columns: ColumnDef<StakeholderType>[] = [
-  { accessorKey: 'companyName', header: 'Company' },
+  {
+    accessorKey: 'companyName',
+    header: 'Company',
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium">{row.original.companyName}</span>
+        {row.original.companyFullName && <span className="text-xs text-muted-foreground">{row.original.companyFullName}</span>}
+        {row.original.companyShortName && <span className="text-xs text-muted-foreground">({row.original.companyShortName})</span>}
+      </div>
+    ),
+  },
   { accessorKey: 'salesRepEmail', header: 'Sales Rep' },
   { accessorKey: 'accountManagerEmail', header: 'Account Manager' },
   { accessorKey: 'complianceOfficerEmail', header: 'Compliance Officer' },
@@ -90,9 +100,9 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
 
     if (q) {
       d = d.filter((s) => {
-        const parts = [s.companyName, s.salesRepEmail, s.accountManagerEmail, s.complianceOfficerEmail];
+        const parts = [s.companyName, s.companyFullName, s.companyShortName, s.salesRepEmail, s.accountManagerEmail, s.complianceOfficerEmail].filter(Boolean);
 
-        return parts.some((p) => normalize(p).includes(q));
+        return parts.some((p) => normalize(p || '').includes(q));
       });
     }
 
@@ -213,6 +223,26 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                   <Input id="companyName" value={(edit?.companyName ?? selected.companyName) || ''} onChange={(e) => setEdit({ ...(edit ?? selected), companyName: e.target.value })} />
                 </div>
                 <div className="grid gap-3">
+                  <Label htmlFor="companyFullName">Company Full Name</Label>
+                  <Input
+                    id="companyFullName"
+                    value={(edit?.companyFullName ?? selected.companyFullName) || ''}
+                    onChange={(e) => setEdit({ ...(edit ?? selected), companyFullName: e.target.value })}
+                    placeholder="E.g. Advanced Flavors & Fragrances Pte Ltd."
+                    maxLength={255}
+                  />
+                  <span className="text-xs text-muted-foreground">Maximum 255 characters</span>
+                </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="companyShortName">Company Name (Short Form)</Label>
+                  <Input
+                    id="companyShortName"
+                    value={(edit?.companyShortName ?? selected.companyShortName) || ''}
+                    onChange={(e) => setEdit({ ...(edit ?? selected), companyShortName: e.target.value })}
+                    placeholder="E.g. AFF"
+                  />
+                </div>
+                <div className="grid gap-3">
                   <Label htmlFor="salesRepEmail">Sales Rep Email</Label>
                   <Input
                     id="salesRepEmail"
@@ -272,6 +302,8 @@ export function DataTable({ data: initialData, isPending }: { data: StakeholderT
                     const payload = {
                       id: selected.id as Id<'stakeholders'>,
                       companyName: (edit?.companyName ?? selected.companyName) || '',
+                      companyFullName: (edit?.companyFullName ?? selected.companyFullName) || undefined,
+                      companyShortName: (edit?.companyShortName ?? selected.companyShortName) || undefined,
                       salesRepEmail: (edit?.salesRepEmail ?? selected.salesRepEmail) || '',
                       accountManagerEmail: (edit?.accountManagerEmail ?? selected.accountManagerEmail) || '',
                       complianceOfficerEmail: (edit?.complianceOfficerEmail ?? selected.complianceOfficerEmail) || '',

@@ -121,6 +121,7 @@ export const add = mutation({
     contactName: v.string(),
     email: v.string(),
     phone: v.string(),
+    phoneCountryCode: v.optional(v.string()),
     country: v.string(),
     applicationType: v.string(),
     applicationDetail: v.optional(v.string()),
@@ -149,6 +150,18 @@ export const add = mutation({
       }),
     ),
     requestedBy: v.string(),
+    requestorName: v.optional(v.string()),
+    requestorCountry: v.optional(v.string()),
+    isCommercialProject: v.optional(v.string()),
+    customerType: v.optional(v.string()),
+    intendedMarket: v.optional(v.string()),
+    numberOfFlavorProfiles: v.optional(v.number()),
+    samplingSize: v.optional(v.string()),
+    sampleQuantityRequired: v.optional(v.string()),
+    customerDeadline: v.optional(v.number()),
+    otherComments: v.optional(v.string()),
+    companyFullName: v.optional(v.string()),
+    companyShortName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const requesterUser = await ctx.db
@@ -192,6 +205,17 @@ export const add = mutation({
       throw new Error('Duplicate request (same company & products already submitted today)');
     }
 
+    // Update stakeholder with company name fields if provided
+    if (args.companyFullName || args.companyShortName) {
+      const stakeholder = await ctx.db.get(args.companyId);
+      if (stakeholder) {
+        const updateData: Record<string, unknown> = { updatedAt: Date.now() };
+        if (args.companyFullName) updateData.companyFullName = args.companyFullName.trim();
+        if (args.companyShortName) updateData.companyShortName = args.companyShortName.trim();
+        await ctx.db.patch(args.companyId, updateData);
+      }
+    }
+
     const now = Date.now();
     const id = await ctx.db.insert('requests', {
       requestId,
@@ -200,6 +224,7 @@ export const add = mutation({
       contactName: args.contactName,
       email: args.email,
       phone: args.phone,
+      phoneCountryCode: args.phoneCountryCode,
       country: args.country,
       applicationType: args.applicationType,
       applicationDetail: args.applicationDetail,
@@ -224,6 +249,16 @@ export const add = mutation({
       accountType: args.accountType,
       commercialPotential: args.commercialPotential,
       internalPriorityLevel: args.internalPriorityLevel,
+      requestorName: args.requestorName,
+      requestorCountry: args.requestorCountry,
+      isCommercialProject: args.isCommercialProject,
+      customerType: args.customerType,
+      intendedMarket: args.intendedMarket,
+      numberOfFlavorProfiles: args.numberOfFlavorProfiles,
+      samplingSize: args.samplingSize,
+      sampleQuantityRequired: args.sampleQuantityRequired,
+      customerDeadline: args.customerDeadline,
+      otherComments: args.otherComments,
       duplicateHash,
       createdAt: now,
       updatedAt: now,
@@ -323,6 +358,7 @@ export const update = mutation({
     contactName: v.string(),
     email: v.string(),
     phone: v.string(),
+    phoneCountryCode: v.optional(v.string()),
     country: v.string(),
     applicationType: v.string(),
     applicationDetail: v.optional(v.string()),
@@ -350,6 +386,18 @@ export const update = mutation({
         notes: v.optional(v.string()),
       }),
     ),
+    requestorName: v.optional(v.string()),
+    requestorCountry: v.optional(v.string()),
+    isCommercialProject: v.optional(v.string()),
+    customerType: v.optional(v.string()),
+    intendedMarket: v.optional(v.string()),
+    numberOfFlavorProfiles: v.optional(v.number()),
+    samplingSize: v.optional(v.string()),
+    sampleQuantityRequired: v.optional(v.string()),
+    customerDeadline: v.optional(v.number()),
+    otherComments: v.optional(v.string()),
+    companyFullName: v.optional(v.string()),
+    companyShortName: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...rest }) => {
     const req = await ctx.db.get(id);
@@ -365,8 +413,19 @@ export const update = mutation({
 
     if (existingOrder) throw new Error('Cannot edit once order exists');
 
+    // Update stakeholder with company name fields if provided
+    if (rest.companyFullName || rest.companyShortName) {
+      const stakeholder = await ctx.db.get(req.companyId);
+      if (stakeholder) {
+        const updateData: Record<string, unknown> = { updatedAt: Date.now() };
+        if (rest.companyFullName) updateData.companyFullName = rest.companyFullName.trim();
+        if (rest.companyShortName) updateData.companyShortName = rest.companyShortName.trim();
+        await ctx.db.patch(req.companyId, updateData);
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { userId, ...patchRest } = rest;
+    const { userId, companyFullName, companyShortName, ...patchRest } = rest;
     const patch: Record<string, unknown> = { ...patchRest, businessBrief: patchRest.businessBrief.trim(), updatedAt: Date.now() };
     await ctx.db.patch(id, patch);
 

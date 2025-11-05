@@ -17,6 +17,8 @@ export const getStakeholders = query({
     return stakeholders.map((s) => ({
       id: s._id,
       companyName: s.companyName,
+      companyFullName: s.companyFullName,
+      companyShortName: s.companyShortName,
       salesRepEmail: s.salesRepEmail,
       accountManagerEmail: s.accountManagerEmail,
       complianceOfficerEmail: s.complianceOfficerEmail,
@@ -31,13 +33,15 @@ export const addStakeholder = mutation({
   args: {
     userId: v.id('users'),
     companyName: v.string(),
+    companyFullName: v.optional(v.string()),
+    companyShortName: v.optional(v.string()),
     salesRepEmail: v.string(),
     accountManagerEmail: v.string(),
     complianceOfficerEmail: v.string(),
     vipFlag: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const { companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag } = args;
+    const { companyName, companyFullName, companyShortName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag } = args;
 
     const existing = await ctx.db
       .query('stakeholders')
@@ -52,6 +56,8 @@ export const addStakeholder = mutation({
 
     const id = await ctx.db.insert('stakeholders', {
       companyName,
+      companyFullName: companyFullName?.trim(),
+      companyShortName: companyShortName?.trim(),
       salesRepEmail,
       accountManagerEmail,
       complianceOfficerEmail,
@@ -93,12 +99,14 @@ export const updateStakeholder = mutation({
     userId: v.id('users'),
     id: v.id('stakeholders'),
     companyName: v.string(),
+    companyFullName: v.optional(v.string()),
+    companyShortName: v.optional(v.string()),
     salesRepEmail: v.string(),
     accountManagerEmail: v.string(),
     complianceOfficerEmail: v.string(),
     vipFlag: v.boolean(),
   },
-  handler: async (ctx, { userId, id, companyName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag }) => {
+  handler: async (ctx, { userId, id, companyName, companyFullName, companyShortName, salesRepEmail, accountManagerEmail, complianceOfficerEmail, vipFlag }) => {
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error('Stakeholder not found');
 
@@ -111,6 +119,8 @@ export const updateStakeholder = mutation({
 
     await ctx.db.patch(id, {
       companyName,
+      companyFullName: companyFullName?.trim(),
+      companyShortName: companyShortName?.trim(),
       salesRepEmail,
       accountManagerEmail,
       complianceOfficerEmail,

@@ -6,16 +6,20 @@ import {
   certificationsRequiredOptions,
   commercialPotentialOptions,
   countries,
+  customerTypeOptions,
   documentsNeededOptions,
   foodMatrix,
   formatRequiredOptions,
   healthApplications,
+  intendedMarketOptions,
   internalPriorityLevels,
+  isCommercialProjectOptions,
   legalStatusOptions,
   nonFoodApplications,
   processingConditionsList,
   requestUrgencies,
   sampleVolumeOptions,
+  samplingSizeOptions,
   shelfLifeExpectations,
 } from '@/constants';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -54,6 +58,7 @@ type RequestExtended = {
   contactName?: string;
   email?: string;
   phone?: string;
+  phoneCountryCode?: string;
   country?: string;
   applicationType?: string;
   applicationDetail?: string;
@@ -75,6 +80,16 @@ type RequestExtended = {
   commercialPotential?: string;
   internalPriorityLevel?: string;
   productsRequested?: { productId: Id<'products'>; quantity: number; notes?: string }[];
+  requestorName?: string;
+  requestorCountry?: string;
+  isCommercialProject?: string;
+  customerType?: string;
+  intendedMarket?: string;
+  numberOfFlavorProfiles?: number;
+  samplingSize?: string;
+  sampleQuantityRequired?: string;
+  customerDeadline?: number;
+  otherComments?: string;
 };
 
 type Props = {
@@ -138,6 +153,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     contactName: '',
     email: '',
     phone: '',
+    phoneCountryCode: '',
     country: '',
     applicationType: '',
     applicationDetail: '',
@@ -159,6 +175,16 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     commercialPotential: '',
     internalPriorityLevel: '',
     productsRequested: [] as { productId: Id<'products'>; quantity: number; notes?: string }[],
+    requestorName: '',
+    requestorCountry: '',
+    isCommercialProject: '',
+    customerType: '',
+    intendedMarket: '',
+    numberOfFlavorProfiles: '' as number | '',
+    samplingSize: '',
+    sampleQuantityRequired: '',
+    customerDeadline: '',
+    otherComments: '',
   });
 
   type ProductLine = { productId: Id<'products'> | null; quantity: number | ''; notes?: string; productDisplay: string };
@@ -170,10 +196,14 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
 
       const r = request as RequestExtended;
 
+      // Format customer deadline if exists
+      const deadlineDate = r.customerDeadline ? new Date(r.customerDeadline).toISOString().split('T')[0] : '';
+
       setForm({
         contactName: r.contactName || '',
         email: r.email || '',
         phone: r.phone || '',
+        phoneCountryCode: r.phoneCountryCode || '',
         country: r.country || '',
         applicationType: r.applicationType || '',
         applicationDetail: r.applicationDetail || '',
@@ -195,6 +225,16 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
         commercialPotential: r.commercialPotential || '',
         internalPriorityLevel: r.internalPriorityLevel || '',
         productsRequested: pr,
+        requestorName: r.requestorName || '',
+        requestorCountry: r.requestorCountry || '',
+        isCommercialProject: r.isCommercialProject || '',
+        customerType: r.customerType || '',
+        intendedMarket: r.intendedMarket || '',
+        numberOfFlavorProfiles: r.numberOfFlavorProfiles ?? '',
+        samplingSize: r.samplingSize || '',
+        sampleQuantityRequired: r.sampleQuantityRequired || '',
+        customerDeadline: deadlineDate,
+        otherComments: r.otherComments || '',
       });
       setProductLines(
         pr.map((p) => {
@@ -230,9 +270,19 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
     if (!form.applicationType.trim()) return toast.error('Application type required');
     if (!form.projectName.trim()) return toast.error('Project name required');
     if (!form.businessBrief.trim()) return toast.error('Business brief required');
+    if (form.businessBrief.length > 2000) return toast.error('Business brief must be 2000 characters or less');
     const invalid = productLines.some((l) => !l.productId || l.quantity === '' || (l.quantity as number) <= 0);
 
     if (invalid) return toast.error('Each product line must have a product and quantity > 0');
+
+    // Parse customer deadline if provided
+    let customerDeadlineTimestamp: number | undefined;
+    if (form.customerDeadline) {
+      const deadlineDate = new Date(form.customerDeadline);
+      if (!isNaN(deadlineDate.getTime())) {
+        customerDeadlineTimestamp = deadlineDate.getTime();
+      }
+    }
 
     startSaving(async () => {
       try {
@@ -242,6 +292,7 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
           contactName: form.contactName,
           email: form.email,
           phone: form.phone,
+          phoneCountryCode: form.phoneCountryCode || undefined,
           country: form.country,
           applicationType: form.applicationType,
           applicationDetail: form.applicationDetail || undefined,
@@ -263,6 +314,16 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
           commercialPotential: form.commercialPotential || undefined,
           internalPriorityLevel: form.internalPriorityLevel || undefined,
           productsRequested: form.productsRequested,
+          requestorName: form.requestorName || undefined,
+          requestorCountry: form.requestorCountry || undefined,
+          isCommercialProject: form.isCommercialProject || undefined,
+          customerType: form.customerType || undefined,
+          intendedMarket: form.intendedMarket || undefined,
+          numberOfFlavorProfiles: form.numberOfFlavorProfiles !== '' ? (form.numberOfFlavorProfiles as number) : undefined,
+          samplingSize: form.samplingSize || undefined,
+          sampleQuantityRequired: form.sampleQuantityRequired || undefined,
+          customerDeadline: customerDeadlineTimestamp,
+          otherComments: form.otherComments || undefined,
         });
         setEditing(false);
         toast.success('Request updated');
@@ -308,14 +369,46 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
           {!editing && (
             <div className="space-y-6">
               <div className="rounded-lg border bg-card p-4 space-y-5">
+                <h4 className="text-sm font-semibold tracking-tight">Enquiry Information</h4>
+                <Row label="Requestor Name">{(request as RequestExtended)?.requestorName || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Requestor Country">{(request as RequestExtended)?.requestorCountry || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Date of Request">
+                  {request ? <span title={dayjs(request.createdAt).format('MMM D, YYYY HH:mm')}>{dayjs(request.createdAt).format('MMM D, YYYY')}</span> : <span className="text-muted-foreground">—</span>}
+                </Row>
+                <Row label="Is Commercial Project">{(request as RequestExtended)?.isCommercialProject || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Enquiry Brief">{(request as RequestExtended)?.businessBrief || <span className="text-muted-foreground">—</span>}</Row>
+                <h4 className="text-sm font-semibold tracking-tight mt-4">Company Information</h4>
                 <Row label="Company">{row.company}</Row>
-                <Row label="Contact">{request?.contactName || <span className="text-muted-foreground">—</span>}</Row>
-                <Row label="Email">{request?.email || <span className="text-muted-foreground">—</span>}</Row>
-                <Row label="Phone">{request?.phone || <span className="text-muted-foreground">—</span>}</Row>
-                <Row label="Country">{request?.country || <span className="text-muted-foreground">—</span>}</Row>
+                <h4 className="text-sm font-semibold tracking-tight mt-4">Customer Information</h4>
+                <Row label="Customer Name">{request?.contactName || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Customer Email">{request?.email || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Phone">
+                  {request?.phoneCountryCode || request?.phone ? (
+                    <span>
+                      {request?.phoneCountryCode && <span>{request.phoneCountryCode} </span>}
+                      {request?.phone || ''}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </Row>
+                <Row label="Customer Country">{request?.country || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Customer Type">{(request as RequestExtended)?.customerType || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Intended Market">{(request as RequestExtended)?.intendedMarket || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Number of Flavor Profiles">{(request as RequestExtended)?.numberOfFlavorProfiles || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Sampling Size">{(request as RequestExtended)?.samplingSize || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Sample Quantity Required">{(request as RequestExtended)?.sampleQuantityRequired || <span className="text-muted-foreground">—</span>}</Row>
+                <Row label="Customer Deadline">
+                  {(request as RequestExtended)?.customerDeadline ? (
+                    <span>{dayjs((request as RequestExtended).customerDeadline).format('MMM D, YYYY')}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </Row>
+                <Row label="Other Comments">{(request as RequestExtended)?.otherComments || <span className="text-muted-foreground">—</span>}</Row>
+                <h4 className="text-sm font-semibold tracking-tight mt-4">Request Details</h4>
                 <Row label="Application Type">{request?.applicationType || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Project Name">{request?.projectName || <span className="text-muted-foreground">—</span>}</Row>
-                <Row label="Business Brief">{(request as unknown as { businessBrief?: string })?.businessBrief || <span className="text-muted-foreground">—</span>}</Row>
                 <Row label="Submitted">
                   {request ? <span title={dayjs(request.createdAt).format('MMM D, YYYY HH:mm')}>{dayjs(request.createdAt).fromNow()}</span> : <span className="text-muted-foreground">—</span>}
                 </Row>
@@ -424,7 +517,10 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-medium">Phone</Label>
-                  <Input value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
+                  <div className="flex gap-2">
+                    <Input value={form.phoneCountryCode} onChange={(e) => updateField('phoneCountryCode', e.target.value)} placeholder="+92" className="w-24" />
+                    <Input value={form.phone} onChange={(e) => updateField('phone', e.target.value)} placeholder="Enter full phone number" />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-medium">Country</Label>
@@ -479,13 +575,61 @@ export function RequestDetailsDrawer({ open, onOpenChange, row }: Props) {
                   <InputWithSuggestions value={form.urgency} onValueChange={(v) => updateField('urgency', v)} options={requestUrgencies as unknown as string[]} placeholder="Select" />
                 </div>
                 <div className="md:col-span-2 grid gap-2">
-                  <Label className="text-sm font-medium">Business Brief</Label>
+                  <Label className="text-sm font-medium">Requestor Name</Label>
+                  <Input value={form.requestorName} onChange={(e) => updateField('requestorName', e.target.value)} placeholder="Requestor Name" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Requestor Country</Label>
+                  <InputWithSuggestions value={form.requestorCountry} onValueChange={(v) => updateField('requestorCountry', v)} options={countries} placeholder="Select country" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Is Commercial Project</Label>
+                  <InputWithSuggestions value={form.isCommercialProject} onValueChange={(v) => updateField('isCommercialProject', v)} options={isCommercialProjectOptions as unknown as string[]} placeholder="Select" />
+                </div>
+                <div className="md:col-span-2 grid gap-2">
+                  <Label className="text-sm font-medium">Enquiry Brief</Label>
                   <Textarea
                     value={form.businessBrief}
                     onChange={(e) => updateField('businessBrief', e.target.value)}
-                    placeholder="Describe the business problem/use-case and desired outcome"
+                    placeholder="Please include as much information as possible about the company's requirements and concerns."
                     className="h-28 resize-none"
+                    maxLength={2000}
                   />
+                  <span className="text-xs text-muted-foreground">{form.businessBrief.length}/2000 characters</span>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Customer Type</Label>
+                  <InputWithSuggestions value={form.customerType} onValueChange={(v) => updateField('customerType', v)} options={customerTypeOptions as unknown as string[]} placeholder="Select" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Intended Market</Label>
+                  <InputWithSuggestions value={form.intendedMarket} onValueChange={(v) => updateField('intendedMarket', v)} options={intendedMarketOptions as unknown as string[]} placeholder="Select" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Number of Flavor Profiles</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.numberOfFlavorProfiles === '' ? '' : form.numberOfFlavorProfiles}
+                    onChange={(e) => updateField('numberOfFlavorProfiles', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                    placeholder="Enter number"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Sampling Size</Label>
+                  <InputWithSuggestions value={form.samplingSize} onValueChange={(v) => updateField('samplingSize', v)} options={samplingSizeOptions as unknown as string[]} placeholder="Select" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Sample Quantity Required</Label>
+                  <Input value={form.sampleQuantityRequired} onChange={(e) => updateField('sampleQuantityRequired', e.target.value)} placeholder="Enter quantity" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Customer Deadline</Label>
+                  <Input type="date" value={form.customerDeadline} onChange={(e) => updateField('customerDeadline', e.target.value)} />
+                </div>
+                <div className="md:col-span-2 grid gap-2">
+                  <Label className="text-sm font-medium">Other Comments</Label>
+                  <Textarea value={form.otherComments} onChange={(e) => updateField('otherComments', e.target.value)} placeholder="Any additional comments or notes" className="h-20 resize-none" />
                 </div>
                 <div className="md:col-span-2 grid md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
