@@ -40,6 +40,10 @@ export function AddStakeholder() {
 
       const vipFlag = formData.get('vipFlag') === 'on';
 
+      const companyFullName = (formData.get('companyFullName') as string)?.trim();
+
+      const companyShortName = (formData.get('companyShortName') as string)?.trim();
+
       if (!companyName) {
         toast.error('Company name is required');
 
@@ -68,6 +72,8 @@ export function AddStakeholder() {
         await addStakeholder({
           userId: user?.id,
           companyName,
+          companyFullName: companyFullName || undefined,
+          companyShortName: companyShortName || undefined,
           salesRepEmail,
           accountManagerEmail,
           complianceOfficerEmail,
@@ -99,6 +105,15 @@ export function AddStakeholder() {
             <div className="grid gap-3">
               <Label htmlFor="companyName">Company Name</Label>
               <Input id="companyName" name="companyName" />
+            </div>
+            <div className="grid gap-3">
+              <Label htmlFor="companyFullName">Company Full Name</Label>
+              <Input id="companyFullName" name="companyFullName" placeholder="E.g. Advanced Flavors & Fragrances Pte Ltd." maxLength={255} />
+              <span className="text-xs text-muted-foreground">Maximum 255 characters</span>
+            </div>
+            <div className="grid gap-3">
+              <Label htmlFor="companyShortName">Company Name (Short Form)</Label>
+              <Input id="companyShortName" name="companyShortName" placeholder="E.g. AFF" />
             </div>
             <div className="grid gap-3">
               <Label htmlFor="salesRepEmail">Sales Rep Email</Label>
