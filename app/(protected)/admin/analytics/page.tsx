@@ -187,7 +187,10 @@ function DistributionCard({ title, data, type }: { title: string; data: DistDatu
                   paddingAngle={4}
                   strokeWidth={2}
                   labelLine={false}
-                  label={(p) => (p.percent && p.percent * 100 >= 8 ? `${Math.round(p.percent * 100)}%` : '')}
+                  label={(p) => {
+                    const percent = p.percent as number | undefined;
+                    return percent && percent * 100 >= 8 ? `${Math.round(percent * 100)}%` : '';
+                  }}
                 >
                   {withPct.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
