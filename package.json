@@ -54,8 +54,8 @@
     "@react-email/preview-server": "4.3.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
+    "@types/react": "19.2.3",
+    "@types/react-dom": "19.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "react-email": "4.3.2",
@@ -66,8 +66,8 @@
   "packageManager": "pnpm@10.21.0",
   "pnpm": {
     "overrides": {
-      "@types/react": "19.2.2",
-      "@types/react-dom": "19.2.2"
+      "@types/react": "19.2.3",
+      "@types/react-dom": "19.2.3"
     }
   }
 }
