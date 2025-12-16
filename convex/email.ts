@@ -76,7 +76,7 @@ export const attemptSend = internalMutation({
     try {
       const resendId = await ctx.runMutation(components.resend.lib.sendEmail, {
         from: email.from,
-        to: email.to.join(', '),
+        to: email.to,
         subject: email.subject,
         text: email.text,
         html: email.html,
