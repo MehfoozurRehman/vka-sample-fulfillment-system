@@ -378,26 +378,37 @@ export const sendDailySummary = internalMutation({
   args: {},
   handler: async (ctx): Promise<{ sentTo: string[] } | { skipped: true }> => {
     const end = Date.now();
+
     const start = end - 24 * 60 * 60 * 1000;
+
     const emails = await ctx.db
       .query('emails')
       .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
       .collect();
 
     const countBy = (s: string) => emails.filter((e) => e.status === s).length;
+
     const total = emails.length;
 
     const summary = `Email Summary (last 24h)\n\nTotal: ${total}\nPending: ${countBy('pending')}\nRetrying: ${countBy('retrying')}\nSent: ${countBy('sent')}\nDelivered: ${countBy('delivered')}\nDelayed: ${countBy('delivery_delayed')}\nBounced: ${countBy('bounced')}\nFailed: ${countBy('failed')}\nCancelled: ${countBy('cancelled')}`;
 
     const users = await ctx.db.query('users').collect();
+
     const admins = users.filter((u) => !u.deletedAt && u.active && ((u.roles && u.roles.includes('admin')) || u.activeRole === 'admin'));
-    const to = admins.map((a) => a.email).filter((e) => /.+@.+\..+/.test(e));
+
+    const emailsToExclude = ['mehfoozijaz786@gmail.com', 'hammadhabib46@gmail.com'];
+
+    const to = admins
+      .map((a) => a.email)
+      .filter((e) => /.+@.+\..+/.test(e))
+      .filter((e) => !emailsToExclude.includes(e));
 
     if (!to.length) return { skipped: true } as const;
 
     const createdBy = admins[0]._id;
 
     const subject = 'VKA Email Queue – Daily Summary';
+
     const text = summary;
 
     const emailId = await ctx.runMutation(internal.email.queueEmail, {
