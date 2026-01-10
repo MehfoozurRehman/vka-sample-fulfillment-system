@@ -14,7 +14,7 @@ importers:
     dependencies:
       '@convex-dev/resend':
         specifier: ^0.2.3
-        version: 0.2.3(@react-email/render@2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(convex-helpers@0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))(react@19.2.3)
+        version: 0.2.3(@react-email/render@2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(convex-helpers@0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -76,8 +76,8 @@ importers:
         specifier: ^1.31.3
         version: 1.31.3(react@19.2.3)
       convex-helpers:
-        specifier: ^0.1.108
-        version: 0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
+        specifier: ^0.1.109
+        version: 0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
@@ -85,8 +85,8 @@ importers:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
       motion:
-        specifier: ^12.24.10
-        version: 12.24.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^12.25.0
+        version: 12.25.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next:
         specifier: 16.1.1
         version: 16.1.1(@babel/core@7.26.10)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -131,8 +131,8 @@ importers:
         specifier: ^4
         version: 4.1.11
       '@types/node':
-        specifier: ^25.0.3
-        version: 25.0.3
+        specifier: ^25.0.5
+        version: 25.0.5
       '@types/react':
         specifier: 19.2.7
         version: 19.2.7
@@ -1742,8 +1742,8 @@ packages:
   '@types/node@22.17.1':
     resolution: {integrity: sha512-y3tBaz+rjspDTylNjAX37jEC3TETEFGNJL6uQDxwF9/8GLLIjW1rvVHlynyuUKMnMr1Roq8jOv3vkopBjC4/VA==}
 
-  '@types/node@25.0.3':
-    resolution: {integrity: sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA==}
+  '@types/node@25.0.5':
+    resolution: {integrity: sha512-FuLxeLuSVOqHPxSN1fkcD8DLU21gAP7nCKqGRJ/FglbCUBs0NYN6TpHcdmyLeh8C0KwGIaZQJSv+OYG+KZz+Gw==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -2129,8 +2129,8 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  convex-helpers@0.1.108:
-    resolution: {integrity: sha512-5dHYX4Dy/qnBuvP5CI9ZKEwYtSlyQKK2MiIdGTVV8WUON5mWr/St8IeBxsJTBNh/vuBrlX0XPAZ1arbk4KQUdg==}
+  convex-helpers@0.1.109:
+    resolution: {integrity: sha512-3Yzi+4M+szpqze2/NjTqBdA6nit1vgtU0M3Ga6lUw2oNjOMrQ6si2Dx2M524GHXJ+5icBNM/6cii4Nrx58zMEw==}
     hasBin: true
     peerDependencies:
       '@standard-schema/spec': ^1.0.0
@@ -2606,8 +2606,8 @@ packages:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
-  framer-motion@12.24.10:
-    resolution: {integrity: sha512-8yoyMkCn2RmV9UB9mfmMuzKyenQe909hRQRl0yGBhbZJjZZ9bSU87NIGAruqCXCuTNCA0qHw2LWLrcXLL9GF6A==}
+  framer-motion@12.25.0:
+    resolution: {integrity: sha512-mlWqd0rApIjeyhTCSNCqPYsUAEhkcUukZxH3ke6KbstBRPcxhEpuIjmiUQvB+1E9xkEm5SpNHBgHCapH/QHTWg==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -3123,14 +3123,14 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  motion-dom@12.24.10:
-    resolution: {integrity: sha512-H3HStYaJ6wANoZVNT0ZmYZHGvrpvi9pKJRzsgNEHkdITR4Qd9FFu2e9sH4e2Phr4tKCmyyloex6SOSmv0Tlq+g==}
+  motion-dom@12.24.11:
+    resolution: {integrity: sha512-DlWOmsXMJrV8lzZyd+LKjG2CXULUs++bkq8GZ2Sr0R0RRhs30K2wtY+LKiTjhmJU3W61HK+rB0GLz6XmPvTA1A==}
 
   motion-utils@12.24.10:
     resolution: {integrity: sha512-x5TFgkCIP4pPsRLpKoI86jv/q8t8FQOiM/0E8QKBzfMozWHfkKap2gA1hOki+B5g3IsBNpxbUnfOum1+dgvYww==}
 
-  motion@12.24.10:
-    resolution: {integrity: sha512-P3tEZfL9N9Feb2sXVZaF085DHNyd4SO/X76Fo37pFv6DDAeL3vU4vYpTZBWiwW66qnF11VmFCM9DxnpAG825yg==}
+  motion@12.25.0:
+    resolution: {integrity: sha512-jBFohEYklpZ+TL64zv03sHdqr1Tsc8/yDy7u68hVzi7hTJYtv53AduchqCiY3aWi4vY1hweS8DWtgCuckusYdQ==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -4099,12 +4099,12 @@ snapshots:
     optionalDependencies:
       react: 19.2.3
 
-  '@convex-dev/resend@0.2.3(@react-email/render@2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(convex-helpers@0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))(react@19.2.3)':
+  '@convex-dev/resend@0.2.3(@react-email/render@2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(convex-helpers@0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@convex-dev/rate-limiter': 0.3.0(convex@1.31.3(react@19.2.3))(react@19.2.3)
-      '@convex-dev/workpool': 0.3.0(convex-helpers@0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))
+      '@convex-dev/workpool': 0.3.0(convex-helpers@0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))
       convex: 1.31.3(react@19.2.3)
-      convex-helpers: 0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
+      convex-helpers: 0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
       remeda: 2.30.0
       resend: 6.6.0(@react-email/render@2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
       svix: 1.71.0
@@ -4113,10 +4113,10 @@ snapshots:
       - encoding
       - react
 
-  '@convex-dev/workpool@0.3.0(convex-helpers@0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))':
+  '@convex-dev/workpool@0.3.0(convex-helpers@0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5))(convex@1.31.3(react@19.2.3))':
     dependencies:
       convex: 1.31.3(react@19.2.3)
-      convex-helpers: 0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
+      convex-helpers: 0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5)
 
   '@emnapi/core@1.4.5':
     dependencies:
@@ -5276,7 +5276,7 @@ snapshots:
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 25.0.3
+      '@types/node': 25.0.5
 
   '@types/d3-array@3.2.1': {}
 
@@ -5312,7 +5312,7 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/node@25.0.3':
+  '@types/node@25.0.5':
     dependencies:
       undici-types: 7.16.0
 
@@ -5715,7 +5715,7 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  convex-helpers@0.1.108(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5):
+  convex-helpers@0.1.109(@standard-schema/spec@1.0.0)(convex@1.31.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)(zod@4.3.5):
     dependencies:
       convex: 1.31.3(react@19.2.3)
     optionalDependencies:
@@ -5896,7 +5896,7 @@ snapshots:
   engine.io@6.6.4:
     dependencies:
       '@types/cors': 2.8.19
-      '@types/node': 25.0.3
+      '@types/node': 25.0.5
       accepts: 1.3.8
       base64id: 2.0.0
       cookie: 0.7.2
@@ -6356,9 +6356,9 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  framer-motion@12.24.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  framer-motion@12.25.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
-      motion-dom: 12.24.10
+      motion-dom: 12.24.11
       motion-utils: 12.24.10
       tslib: 2.8.1
     optionalDependencies:
@@ -6824,15 +6824,15 @@ snapshots:
 
   mkdirp@3.0.1: {}
 
-  motion-dom@12.24.10:
+  motion-dom@12.24.11:
     dependencies:
       motion-utils: 12.24.10
 
   motion-utils@12.24.10: {}
 
-  motion@12.24.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  motion@12.25.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
-      framer-motion: 12.24.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      framer-motion: 12.25.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       tslib: 2.8.1
     optionalDependencies:
       react: 19.2.3
