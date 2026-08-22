@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node api.js && next dev --turbopack",
     "dev:email": "email dev",
     "dev:server": "npx convex dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "node api.js && next build",
+    "start": "node api.js && next start",
     "lint": "next lint",
     "format": "npx prettier --write ."
   },
