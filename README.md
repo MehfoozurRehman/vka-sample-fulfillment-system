@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VKA Sample Fulfillment Operations Platform
+
+An enterprise order fulfillment and warehouse tracking system built with Next.js App Router, Convex backend, React Email, and Tailwind CSS v4.
+
+## Overview
+
+`vka-sample-fulfillment-system` manages end-to-end sample intake, processing workflows, inventory data tables (TanStack Table), order analytics (Recharts), automated customer emails via React Email & Resend, and real-time backend updates with Convex.
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, Turbopack)
+- **Backend & Database**: [Convex](https://convex.dev/) (`convex`, `convex-helpers`)
+- **Email Delivery**: React Email (`@react-email/components`), `@convex-dev/resend`
+- **Data Tables & Charts**: TanStack Table v8, Recharts v3
+- **UI & Animation**: Radix UI Primitives, Lucide Icons, Framer Motion (`motion`), `vaul`, `sonner`
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
+
+## Prerequisites
+
+- Node.js (v20 or higher recommended)
+- Package manager (`pnpm` recommended)
+- Convex backend account and Resend API key
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Configure Environment Variables**:
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_CONVEX_URL="your-convex-deployment-url"
+   RESEND_API_KEY="your-resend-api-key"
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Start the Convex Backend**:
+   ```bash
+   pnpm dev:server
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Run the Next.js Development Server**:
+   ```bash
+   pnpm dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. **Access the Application**:
+   Open `http://localhost:3000` in your web browser.
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `pnpm dev` - Starts the Next.js frontend with Turbopack.
+- `pnpm dev:server` - Launches the local Convex real-time backend engine.
+- `pnpm dev:email` - Opens the React Email template preview server.
+- `pnpm build` - Compiles production bundles.
+- `pnpm start` - Runs the production server.
+- `pnpm format` - Formats the codebase with Prettier.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Author
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Created by [Mehfooz-ur-Rehman](https://github.com/MehfoozurRehman).
