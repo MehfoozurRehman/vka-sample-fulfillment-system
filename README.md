@@ -1,62 +1,43 @@
 # VKA Sample Fulfillment Operations Platform
 
-An enterprise order fulfillment and warehouse tracking system built with Next.js App Router, Convex backend, React Email, and Tailwind CSS v4.
+An internal operations app for sample and order fulfillment: requests come in, move through screening, packing and shipping, and every change is logged and reported by email. Built with Next.js, a Convex backend and React Email templates.
 
-## Overview
+**Status:** In progress. The request workflow, role-based dashboards, audit logs, product and stakeholder management, and email templates are all in the code, but the first-admin route has no access check, and there are no tests.
 
-`vka-sample-fulfillment-system` manages end-to-end sample intake, processing workflows, inventory data tables (TanStack Table), order analytics (Recharts), automated customer emails via React Email & Resend, and real-time backend updates with Convex.
+## The problem
 
-## Tech Stack
+Sample and order requests pass through several hands: the requester asks, a screener checks them, a packer prepares the items and a shipper sends them. This app tracks each request through those steps and tells the people involved what happened.
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router, Turbopack)
-- **Backend & Database**: [Convex](https://convex.dev/) (`convex`, `convex-helpers`)
-- **Email Delivery**: React Email (`@react-email/components`), `@convex-dev/resend`
-- **Data Tables & Charts**: TanStack Table v8, Recharts v3
-- **UI & Animation**: Radix UI Primitives, Lucide Icons, Framer Motion (`motion`), `vaul`, `sonner`
-- **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
+## What it does
 
-## Prerequisites
+- Role-based areas under `app/(protected)/`: admin, requester, screener, packer and shipper, each with its own dashboard, profile and help page.
+- Request lifecycle: create a request with product lines and a business brief, screen it, and follow its timeline (`convex/request.ts`, `app/(protected)/admin/[requestId]/`).
+- Admin tools for users (invite users), products, stakeholders, analytics and audit logs (`convex/user.ts`, `convex/audit.ts`).
+- Email notifications built with React Email for submitted, approved, rejected, more-info-requested and order-ready events, plus an invitation email (`emails/`).
+- Google sign-in through `providers/gauth.tsx`, with users linked by `googleId` in `convex/auth.ts`.
 
-- Node.js (v20 or higher recommended)
-- Package manager (`pnpm` recommended)
-- Convex backend account and Resend API key
+## How it's built
 
-## Getting Started
+- Next.js App Router with TypeScript and Tailwind CSS v4. UI components are shadcn-style files in `components/ui/`.
+- Convex is the backend: schema in `convex/schema.ts`, queries and mutations per domain (`request`, `user`, `product`, `stakeholder`, `screener`, `packer`, `shipper`, `analytics`), HTTP routes in `convex/http.ts`, and scheduled jobs in `convex/crons.ts`.
+- Each role has its own layout under `app/(protected)/`.
+- Email goes through Resend (`convex/resend.ts`, `convex/email.ts`), and the templates in `emails/` are previewed with `email dev`.
+- `app/api/admin-register/route.ts` is a Next.js route that calls the `createFirstAdmin` mutation.
 
-1. **Install dependencies**:
-   ```bash
-   pnpm install
-   ```
+## Running it locally
 
-2. **Configure Environment Variables**:
-   Create a `.env.local` file in the root directory:
-   ```env
-   NEXT_PUBLIC_CONVEX_URL="your-convex-deployment-url"
-   RESEND_API_KEY="your-resend-api-key"
-   ```
+```bash
+pnpm install
+# set NEXT_PUBLIC_CONVEX_URL to your Convex deployment URL
+pnpm dev:server   # npx convex dev
+pnpm dev          # next dev --turbopack
+pnpm dev:email    # preview the email templates
+```
 
-3. **Start the Convex Backend**:
-   ```bash
-   pnpm dev:server
-   ```
+Other scripts: `build`, `start` and `lint`.
 
-4. **Run the Next.js Development Server**:
-   ```bash
-   pnpm dev
-   ```
+## What's left
 
-5. **Access the Application**:
-   Open `http://localhost:3000` in your web browser.
-
-## Available Scripts
-
-- `pnpm dev` - Starts the Next.js frontend with Turbopack.
-- `pnpm dev:server` - Launches the local Convex real-time backend engine.
-- `pnpm dev:email` - Opens the React Email template preview server.
-- `pnpm build` - Compiles production bundles.
-- `pnpm start` - Runs the production server.
-- `pnpm format` - Formats the codebase with Prettier.
-
-## Author
-
-Created by [Mehfooz-ur-Rehman](https://github.com/MehfoozurRehman).
+- `POST /api/admin-register` creates the first admin with no secret or signed-in check. The mutation only refuses when a user already exists, so whoever calls it first on an empty database becomes admin. This must be locked down before any real deployment.
+- There are no automated tests for the Convex functions or the workflow.
+- The README has no deployment steps.
